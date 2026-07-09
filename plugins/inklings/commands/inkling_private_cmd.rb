@@ -19,6 +19,12 @@ module AresMUSH
         [self.id, self.text]
       end
 
+      def check_approved
+        return nil if Inklings.can_manage_inklings?(enactor)
+        return t('inklings.char_not_approved') unless enactor.is_approved?
+        nil
+      end
+
       def check_valid_inkling
         return t('inklings.invalid_id') if !Inklings.find_inkling(self.id)
         return nil

@@ -1,5 +1,6 @@
 en:
   inklings:
+    char_not_approved: "Your character must be approved before using inklings."
     inklings_title: "Your Inklings"
     inklings_title_for: "Inklings for %{name}"
     no_inklings: "You don't have any inklings to show."

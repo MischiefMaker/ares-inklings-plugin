@@ -17,10 +17,14 @@ module AresMUSH
       enactor.is_staff?
     end
 
-    STAFF_KINDS = ["hint", "vision", "nudge", "hook"]
-    PLAYER_KINDS = ["action", "research", "request", "update", "pitch", "goal"]
-    SHARED_KINDS = ["secret"]
-    ALL_KINDS = STAFF_KINDS + PLAYER_KINDS + SHARED_KINDS
+    STAFF_KINDS   = ["hint", "vision", "nudge", "hook"]
+    PLAYER_KINDS  = ["action", "research", "request", "update", "pitch", "goal"]
+    SHARED_KINDS  = ["secret"]
+    ALL_KINDS     = STAFF_KINDS + PLAYER_KINDS + SHARED_KINDS
+
+    # Kinds that can be created by unapproved characters (during chargen).
+    # All other player commands require an approved character.
+    CHARGEN_KINDS = ["secret", "goal"]
 
     def self.find_inkling(id)
       Inkling.find_one_by_id(id)

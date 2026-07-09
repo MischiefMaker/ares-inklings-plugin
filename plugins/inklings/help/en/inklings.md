@@ -7,6 +7,8 @@ summary: Tracking character development and plot threads with inklings.
 
 Inklings are a system for tracking character development, plot threads, and important notes about your character. They're private conversations between you and staff, or between you and other players in a shared thread.
 
+> **Note:** Most inkling commands require an approved character. The exceptions are `+inkling/secret` and `+inkling/goal`, which may be used during character creation.
+
 ## Types of Inklings
 
 **Your own:**
@@ -17,7 +19,6 @@ Inklings are a system for tracking character development, plot threads, and impo
 - **Pitch** - A pitch for a scene, plot arc, or event you'd like to happen
 - **Goal** - A long-term goal your character is working toward
 - **Secret** - An IC secret your character holds (shareable with other players)
-- **Roll** - A thread for tracking dice rolls and their outcomes
 
 **From staff:**
 - **Hint** - A hint or guidance from staff about something

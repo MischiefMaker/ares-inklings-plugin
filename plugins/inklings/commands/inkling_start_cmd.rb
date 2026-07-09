@@ -43,6 +43,13 @@ module AresMUSH
         self.target_name ? [self.target_name, self.text] : [self.text]
       end
 
+      def check_approved
+        return nil if Inklings.can_manage_inklings?(enactor)
+        return nil if Inklings::CHARGEN_KINDS.include?(self.kind)
+        return t('inklings.char_not_approved') unless enactor.is_approved?
+        nil
+      end
+
       def check_valid_kind
         return nil if Inklings::ALL_KINDS.include?(self.kind)
         return t('inklings.invalid_kind')

@@ -6,6 +6,12 @@ module AresMUSH
     class InklingsCmd
       include CommandHandler
 
+      def check_approved
+        return nil if Inklings.can_manage_inklings?(enactor)
+        return t('inklings.char_not_approved') unless enactor.is_approved?
+        nil
+      end
+
       def handle
         own_inklings = enactor.inklings.to_a
         shared_inklings = InklingParticipant.find(character_id: enactor.id)

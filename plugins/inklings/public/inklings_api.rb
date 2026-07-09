@@ -12,9 +12,14 @@ module AresMUSH
         viewer = Character[viewer_id]
         return { error: "Viewer not found" } if !viewer
 
-        # Only the character themselves, staff, or a shared participant can view
+        # Only the character themselves or staff can view their inklings
         unless viewer.id == char.id || Inklings.can_manage_inklings?(viewer)
           return { error: "Not authorized" }
+        end
+
+        # Non-staff players must be approved to browse inklings
+        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved?
+          return { error: "Your character must be approved to access inklings." }
         end
 
         own = char.inklings.to_a
@@ -47,6 +52,11 @@ module AresMUSH
         # Only the character themselves or staff can create inklings for them
         unless viewer.id == char.id || Inklings.can_manage_inklings?(viewer)
           return { error: "Not authorized" }
+        end
+
+        # Non-staff players must be approved, except for chargen kinds
+        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved? || Inklings::CHARGEN_KINDS.include?(kind)
+          return { error: "Your character must be approved to create inklings." }
         end
 
         # Validate kind and enforce staff-only kinds
@@ -152,7 +162,9 @@ module AresMUSH
           return { error: "Not authorized" }
         end
 
-        # Check inkling is not closed
+        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved?
+          return { error: "Your character must be approved to reply to inklings." }
+        end
         if inkling.status == "closed"
           return { error: "This inkling is closed" }
         end
@@ -232,7 +244,9 @@ module AresMUSH
           return { error: "Not authorized" }
         end
 
-        inkling.update(status: "closed")
+        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved?
+          return { error: "Your character must be approved to close inklings." }
+        end
 
         if inkling.job
           Jobs.close_job(viewer, inkling.job, "Inkling closed from web portal")
@@ -260,6 +274,10 @@ module AresMUSH
 
         unless viewer.id == char.id || Inklings.can_manage_inklings?(viewer)
           return { error: "Not authorized" }
+        end
+
+        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved?
+          return { error: "Your character must be approved to delete inklings." }
         end
 
         unless Inklings.can_manage_inklings?(viewer)
@@ -295,6 +313,10 @@ module AresMUSH
 
         unless viewer.id == char.id || Inklings.can_manage_inklings?(viewer)
           return { error: "Not authorized" }
+        end
+
+        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved?
+          return { error: "Your character must be approved to share inklings." }
         end
 
         return { error: "Cannot share a closed inkling" } if inkling.status == "closed"
