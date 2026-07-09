@@ -65,24 +65,44 @@ module AresMUSH
     end
 
     def self.find_matching_group_chars(group_name)
-      matches = []
+      query = group_name.to_s.strip
+      return [] if query.blank?
 
-      if group_name.to_s.include?(":")
-        group_key, group_value = group_name.split(":", 2).map(&:strip)
-        return [] if group_key.blank? || group_value.blank?
+      matches = Character.all.select do |char|
+        groups = char.respond_to?(:groups) ? (char.groups || {}) : {}
 
-        matches = Character.all.select do |char|
-          char.is_approved? && char.group(group_key).to_s.casecmp?(group_value)
+        if query.include?(":")
+          group_key, group_value = query.split(":", 2).map(&:strip)
+          next false if group_key.blank? || group_value.blank?
+
+          group_value_for_char = if char.respond_to?(:group)
+            char.group(group_key)
+          else
+            groups[group_key.downcase]
+          end
+
+          next group_value_for_char.to_s.casecmp?(group_value)
         end
-      else
-        group_keys = (defined?(Demographics) ? Demographics.all_groups.keys : [])
-        matches = Character.all.select do |char|
-          next false if !char.is_approved?
 
-          group_keys.any? do |group_key|
-            char.group(group_key).to_s.casecmp?(group_name.to_s.strip)
+        groups.values.any? do |value|
+          value.to_s.casecmp?(query)
+        end
+      end
+
+      # If demographics is available, include any key-based checks as well.
+      if defined?(Demographics)
+        configured_keys = Demographics.all_groups.keys
+        key_matches = Character.all.select do |char|
+          configured_keys.any? do |group_key|
+            value = if char.respond_to?(:group)
+              char.group(group_key)
+            else
+              (char.respond_to?(:groups) ? (char.groups || {}) : {})[group_key.to_s.downcase]
+            end
+            value.to_s.casecmp?(query)
           end
         end
+        matches.concat(key_matches)
       end
 
       matches.uniq(&:id)

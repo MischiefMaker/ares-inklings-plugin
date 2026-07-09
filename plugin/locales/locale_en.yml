@@ -29,7 +29,7 @@ en:
     inkling_shared: "Inkling shared with %{name}."
     inkling_shared_multiple: "Inkling shared with %{names}."
     group_shared: "Inkling shared with %{names}."
-    group_not_found: "No approved characters matched: %{name}."
+    group_not_found: "No characters matched: %{name}."
     character_not_found: "Can't find: %{name}."
     not_a_participant: "%{name} does not have access to this inkling."
     shared_notice: "<inklings> %{name} has shared an inkling with you. Use +inkling %{id} to view it."
