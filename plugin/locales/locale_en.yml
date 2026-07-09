@@ -1,6 +1,8 @@
 en:
   inklings:
     char_not_approved: "Your character must be approved before using inklings."
+    staff_target_warning: "%xyWarning:%xn %{name} is not approved. You're creating this inkling on an unapproved character."
+    staff_target_staff_warning: "%xyWarning:%xn %{name} can manage staff-side systems. Make sure this inkling belongs on a real character, not a staff utility/player record."
     inklings_title: "Your Inklings"
     inklings_title_for: "Inklings for %{name}"
     no_inklings: "You don't have any inklings to show."

@@ -1,3 +1,5 @@
+require "time"
+
 module AresMUSH
   module Inklings
     def self.plugin_dir
@@ -27,6 +29,25 @@ module AresMUSH
 
     def self.find_inkling(id)
       Inkling.find_one_by_id(id)
+    end
+
+    def self.time_value(value)
+      return value if value.is_a?(Time)
+      return Time.parse(value) if !value.to_s.blank?
+      Time.at(0)
+    rescue ArgumentError
+      Time.at(0)
+    end
+
+    def self.format_time(value, format)
+      time_value(value).strftime(format)
+    end
+
+    def self.staff_target_warning(char)
+      return nil if !char
+      return "%xyWarning:%xn #{char.name} is not approved. You're creating this inkling on an unapproved character." if !char.is_approved?
+      return "%xyWarning:%xn #{char.name} can manage staff-side systems. Make sure this inkling belongs on a real character, not a staff utility/player record." if Inklings.can_manage_inklings?(char)
+      nil
     end
 
     # Whether char is meaningfully attached to this thread (as its

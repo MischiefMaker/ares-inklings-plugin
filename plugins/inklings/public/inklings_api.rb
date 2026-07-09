@@ -31,7 +31,7 @@ module AresMUSH
         end
 
         {
-          inklings: inklings.sort_by { |i| i.created_at }.reverse.map { |i| format_inkling_summary(i, viewer) }
+          inklings: inklings.sort_by { |i| Inklings.time_value(i.created_at) }.reverse.map { |i| format_inkling_summary(i, viewer) }
         }
       end
 
@@ -127,13 +127,13 @@ module AresMUSH
         is_staff = Inklings.can_manage_inklings?(viewer)
 
         if is_staff && !is_private
-          last_msg = inkling.messages.to_a.sort_by { |m| m.created_at }.last
+          last_msg = inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }.last
           is_private = true if last_msg && last_msg.is_private.to_s == "true"
         end
 
         recipient_ids = ""
         if is_private && is_staff
-          last_msg = inkling.messages.to_a.sort_by { |m| m.created_at }.last
+          last_msg = inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }.last
           recipient_ids = last_msg&.private_recipient_ids.to_s.presence ||
             (last_msg&.author ? last_msg.author.id : inkling.character.id)
         end
@@ -278,11 +278,11 @@ module AresMUSH
       end
 
       def self.visible_messages_for(inkling, viewer)
-        inkling.messages.sort_by { |m| m.created_at }.select { |m| Inklings.can_see_message?(m, viewer) }
+        inkling.messages.sort_by { |m| Inklings.time_value(m.created_at) }.select { |m| Inklings.can_see_message?(m, viewer) }
       end
 
       def self.visible_rolls_for(inkling, viewer)
-        inkling.rolls.to_a.sort_by { |r| r.created_at }.select { |r| Inklings.can_see_roll?(r, viewer) }
+        inkling.rolls.to_a.sort_by { |r| Inklings.time_value(r.created_at) }.select { |r| Inklings.can_see_roll?(r, viewer) }
       end
 
       def self.format_inkling_summary(inkling, viewer = nil)
@@ -305,8 +305,8 @@ module AresMUSH
       end
 
       def self.format_inkling_detail(inkling, viewer = nil)
-        messages = viewer ? visible_messages_for(inkling, viewer) : inkling.messages.sort_by { |m| m.created_at }
-        rolls = viewer ? visible_rolls_for(inkling, viewer) : inkling.rolls.to_a.sort_by { |r| r.created_at }
+        messages = viewer ? visible_messages_for(inkling, viewer) : inkling.messages.sort_by { |m| Inklings.time_value(m.created_at) }
+        rolls = viewer ? visible_rolls_for(inkling, viewer) : inkling.rolls.to_a.sort_by { |r| Inklings.time_value(r.created_at) }
 
         format_inkling_summary(inkling, viewer).merge(
           messages: messages.map { |m| format_message(m) },

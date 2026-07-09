@@ -21,7 +21,7 @@ module AresMUSH
 
       def handle
         ClassTargetFinder.with_a_character(self.target_name, client, enactor) do |model|
-          inklings = model.inklings.sort_by { |i| i.created_at }.reverse
+          inklings = model.inklings.sort_by { |i| Inklings.time_value(i.created_at) }.reverse
           inklings.each { |i| Inklings.sync_job_replies(i) }
 
           if inklings.empty?
@@ -32,7 +32,7 @@ module AresMUSH
           list = inklings.map do |i|
             job_ref = i.job ? "job ##{i.job.id} [#{i.job.status}]" : t('inklings.no_linked_job')
             title = i.title.to_s.blank? ? t("inklings.kind_#{i.kind}") : i.title
-            "##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{i.created_at.strftime('%m/%d')} #{job_ref} - #{i.messages.to_a.size} msg(s)"
+            "##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} #{job_ref} - #{i.messages.to_a.size} msg(s)"
           end
 
           template = BorderedPagedListTemplate.new list, cmd.page, 25,

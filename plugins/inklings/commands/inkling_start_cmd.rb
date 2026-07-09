@@ -105,6 +105,8 @@ module AresMUSH
         end
 
         client.emit_success t('inklings.thread_started', :id => inkling.id)
+        warning = Inklings.staff_target_warning(subject) if Inklings.can_manage_inklings?(creator)
+        client.emit warning if warning
 
         if staff_started
           Inklings.notify_player(subject, t('inklings.new_message_notice'))

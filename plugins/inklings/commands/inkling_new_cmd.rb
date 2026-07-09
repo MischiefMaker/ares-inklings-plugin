@@ -64,6 +64,8 @@ module AresMUSH
         end
 
         client.emit_success t('inklings.thread_started', :id => inkling.id)
+        warning = Inklings.staff_target_warning(enactor) if Inklings.can_manage_inklings?(enactor)
+        client.emit warning if warning
       end
     end
   end

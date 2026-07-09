@@ -28,7 +28,7 @@ module AresMUSH
           inklings = inklings.select { |i| i.status == "open" }
         end
 
-        inklings = inklings.sort_by { |i| i.created_at }.reverse
+        inklings = inklings.sort_by { |i| Inklings.time_value(i.created_at) }.reverse
 
         if inklings.empty?
           client.emit_success t('inklings.no_inklings')
@@ -39,7 +39,7 @@ module AresMUSH
           flag = i.character == enactor && i.player_unread == "true" ? "%xh*%xn " : "  "
           title = i.title.to_s.blank? ? t("inklings.kind_#{i.kind}") : i.title
           visible_message_count = i.messages.to_a.count { |m| Inklings.can_see_message?(m, enactor) }
-          "#{flag}##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{i.created_at.strftime('%m/%d')} - #{visible_message_count} msg(s)"
+          "#{flag}##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} - #{visible_message_count} msg(s)"
         end
 
         template = BorderedPagedListTemplate.new list, cmd.page, 25, t('inklings.inklings_title')

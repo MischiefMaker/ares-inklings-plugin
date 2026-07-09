@@ -119,7 +119,7 @@ module AresMUSH
           return { error: "Not authorized" }
         end
 
-        rolls = InklingRoll.find(inkling_id: inkling.id).to_a.sort_by { |r| r.created_at }
+        rolls = InklingRoll.find(inkling_id: inkling.id).to_a.sort_by { |r| Inklings.time_value(r.created_at) }
         visible_rolls = rolls.select { |r| Inklings.can_see_roll?(r, viewer) }
 
         {

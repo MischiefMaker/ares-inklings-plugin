@@ -49,7 +49,7 @@ module AresMUSH
         auto_private = false
         auto_recipients = ""
         if is_staff
-          last_msg = inkling.messages.to_a.sort_by { |m| m.created_at }.last
+          last_msg = inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }.last
           if last_msg && last_msg.is_private.to_s == "true"
             auto_private = true
             auto_recipients = last_msg.private_recipient_ids.to_s.presence ||

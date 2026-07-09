@@ -39,7 +39,7 @@ module AresMUSH
 
         events = []
 
-        inkling.messages.sort_by { |m| m.created_at }
+        inkling.messages.sort_by { |m| Inklings.time_value(m.created_at) }
           .select { |m| Inklings.can_see_message?(m, enactor) }
           .each do |m|
             who = m.author ? m.author.name : "?"
@@ -47,15 +47,15 @@ module AresMUSH
             tags << "gm" if m.is_gm_note == "true"
             tags << "private" if m.is_private == "true"
             tag_text = tags.empty? ? "" : " [#{tags.join(", ")}]"
-            events << [m.created_at, "#{m.created_at.strftime('%m/%d %H:%M')} #{who}#{tag_text}: #{m.text}"]
+            events << [Inklings.time_value(m.created_at), "#{Inklings.format_time(m.created_at, '%m/%d %H:%M')} #{who}#{tag_text}: #{m.text}"]
           end
 
-        inkling.rolls.to_a.sort_by { |r| r.created_at }.each do |roll|
+        inkling.rolls.to_a.sort_by { |r| Inklings.time_value(r.created_at) }.each do |roll|
           next if !Inklings.can_see_roll?(roll, enactor)
 
           who = roll.creator ? roll.creator.name : "?"
           private_tag = roll.private == "true" ? " [private]" : ""
-          events << [roll.created_at, "#{roll.created_at.strftime('%m/%d %H:%M')} #{who} rolled #{roll.roll_spec}#{private_tag}: #{roll.result}"]
+          events << [Inklings.time_value(roll.created_at), "#{Inklings.format_time(roll.created_at, '%m/%d %H:%M')} #{who} rolled #{roll.roll_spec}#{private_tag}: #{roll.result}"]
         end
 
         lines = events.sort_by { |time, _line| time }.map(&:last)
