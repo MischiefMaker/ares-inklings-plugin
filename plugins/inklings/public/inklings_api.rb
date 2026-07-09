@@ -2,21 +2,33 @@ module AresMUSH
   module Inklings
     class InklingApi
       # GET /api/characters/:char_id/inklings
-      # Returns list of inklings for a character, visible only to the character
-      # and staff
-      def self.get_inklings(char_id, viewer_id)
+      # Returns list of inklings for a character, visible only to the character,
+      # staff, and players the character has shared inklings with.
+      # Supports ?status=open|closed|all (defaults to open).
+      def self.get_inklings(char_id, viewer_id, status_filter: "open")
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
         viewer = Character[viewer_id]
         return { error: "Viewer not found" } if !viewer
 
-        # Only the character themselves or staff can view their inklings
+        # Only the character themselves, staff, or a shared participant can view
         unless viewer.id == char.id || Inklings.can_manage_inklings?(viewer)
           return { error: "Not authorized" }
         end
 
-        inklings = char.inklings.to_a.sort_by { |i| i.created_at }.reverse
+        own = char.inklings.to_a
+        shared = InklingParticipant.find(character_id: viewer.id)
+          .map(&:inkling).compact
+        inklings = (own + shared).uniq(&:id)
+
+        inklings = case status_filter
+          when "closed" then inklings.select { |i| i.status == "closed" }
+          when "all"    then inklings
+          else               inklings.select { |i| i.status == "open" }
+          end
+
+        inklings = inklings.sort_by { |i| i.created_at }.reverse
 
         {
           inklings: inklings.map { |i| format_inkling_summary(i) }
@@ -37,9 +49,13 @@ module AresMUSH
           return { error: "Not authorized" }
         end
 
-        # Validate kind
+        # Validate kind and enforce staff-only kinds
         unless Inklings::ALL_KINDS.include?(kind)
           return { error: "Invalid inkling kind" }
+        end
+
+        if Inklings::STAFF_KINDS.include?(kind) && !Inklings.can_manage_inklings?(viewer)
+          return { error: "Not authorized" }
         end
 
         # Validate text is not empty
@@ -225,6 +241,80 @@ module AresMUSH
         {
           inkling: format_inkling_summary(inkling)
         }
+      end
+
+      # DELETE /api/characters/:char_id/inklings/:inkling_id
+      def self.delete_inkling(char_id, inkling_id, viewer_id)
+        char = Character[char_id]
+        return { error: "Character not found" } if !char
+
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        viewer = Character[viewer_id]
+        return { error: "Viewer not found" } if !viewer
+
+        unless inkling.character == char
+          return { error: "Inkling does not belong to this character" }
+        end
+
+        unless viewer.id == char.id || Inklings.can_manage_inklings?(viewer)
+          return { error: "Not authorized" }
+        end
+
+        unless Inklings.can_manage_inklings?(viewer)
+          transcript = inkling.messages.map { |m| "#{m.author ? m.author.name : "?"}: #{m.text}" }.join(" / ")
+          Inklings.ensure_job(inkling,
+            "#{viewer.name} deleted a #{inkling.kind.titleize}",
+            "The player deleted this inkling. Its contents were: #{transcript}",
+            viewer)
+        end
+
+        inkling.messages.each { |m| m.delete }
+        inkling.rolls.each { |r| r.delete }
+        InklingParticipant.find(inkling_id: inkling.id).each { |p| p.delete }
+        inkling.delete
+
+        { success: true }
+      end
+
+      # POST /api/characters/:char_id/inklings/:inkling_id/share
+      def self.share_inkling(char_id, inkling_id, viewer_id, target_name)
+        char = Character[char_id]
+        return { error: "Character not found" } if !char
+
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        viewer = Character[viewer_id]
+        return { error: "Viewer not found" } if !viewer
+
+        unless inkling.character == char
+          return { error: "Inkling does not belong to this character" }
+        end
+
+        unless viewer.id == char.id || Inklings.can_manage_inklings?(viewer)
+          return { error: "Not authorized" }
+        end
+
+        return { error: "Cannot share a closed inkling" } if inkling.status == "closed"
+
+        target = Character.find_one_by_name(target_name)
+        return { error: "Character '#{target_name}' not found" } if !target
+
+        if Inklings.is_participant?(inkling, target)
+          return { error: "#{target.name} already has access to this inkling" }
+        end
+
+        InklingParticipant.create(
+          inkling: inkling,
+          character: target,
+          added_at: Time.now)
+
+        Inklings.notify_player(target,
+          "<inklings> #{viewer.name} has shared an inkling with you. Use +inkling #{inkling.id} to view it.")
+
+        { success: true, target_name: target.name }
       end
 
       private
