@@ -38,28 +38,41 @@ module AresMUSH
         inkling = Inklings.find_inkling(self.id)
         is_staff = Inklings.can_manage_inklings?(enactor)
 
+        # Auto-private: if staff are replying and the last message in the
+        # thread is private, inherit its privacy and recipients automatically.
+        auto_private = false
+        auto_recipients = ""
+        if is_staff
+          last_msg = inkling.messages.to_a.sort_by { |m| m.created_at }.last
+          if last_msg && last_msg.is_private.to_s == "true"
+            auto_private = true
+            auto_recipients = last_msg.private_recipient_ids.to_s.presence || inkling.character.id
+          end
+        end
+
+        job_text = auto_private ? "[Private] #{self.text}" : self.text
+
         InklingMessage.create(
           inkling: inkling,
           author: enactor,
           text: self.text,
           created_at: Time.now,
-          is_staff: is_staff ? "true" : "false")
+          is_staff: is_staff ? "true" : "false",
+          is_private: auto_private ? "true" : "false",
+          private_recipient_ids: auto_recipients)
 
         if is_staff
           inkling.update(player_unread: "true")
-          # Only mirrors if a job already exists - a staff reply on a
-          # thread that's never needed staff attention shouldn't spawn one.
-          Inklings.mirror_to_job(inkling, self.text, enactor)
+          Inklings.mirror_to_job(inkling, job_text, enactor)
           Inklings.notify_player(inkling.character, t('inklings.new_message_notice'))
         else
-          # Player replied - staff need to know, creating a job if this
-          # thread doesn't already have one.
           Inklings.ensure_job(inkling,
             "#{enactor.name} replied - #{t("inklings.kind_#{inkling.kind}")}",
             self.text, enactor)
         end
 
-        client.emit_success t('inklings.reply_added')
+        notice = auto_private ? t('inklings.reply_added_auto_private') : t('inklings.reply_added')
+        client.emit_success notice
       end
     end
   end

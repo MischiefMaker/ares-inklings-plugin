@@ -41,13 +41,19 @@ module AresMUSH
         inkling = Inklings.find_inkling(self.id)
         is_staff = Inklings.can_manage_inklings?(enactor)
 
+        # Staff private messages are visible to the inkling's subject player
+        # by default. Player private messages are visible only to the author
+        # and staff (empty recipient list).
+        recipient_ids = is_staff ? inkling.character.id : ""
+
         InklingMessage.create(
           inkling: inkling,
           author: enactor,
           text: self.text,
           created_at: Time.now,
           is_staff: is_staff ? "true" : "false",
-          is_private: "true")
+          is_private: "true",
+          private_recipient_ids: recipient_ids)
 
         if is_staff
           inkling.update(player_unread: "true")

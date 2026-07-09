@@ -111,6 +111,18 @@ module AresMUSH
       Login.emit_ooc_if_logged_in(char, message)
     end
 
+    # Whether a viewer is allowed to see a specific message.
+    # Non-private messages are always visible. Private messages are
+    # visible to: staff, the message author, and any character IDs
+    # listed in private_recipient_ids.
+    def self.can_see_message?(message, viewer)
+      return true if message.is_private.to_s != "true"
+      return true if Inklings.can_manage_inklings?(viewer)
+      return true if message.author && message.author.id == viewer.id
+      ids = message.private_recipient_ids.to_s.split(",").map(&:strip).reject(&:empty?)
+      ids.include?(viewer.id)
+    end
+
     def self.get_cmd_handler(client, cmd, enactor)
       case cmd.root
       when "inkling"

@@ -148,6 +148,23 @@ module AresMUSH
 
         is_staff = Inklings.can_manage_inklings?(viewer)
 
+        # Auto-private: if staff reply and last message is private,
+        # inherit its privacy and recipients.
+        if is_staff && !is_private
+          last_msg = inkling.messages.to_a.sort_by { |m| m.created_at }.last
+          if last_msg && last_msg.is_private.to_s == "true"
+            is_private = true
+          end
+        end
+
+        recipient_ids = ""
+        if is_private
+          if is_staff
+            recipient_ids = inkling.messages.to_a.sort_by { |m| m.created_at }.last&.private_recipient_ids.to_s.presence || inkling.character.id
+          end
+          # player private: recipient_ids stays empty (author + staff only)
+        end
+
         # Create the message
         message = InklingMessage.create(
           inkling: inkling,
@@ -155,7 +172,8 @@ module AresMUSH
           text: text,
           created_at: Time.now,
           is_staff: is_staff ? "true" : "false",
-          is_private: is_private ? "true" : "false"
+          is_private: is_private ? "true" : "false",
+          private_recipient_ids: recipient_ids
         )
 
         job_text = is_private ? "[Private] #{text}" : text
@@ -226,11 +244,7 @@ module AresMUSH
       def self.format_inkling_detail(inkling, viewer = nil)
         messages = inkling.messages.sort_by { |m| m.created_at }
         if viewer
-          messages = messages.select do |m|
-            m.is_private.to_s != "true" ||
-              (m.author && m.author.id == viewer.id) ||
-              Inklings.can_manage_inklings?(viewer)
-          end
+          messages = messages.select { |m| Inklings.can_see_message?(m, viewer) }
         end
         format_inkling_summary(inkling).merge(
           messages: messages.map { |m| format_message(m) }
@@ -245,7 +259,9 @@ module AresMUSH
           text: message.text,
           created_at: message.created_at,
           is_staff: message.is_staff == "true",
-          is_private: message.is_private == "true"
+          is_private: message.is_private == "true",
+          private_recipient_ids: message.is_private == "true" ?
+            message.private_recipient_ids.to_s.split(",").map(&:strip).reject(&:empty?) : []
         }
       end
     end

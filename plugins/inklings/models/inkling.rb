@@ -50,9 +50,14 @@ module AresMUSH
     attribute :created_at
     # "true"/"false" - was the author staff at the time they wrote this
     attribute :is_staff
-    # "true"/"false" - visible only to the author and staff; hidden from
-    # other participants in the thread.
+    # "true"/"false" - visible only to the author, staff, and any IDs
+    # listed in private_recipient_ids.
     attribute :is_private
+    # Comma-separated character IDs of non-staff players who can see
+    # this private message. For player private entries this is empty
+    # (only the author + staff). For staff private entries this defaults
+    # to the inkling's subject character.
+    attribute :private_recipient_ids
 
     reference :inkling, "AresMUSH::Inkling"
     reference :author, "AresMUSH::Character"

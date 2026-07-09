@@ -12,6 +12,7 @@ en:
     thread_closed_msg: "Inkling closed."
     closed_via_inkling: "This job was closed automatically because the linked inkling was closed."
     reply_added: "Reply added."
+    reply_added_auto_private: "Reply added (marked private to match the previous message)."
     private_reply_added: "Private reply added."
     inkling_deleted: "Inkling deleted."
     already_shared: "That character already has access to this inkling."

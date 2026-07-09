@@ -6,6 +6,12 @@ module AresMUSH
     #   +inkling/nudge <char>=<text>
     #   +inkling/hook <char>=<text>
     #
+    # Player or staff (no target = own character):
+    #   +inkling/secret <text>
+    #
+    # Staff creating a secret for a player (args contain "="):
+    #   +inkling/secret <char>=<text>
+    #
     # Player-initiated (no target - always about themselves):
     #   +inkling/action <text>
     #   +inkling/research <text>
@@ -21,7 +27,8 @@ module AresMUSH
       def parse_args
         self.kind = cmd.switch
 
-        needs_target = Inklings::STAFF_KINDS.include?(self.kind)
+        needs_target = Inklings::STAFF_KINDS.include?(self.kind) ||
+          (self.kind == "secret" && cmd.args.to_s.include?("="))
 
         if needs_target
           args = cmd.parse_args(ArgParser.arg1_equals_arg2)
@@ -42,7 +49,8 @@ module AresMUSH
       end
 
       def check_permission
-        if Inklings::STAFF_KINDS.include?(self.kind)
+        if Inklings::STAFF_KINDS.include?(self.kind) ||
+           (self.kind == "secret" && self.target_name)
           return nil if Inklings.can_manage_inklings?(enactor)
           return t('dispatcher.not_allowed')
         end
