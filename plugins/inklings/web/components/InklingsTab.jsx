@@ -10,6 +10,13 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
   const [showNewForm, setShowNewForm] = useState(false);
   const [newInkling, setNewInkling] = useState({ kind: 'goal', text: '' });
   const [replyText, setReplyText] = useState({});
+  const [fs3Attributes, setFs3Attributes] = useState([]);
+  const [showRollForm, setShowRollForm] = useState(false);
+  const [newRoll, setNewRoll] = useState({
+    rollType: 'player',
+    rollSpec: '',
+    isPrivate: false
+  });
 
   const kindDisplayNames = {
     hint: 'Hint',
@@ -22,15 +29,17 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
     request: 'Request',
     update: 'Update',
     pitch: 'Pitch',
-    goal: 'Goal'
+    goal: 'Goal',
+    roll: 'Roll'
   };
 
   const staffKinds = ['hint', 'vision', 'nudge', 'hook'];
   const playerKinds = ['action', 'research', 'request', 'update', 'pitch', 'goal'];
-  const allKinds = [...staffKinds, ...playerKinds, 'secret'];
+  const allKinds = [...staffKinds, ...playerKinds, 'secret', 'roll'];
 
   useEffect(() => {
     loadInklings();
+    loadFS3Attributes();
   }, [characterId]);
 
   const loadInklings = async () => {
@@ -43,6 +52,19 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
       setError(err.response?.data?.error || 'Failed to load inklings');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadFS3Attributes = async () => {
+    try {
+      // Try to load FS3 attributes for the character
+      const response = await api.get(`/api/characters/${characterId}/fs3?viewer_id=${viewerId}`);
+      if (response.data && response.data.attributes) {
+        setFs3Attributes(response.data.attributes);
+      }
+    } catch (err) {
+      // FS3 may not be available, that's okay
+      console.log('FS3 not available');
     }
   };
 
@@ -102,6 +124,83 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
       setError(null);
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to add reply');
+    }
+  };
+
+  const handleAddRoll = async (inklingId) => {
+    if (!newRoll.rollSpec || !newRoll.rollSpec.trim()) {
+      setError('Please select or enter a roll spec');
+      return;
+    }
+
+    try {
+      // For player rolls, we need to actually roll
+      let result, resultValue;
+      
+      if (newRoll.rollType === 'player') {
+        // Call FS3 API to roll the skill/attribute
+        const rollResponse = await api.post(`/api/characters/${characterId}/roll`, {
+          attribute: newRoll.rollSpec,
+          viewer_id: viewerId
+        });
+        result = rollResponse.data.result;
+        resultValue = rollResponse.data.result_value;
+      } else {
+        // Staff is entering the result manually
+        result = newRoll.rollSpec;
+        resultValue = parseInt(newRoll.rollSpec) || 0;
+      }
+
+      const response = await api.post(
+        `/api/characters/${characterId}/inklings/${inklingId}/roll`,
+        {
+          roll_type: newRoll.rollType,
+          roll_spec: newRoll.rollSpec,
+          result: result,
+          result_value: resultValue,
+          is_private: newRoll.isPrivate,
+          viewer_id: viewerId
+        }
+      );
+
+      // Reload the expanded inkling
+      const fullResponse = await api.get(`/api/characters/${characterId}/inklings/${inklingId}?viewer_id=${viewerId}`);
+      setInklings(inklings.map(i => i.id === inklingId ? fullResponse.data.inkling : i));
+      setNewRoll({ rollType: 'player', rollSpec: '', isPrivate: false });
+      setShowRollForm(false);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to add roll');
+    }
+  };
+
+  const handleRerollWithLuck = async (inklingId, rollId) => {
+    try {
+      // Call FS3 API to reroll the skill/attribute
+      const rollResponse = await api.post(`/api/characters/${characterId}/roll`, {
+        attribute: 'luck_reroll',
+        viewer_id: viewerId
+      });
+      const result = rollResponse.data.result;
+      const resultValue = rollResponse.data.result_value;
+      const luckCost = rollResponse.data.luck_cost || 1;
+
+      const response = await api.post(
+        `/api/characters/${characterId}/inklings/${inklingId}/rolls/${rollId}/reroll`,
+        {
+          new_result: result,
+          new_result_value: resultValue,
+          luck_cost: luckCost,
+          viewer_id: viewerId
+        }
+      );
+
+      // Reload the expanded inkling
+      const fullResponse = await api.get(`/api/characters/${characterId}/inklings/${inklingId}?viewer_id=${viewerId}`);
+      setInklings(inklings.map(i => i.id === inklingId ? fullResponse.data.inkling : i));
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to reroll');
     }
   };
 
@@ -211,6 +310,37 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
 
               {expandedId === inkling.id && expandedInkling && (
                 <div className="inkling-detail">
+                  {/* Display rolls if this is a roll inkling */}
+                  {expandedInkling.kind === 'roll' && expandedInkling.rolls && expandedInkling.rolls.length > 0 && (
+                    <div className="rolls-section">
+                      <h3>Rolls</h3>
+                      {expandedInkling.rolls.map(roll => (
+                        <div key={roll.id} className={`roll ${roll.private ? 'private' : 'public'}`}>
+                          <div className="roll-header">
+                            <strong>{roll.roll_spec}</strong>
+                            {roll.private && <span className="private-badge">PRIVATE</span>}
+                            <span className="roll-result">{roll.result}</span>
+                            <span className="roll-meta">by {roll.creator}</span>
+                          </div>
+                          {roll.reroll_count > 0 && (
+                            <div className="roll-reroll-info">
+                              Rerolled {roll.reroll_count} time{roll.reroll_count !== 1 ? 's' : ''}
+                              {roll.luck_cost > 0 && ` (cost: ${roll.luck_cost} luck)`}
+                            </div>
+                          )}
+                          {roll.roll_type === 'player' && roll.character === roll.creator && expandedInkling.status === 'open' && (
+                            <button
+                              className="btn btn-small btn-secondary"
+                              onClick={() => handleRerollWithLuck(expandedInkling.id, roll.id)}
+                            >
+                              Reroll with Luck
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
                   <div className="messages-section">
                     {expandedInkling.messages && expandedInkling.messages.map(msg => (
                       <div key={msg.id} className={`message ${msg.is_staff ? 'staff' : 'player'}`}>
@@ -227,20 +357,113 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                   </div>
 
                   {expandedInkling.status === 'open' && (
-                    <div className="reply-section">
-                      <textarea
-                        value={replyText[expandedInkling.id] || ''}
-                        onChange={(e) => setReplyText({ ...replyText, [expandedInkling.id]: e.target.value })}
-                        placeholder="Add a reply..."
-                        rows="3"
-                      />
-                      <button
-                        className="btn btn-success"
-                        onClick={() => handleReplyToInkling(expandedInkling.id)}
-                      >
-                        Add Reply
-                      </button>
-                    </div>
+                    <>
+                      {expandedInkling.kind === 'roll' && (
+                        <div className="roll-form-section">
+                          {!showRollForm ? (
+                            <button
+                              className="btn btn-success"
+                              onClick={() => setShowRollForm(true)}
+                            >
+                              + Add Roll
+                            </button>
+                          ) : (
+                            <div className="roll-form">
+                              <div className="form-group">
+                                <label>Roll Type</label>
+                                <select
+                                  value={newRoll.rollType}
+                                  onChange={(e) => setNewRoll({ ...newRoll, rollType: e.target.value })}
+                                >
+                                  <option value="player">My Roll</option>
+                                  {isStaff && <option value="npc">NPC Roll</option>}
+                                  {isStaff && <option value="static">Static Number</option>}
+                                </select>
+                              </div>
+
+                              {newRoll.rollType === 'player' && (
+                                <div className="form-group">
+                                  <label>Attribute/Skill</label>
+                                  {fs3Attributes.length > 0 ? (
+                                    <select
+                                      value={newRoll.rollSpec}
+                                      onChange={(e) => setNewRoll({ ...newRoll, rollSpec: e.target.value })}
+                                    >
+                                      <option value="">Select an attribute</option>
+                                      {fs3Attributes.map(attr => (
+                                        <option key={attr} value={attr}>
+                                          {attr}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <input
+                                      type="text"
+                                      value={newRoll.rollSpec}
+                                      onChange={(e) => setNewRoll({ ...newRoll, rollSpec: e.target.value })}
+                                      placeholder="Enter attribute/skill name"
+                                    />
+                                  )}
+                                </div>
+                              )}
+
+                              {(newRoll.rollType === 'npc' || newRoll.rollType === 'static') && (
+                                <div className="form-group">
+                                  <label>{newRoll.rollType === 'npc' ? 'Character / Result' : 'Number'}</label>
+                                  <input
+                                    type="text"
+                                    value={newRoll.rollSpec}
+                                    onChange={(e) => setNewRoll({ ...newRoll, rollSpec: e.target.value })}
+                                    placeholder={newRoll.rollType === 'npc' ? 'NPC name or ID' : 'Enter a number'}
+                                  />
+                                </div>
+                              )}
+
+                              <div className="form-group checkbox">
+                                <label>
+                                  <input
+                                    type="checkbox"
+                                    checked={newRoll.isPrivate}
+                                    onChange={(e) => setNewRoll({ ...newRoll, isPrivate: e.target.checked })}
+                                  />
+                                  Private (only visible to player and staff)
+                                </label>
+                              </div>
+
+                              <div className="form-actions">
+                                <button
+                                  className="btn btn-success"
+                                  onClick={() => handleAddRoll(expandedInkling.id)}
+                                >
+                                  Add Roll
+                                </button>
+                                <button
+                                  className="btn btn-secondary"
+                                  onClick={() => setShowRollForm(false)}
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="reply-section">
+                        <textarea
+                          value={replyText[expandedInkling.id] || ''}
+                          onChange={(e) => setReplyText({ ...replyText, [expandedInkling.id]: e.target.value })}
+                          placeholder="Add a reply..."
+                          rows="3"
+                        />
+                        <button
+                          className="btn btn-success"
+                          onClick={() => handleReplyToInkling(expandedInkling.id)}
+                        >
+                          Add Reply
+                        </button>
+                      </div>
+                    </>
                   )}
 
                   {(expandedInkling.status === 'open' && isStaff) && (
