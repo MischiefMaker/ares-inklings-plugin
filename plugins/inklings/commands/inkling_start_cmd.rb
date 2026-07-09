@@ -76,9 +76,12 @@ module AresMUSH
 
       def start_thread(subject, creator)
         staff_started = subject != creator
+        legacy_title = self.text.to_s.split(/\r?\n/).first.to_s[0, 60]
+        legacy_title = t("inklings.kind_#{self.kind}") if legacy_title.blank?
 
         inkling = Inkling.create(
           kind: self.kind,
+          title: legacy_title,
           status: "open",
           character: subject,
           creator: creator,
@@ -90,7 +93,9 @@ module AresMUSH
           author: creator,
           text: self.text,
           created_at: Time.now,
-          is_staff: Inklings.can_manage_inklings?(creator) ? "true" : "false")
+          is_staff: Inklings.can_manage_inklings?(creator) ? "true" : "false",
+          is_private: "false",
+          is_gm_note: "false")
 
         if !staff_started
           # Player started this thread themselves - staff need to know.

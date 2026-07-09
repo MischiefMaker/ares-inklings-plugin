@@ -31,7 +31,8 @@ module AresMUSH
 
           list = inklings.map do |i|
             job_ref = i.job ? "job ##{i.job.id} [#{i.job.status}]" : t('inklings.no_linked_job')
-            "##{i.id} [#{i.kind.upcase}] (#{i.status}) #{i.created_at.strftime('%m/%d')} #{job_ref} - #{i.messages.to_a.size} msg(s)"
+            title = i.title.to_s.blank? ? t("inklings.kind_#{i.kind}") : i.title
+            "##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{i.created_at.strftime('%m/%d')} #{job_ref} - #{i.messages.to_a.size} msg(s)"
           end
 
           template = BorderedPagedListTemplate.new list, cmd.page, 25,

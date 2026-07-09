@@ -1,6 +1,6 @@
 module AresMUSH
   module Inklings
-    # +inkling/reply <id>=<text>
+    # +inkling/advance <id>=<text>
     class InklingReplyCmd
       include CommandHandler
 
@@ -52,7 +52,8 @@ module AresMUSH
           last_msg = inkling.messages.to_a.sort_by { |m| m.created_at }.last
           if last_msg && last_msg.is_private.to_s == "true"
             auto_private = true
-            auto_recipients = last_msg.private_recipient_ids.to_s.presence || inkling.character.id
+            auto_recipients = last_msg.private_recipient_ids.to_s.presence ||
+              (last_msg.author ? last_msg.author.id : inkling.character.id)
           end
         end
 
@@ -65,6 +66,7 @@ module AresMUSH
           created_at: Time.now,
           is_staff: is_staff ? "true" : "false",
           is_private: auto_private ? "true" : "false",
+          is_gm_note: "false",
           private_recipient_ids: auto_recipients)
 
         if is_staff
@@ -77,7 +79,7 @@ module AresMUSH
             self.text, enactor)
         end
 
-        notice = auto_private ? t('inklings.reply_added_auto_private') : t('inklings.reply_added')
+        notice = auto_private ? t('inklings.advance_added_auto_private') : t('inklings.advance_added')
         client.emit_success notice
       end
     end

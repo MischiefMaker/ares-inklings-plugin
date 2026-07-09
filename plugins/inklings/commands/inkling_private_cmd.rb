@@ -1,22 +1,21 @@
 module AresMUSH
   module Inklings
-    # +inkling/private <id>=<text>
-    # Adds a private entry to an inkling thread. Private entries are
-    # visible only to the author and staff, regardless of who else
-    # participates in the thread.
+    # +inkling/private <id>=<name>/<text>
+    # Players can omit the name. Staff may include a target participant
+    # name to direct the private note to that specific player.
     class InklingPrivateCmd
       include CommandHandler
 
-      attr_accessor :id, :text
+      attr_accessor :id, :raw_text
 
       def parse_args
         args = cmd.parse_args(ArgParser.arg1_equals_arg2)
         self.id = args.arg1
-        self.text = args.arg2
+        self.raw_text = trim_arg(args.arg2)
       end
 
       def required_args
-        [self.id, self.text]
+        [self.id, self.raw_text]
       end
 
       def check_approved
@@ -46,29 +45,49 @@ module AresMUSH
       def handle
         inkling = Inklings.find_inkling(self.id)
         is_staff = Inklings.can_manage_inklings?(enactor)
+        target = nil
+        text = self.raw_text
 
-        # Staff private messages are visible to the inkling's subject player
-        # by default. Player private messages are visible only to the author
-        # and staff (empty recipient list).
-        recipient_ids = is_staff ? inkling.character.id : ""
+        if is_staff && self.raw_text.include?("/")
+          possible_name, possible_text = self.raw_text.split("/", 2).map(&:strip)
+          possible_target = Character.find_one_by_name(titlecase_arg(possible_name))
+
+          if possible_target
+            if !Inklings.is_participant?(inkling, possible_target)
+              client.emit_failure t('inklings.not_a_participant', :name => possible_target.name)
+              return
+            end
+
+            target = possible_target
+            text = possible_text
+          end
+        end
+
+        if text.blank?
+          client.emit_failure t('dispatcher.invalid_syntax')
+          return
+        end
+
+        recipient_ids = is_staff ? (target ? target.id : inkling.character.id) : ""
 
         InklingMessage.create(
           inkling: inkling,
           author: enactor,
-          text: self.text,
+          text: text,
           created_at: Time.now,
           is_staff: is_staff ? "true" : "false",
           is_private: "true",
+          is_gm_note: "false",
           private_recipient_ids: recipient_ids)
 
         if is_staff
           inkling.update(player_unread: "true")
-          Inklings.mirror_to_job(inkling, "[Private] #{self.text}", enactor)
-          Inklings.notify_player(inkling.character, t('inklings.new_message_notice'))
+          Inklings.mirror_to_job(inkling, "[Private] #{text}", enactor)
+          Inklings.notify_player(target || inkling.character, t('inklings.new_message_notice'))
         else
           Inklings.ensure_job(inkling,
             "#{enactor.name} private reply - #{t("inklings.kind_#{inkling.kind}")}",
-            "[Private] #{self.text}", enactor)
+            "[Private] #{text}", enactor)
         end
 
         client.emit_success t('inklings.private_reply_added')

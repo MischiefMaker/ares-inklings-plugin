@@ -14,6 +14,7 @@ module AresMUSH
     # or secret (IC character secret, shareable with other players).
     # Rolls are not a kind — they can be attached to any inkling.
     attribute :kind
+    attribute :title
     # "open" or "closed"
     attribute :status
     attribute :created_at
@@ -53,6 +54,8 @@ module AresMUSH
     # "true"/"false" - visible only to the author, staff, and any IDs
     # listed in private_recipient_ids.
     attribute :is_private
+    # "true"/"false" - visible only to staff via can_manage_inklings?.
+    attribute :is_gm_note
     # Comma-separated character IDs of non-staff players who can see
     # this private message. For player private entries this is empty
     # (only the author + staff). For staff private entries this defaults

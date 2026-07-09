@@ -7,7 +7,7 @@ summary: Tracking character development and plot threads with inklings.
 
 Inklings are a system for tracking character development, plot threads, and important notes about your character. They're private conversations between you and staff, or between you and other players in a shared thread.
 
-> **Note:** Most inkling commands require an approved character. The exceptions are `+inkling/secret` and `+inkling/goal`, which may be used during character creation.
+> **Note:** Most inkling commands require an approved character. During chargen, the same exception applies to goal and secret inklings.
 
 ## Types of Inklings
 
@@ -32,15 +32,19 @@ Inklings are a system for tracking character development, plot threads, and impo
 
 `+inkling <id>` - View a specific inkling thread and all messages in it. Mark it as read when you view it.
 
-`+inkling/<kind> <text>` - Create a new inkling of a specific type. For example: `+inkling/goal Work on learning to sail` or `+inkling/request Can we schedule a scene about X?`
+`+inkling/new <kind>=<title>/<text>` - Create a new inkling with a title and opening text. Example: `+inkling/new goal=Learn to Sail/Work toward buying lessons this month.`
 
-`+inkling/secret <text>` - Record an IC secret your character holds. Staff can see this; share it with other players using `+inkling/share`.
+`+inkling/share <id>=<character>,<character>` - Share an inkling with one or more characters by name. Example: `+inkling/share 14=Bob,Alice`
 
-`+inkling/private <id>=<text>` - Add a private entry to any inkling thread, visible only to you and staff.
+`+inkling/group <id>=<group>,<group>` - Share an inkling with everyone in one or more existing groups. You can use a bare group value like `Navy` or an explicit `Group:Value` like `Faction:Navy`.
 
-`+inkling/share <id>=<character>` - Share an inkling with another player.
+`+inkling/advance <id>=<text>` - Add a new update to the inkling thread.
 
-`+inkling/reply <id>=<text>` - Reply to an inkling thread. Staff will be notified of player replies.
+`+inkling/roll <id>=<roll command>` - Attach a roll to the inkling thread. Example: `+inkling/roll 14=Firearms+Reflexes`
+
+`+inkling/private <id>=<text>` - Add a private entry visible only to you and staff.
+
+`+inkling/private <id>=<name>/<text>` - Staff can direct a private entry to a specific participant in the thread. Example: `+inkling/private 14=Bob/Keep this between you and staff.`
 
 `+inkling/close <id>` - Close an inkling thread (you can do this for your own threads).
 
@@ -48,7 +52,7 @@ Inklings are a system for tracking character development, plot threads, and impo
 
 ## Web Portal
 
-You can also manage your inklings through the character profile on the web portal. The **Inklings** tab shows all your threads in an easy-to-read format, allows you to expand threads to see the full conversation, and lets you add replies and rolls directly from the web.
+You can also manage your inklings through the character profile on the web portal. The **Inklings** tab lets you create titled inklings, expand threads to read the full conversation, share them with other characters, and add updates or rolls directly from the web.
 
 ## Tips
 

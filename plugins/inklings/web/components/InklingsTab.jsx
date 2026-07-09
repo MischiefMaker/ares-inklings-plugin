@@ -8,7 +8,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showNewForm, setShowNewForm] = useState(false);
-  const [newInkling, setNewInkling] = useState({ kind: 'goal', text: '' });
+  const [newInkling, setNewInkling] = useState({ kind: 'goal', title: '', text: '' });
   const [replyText, setReplyText] = useState({});
   const [privateReply, setPrivateReply] = useState({});
   const [statusFilter, setStatusFilter] = useState('open');
@@ -73,6 +73,11 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
   };
 
   const handleCreateInkling = async () => {
+    if (!newInkling.title.trim()) {
+      setError('Please enter an inkling title');
+      return;
+    }
+
     if (!newInkling.text.trim()) {
       setError('Please enter inkling text');
       return;
@@ -81,11 +86,12 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
     try {
       const response = await api.post(`/api/characters/${characterId}/inklings`, {
         kind: newInkling.kind,
+        title: newInkling.title,
         text: newInkling.text,
         viewer_id: viewerId
       });
       setInklings([response.data.inkling, ...inklings]);
-      setNewInkling({ kind: 'goal', text: '' });
+      setNewInkling({ kind: 'goal', title: '', text: '' });
       setShowNewForm(false);
       setError(null);
     } catch (err) {
@@ -266,6 +272,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
   const availableKinds = isStaff ? allKinds : playerKinds.concat(['secret']);
 
   const expandedInkling = expandedId ? inklings.find(i => i.id === expandedId) : null;
+  if (loading) {
     return <div className="inklings-tab">Loading inklings...</div>;
   }
 
@@ -310,6 +317,15 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
             </select>
           </div>
           <div className="form-group">
+            <label>Title</label>
+            <input
+              type="text"
+              value={newInkling.title}
+              onChange={(e) => setNewInkling({ ...newInkling, title: e.target.value })}
+              placeholder="Enter a short title"
+            />
+          </div>
+          <div className="form-group">
             <label>Text</label>
             <textarea
               value={newInkling.text}
@@ -340,9 +356,13 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                   <span className={`inkling-kind ${inkling.kind}`}>
                     {kindDisplayNames[inkling.kind]}
                   </span>
+                  <span className="inkling-title">{inkling.title}</span>
                   <span className={`inkling-status ${inkling.status}`}>
                     {inkling.status}
                   </span>
+                  {inkling.character_id !== viewerId && inkling.character_name && (
+                    <span className="inkling-owner">for {inkling.character_name}</span>
+                  )}
                   {inkling.player_unread && (
                     <span className="unread-badge">unread</span>
                   )}
@@ -402,6 +422,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                         <div className="message-header">
                           <strong>{msg.author}</strong>
                           {msg.is_staff && <span className="staff-badge">STAFF</span>}
+                          {msg.is_gm_note && <span className="staff-badge">GM</span>}
                           {msg.is_private && <span className="private-badge">PRIVATE</span>}
                           <span className="message-time">
                             {new Date(msg.created_at).toLocaleString()}
@@ -555,14 +576,14 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                     </>
                   )}
 
-                  {(expandedInkling.status === 'open' && (isStaff || viewerId === characterId)) && (
+                  {(expandedInkling.status === 'open' && (isStaff || expandedInkling.character_id === viewerId)) && (
                     <div className="inkling-actions">
                       <div className="share-form">
                         <input
                           type="text"
                           value={shareTarget[expandedInkling.id] || ''}
                           onChange={(e) => setShareTarget({ ...shareTarget, [expandedInkling.id]: e.target.value })}
-                          placeholder="Share with character..."
+                          placeholder="Share with character(s)..."
                         />
                         <button
                           className="btn btn-secondary"
@@ -580,7 +601,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                     </div>
                   )}
 
-                  {(isStaff || viewerId === characterId) && (
+                  {(isStaff || expandedInkling.character_id === viewerId) && (
                     <div className="inkling-actions inkling-actions-danger">
                       <button
                         className="btn btn-danger"
