@@ -19,7 +19,8 @@ module AresMUSH
 
         own = char.inklings.to_a
         shared = InklingParticipant.find(character_id: viewer.id).map(&:inkling).compact
-        inklings = (own + shared).uniq(&:id)
+        group_matched = Inkling.all.to_a.select { |i| Inklings.is_group_participant?(i, viewer) }
+        inklings = (own + shared + group_matched).uniq(&:id)
 
         inklings = case status_filter
         when "closed"

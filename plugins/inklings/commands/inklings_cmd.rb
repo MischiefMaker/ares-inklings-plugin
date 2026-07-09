@@ -16,8 +16,9 @@ module AresMUSH
         own_inklings = enactor.inklings.to_a
         shared_inklings = InklingParticipant.find(character_id: enactor.id)
           .map(&:inkling).compact
+        group_inklings = Inkling.all.to_a.select { |i| Inklings.is_group_participant?(i, enactor) }
 
-        inklings = (own_inklings + shared_inklings).uniq(&:id)
+        inklings = (own_inklings + shared_inklings + group_inklings).uniq(&:id)
         inklings.each { |i| Inklings.sync_job_replies(i) }
 
         if cmd.switch_is?("closed")

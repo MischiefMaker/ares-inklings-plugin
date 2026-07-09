@@ -19,7 +19,7 @@ module AresMUSH
     end
 
     STAFF_KINDS   = ["hint", "vision", "nudge", "hook"]
-    PLAYER_KINDS  = ["action", "research", "request", "update", "pitch", "goal"]
+    PLAYER_KINDS  = ["initiative", "request", "update", "pitch", "goal"]
     SHARED_KINDS  = ["secret"]
     ALL_KINDS     = STAFF_KINDS + PLAYER_KINDS + SHARED_KINDS
 
@@ -53,15 +53,70 @@ module AresMUSH
     # Whether char is meaningfully attached to this thread (as its
     # subject, the one who started it, or an explicitly added participant).
     # Staff can always act on any thread regardless of this check.
+    # Explicit participant check (owner, creator, or manually added).
+    # Does NOT include group membership. Used to avoid double-notifying
+    # characters who are already explicit participants when a group share is set.
+    def self.is_participant_explicit?(inkling, char)
+      return true if inkling.character == char
+      return true if inkling.creator == char
+      InklingParticipant.find(inkling_id: inkling.id, character_id: char.id).any?
+    end
+
     def self.is_participant?(inkling, char)
       return true if inkling.character == char
       return true if inkling.creator == char
       return true if InklingParticipant.find(inkling_id: inkling.id, character_id: char.id).any?
+      return true if is_group_participant?(inkling, char)
       false
     end
 
     def self.split_list(value)
       value.to_s.split(",").map(&:strip).reject(&:empty?)
+    end
+
+    # Returns true if the group spec exists in the demographics config.
+    # Accepts "Value" (checks all group keys) or "Key:Value" (checks specific key).
+    # Always returns false when Demographics is not loaded.
+    def self.valid_group_spec?(spec)
+      return false unless defined?(Demographics)
+      query = spec.to_s.strip
+      return false if query.blank?
+
+      if query.include?(":")
+        group_key, group_value = query.split(":", 2).map(&:strip)
+        return false if group_key.blank? || group_value.blank?
+        group_config = Demographics.get_group(group_key)
+        return false unless group_config
+        values = (group_config["values"] || {}).keys
+        values.any? { |v| v.to_s.downcase == group_value.downcase }
+      else
+        Demographics.all_groups.values.any? do |group_config|
+          values = (group_config["values"] || {}).keys
+          values.any? { |v| v.to_s.downcase == query.downcase }
+        end
+      end
+    end
+
+    # Returns true if char's group membership matches a single spec string.
+    def self.char_matches_group_spec?(char, spec)
+      return false unless char.respond_to?(:group)
+      query = spec.to_s.strip
+      return false if query.blank?
+
+      if query.include?(":")
+        group_key, group_value = query.split(":", 2).map(&:strip)
+        return false if group_key.blank? || group_value.blank?
+        char.group(group_key).to_s.downcase == group_value.downcase
+      else
+        group_keys = defined?(Demographics) ? Demographics.all_groups.keys : []
+        group_keys.any? { |key| char.group(key).to_s.downcase == query.downcase }
+      end
+    end
+
+    # Returns true if any of the inkling's stored shared_groups specs match char.
+    def self.is_group_participant?(inkling, char)
+      specs = split_list(inkling.shared_groups)
+      specs.any? { |spec| char_matches_group_spec?(char, spec) }
     end
 
     def self.find_matching_group_chars(group_name)

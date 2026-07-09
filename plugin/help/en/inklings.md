@@ -12,8 +12,7 @@ Inklings are a system for tracking character development, plot threads, and impo
 ## Types of Inklings
 
 **Your own:**
-- **Plot Action** - Something your character is doing that's relevant to the game world
-- **Research** - Something your character is researching or studying
+- **Initiative** - Something your character is actively doing that requires staff feedback — an action they're taking, something they're researching, or anything they're pursuing that touches the wider game world
 - **Request** - A request for staff assistance or plot
 - **Update** - A general update about your character's status or plans
 - **Pitch** - A pitch for a scene, plot arc, or event you'd like to happen

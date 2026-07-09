@@ -17,6 +17,10 @@ module AresMUSH
     attribute :title
     # "open" or "closed"
     attribute :status
+    # Comma-separated group specs (e.g. "Navy" or "Faction:Navy,Marines").
+    # Any character whose group membership matches a spec has access, even
+    # if they were approved after the share was set.
+    attribute :shared_groups
     attribute :created_at
     # "true"/"false" - whether the player has unread staff messages
     # on this thread.
