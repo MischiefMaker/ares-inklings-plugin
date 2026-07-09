@@ -11,8 +11,8 @@ module AresMUSH
 
     # kind is one of: hint, vision, nudge, hook (staff -> player),
     # action, research, request, update, pitch, goal (player -> staff),
-    # secret (IC character secret, shareable with other players),
-    # or roll (either direction).
+    # or secret (IC character secret, shareable with other players).
+    # Rolls are not a kind — they can be attached to any inkling.
     attribute :kind
     # "open" or "closed"
     attribute :status

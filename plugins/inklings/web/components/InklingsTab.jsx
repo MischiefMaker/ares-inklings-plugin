@@ -30,13 +30,12 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
     request: 'Request',
     update: 'Update',
     pitch: 'Pitch',
-    goal: 'Goal',
-    roll: 'Roll'
+    goal: 'Goal'
   };
 
   const staffKinds = ['hint', 'vision', 'nudge', 'hook'];
   const playerKinds = ['action', 'research', 'request', 'update', 'pitch', 'goal'];
-  const allKinds = [...staffKinds, ...playerKinds, 'secret', 'roll'];
+  const allKinds = [...staffKinds, ...playerKinds, 'secret'];
 
   useEffect(() => {
     loadInklings();
@@ -312,8 +311,8 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
 
               {expandedId === inkling.id && expandedInkling && (
                 <div className="inkling-detail">
-                  {/* Display rolls if this is a roll inkling */}
-                  {expandedInkling.kind === 'roll' && expandedInkling.rolls && expandedInkling.rolls.length > 0 && (
+                  {/* Rolls — available on any inkling */}
+                  {expandedInkling.rolls && expandedInkling.rolls.length > 0 && (
                     <div className="rolls-section">
                       <h3>Rolls</h3>
                       {expandedInkling.rolls.map(roll => (
@@ -361,8 +360,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
 
                   {expandedInkling.status === 'open' && (
                     <>
-                      {expandedInkling.kind === 'roll' && (
-                        <div className="roll-form-section">
+                      <div className="roll-form-section">
                           {!showRollForm ? (
                             <button
                               className="btn btn-success"
@@ -450,7 +448,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                             </div>
                           )}
                         </div>
-                      )}
+                      </div>
 
                       <div className="reply-section">
                         <textarea
