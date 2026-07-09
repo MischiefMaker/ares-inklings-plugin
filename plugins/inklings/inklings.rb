@@ -227,6 +227,9 @@ module AresMUSH
           return InklingViewCmd
         end
       when "inklings"
+        if !cmd.args.to_s.strip.empty? && cmd.switch.to_s.strip.empty?
+          return InklingViewCmd
+        end
         return InklingsCmd
       end
       return nil
