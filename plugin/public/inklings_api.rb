@@ -278,7 +278,7 @@ module AresMUSH
       end
 
       def self.visible_messages_for(inkling, viewer)
-        inkling.messages.sort_by { |m| Inklings.time_value(m.created_at) }.select { |m| Inklings.can_see_message?(m, viewer) }
+        inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }.select { |m| Inklings.can_see_message?(m, viewer) }
       end
 
       def self.visible_rolls_for(inkling, viewer)
@@ -305,7 +305,7 @@ module AresMUSH
       end
 
       def self.format_inkling_detail(inkling, viewer = nil)
-        messages = viewer ? visible_messages_for(inkling, viewer) : inkling.messages.sort_by { |m| Inklings.time_value(m.created_at) }
+        messages = viewer ? visible_messages_for(inkling, viewer) : inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }
         rolls = viewer ? visible_rolls_for(inkling, viewer) : inkling.rolls.to_a.sort_by { |r| Inklings.time_value(r.created_at) }
 
         format_inkling_summary(inkling, viewer).merge(

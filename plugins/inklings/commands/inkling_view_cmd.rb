@@ -40,7 +40,7 @@ module AresMUSH
 
         events = []
 
-        inkling.messages.sort_by { |m| Inklings.time_value(m.created_at) }
+        inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }
           .select { |m| Inklings.can_see_message?(m, enactor) }
           .each do |m|
             who = m.author ? m.author.name : "?"
