@@ -7,7 +7,8 @@ module AresMUSH
       attr_accessor :id
 
       def parse_args
-        self.id = cmd.args
+        args = cmd.parse_args(/(?<id>.+)/)
+        self.id = trim_arg(args.id)
       end
 
       def required_args

@@ -227,7 +227,8 @@ module AresMUSH
           return InklingViewCmd
         end
       when "inklings"
-        if !cmd.args.to_s.strip.empty?
+        stripped_raw = cmd.raw.to_s.strip.sub(/^[\/\+\=\@\&]/, "")
+        if stripped_raw =~ /^inklings\s+\S+/i
           return InklingViewCmd
         end
         return InklingsCmd
