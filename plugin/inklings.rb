@@ -227,6 +227,28 @@ module AresMUSH
           return InklingViewCmd
         end
       when "inklings"
+        if cmd.switch_is?("delete")
+          return InklingDeleteCmd
+        elsif cmd.switch_is?("advance") || cmd.switch_is?("reply")
+          return InklingReplyCmd
+        elsif cmd.switch_is?("gm")
+          return InklingGmCmd
+        elsif cmd.switch_is?("private")
+          return InklingPrivateCmd
+        elsif cmd.switch_is?("share")
+          return InklingShareCmd
+        elsif cmd.switch_is?("group")
+          return InklingGroupCmd
+        elsif cmd.switch_is?("roll")
+          return InklingRollCmd
+        elsif cmd.switch_is?("new")
+          return InklingNewCmd
+        elsif cmd.switch_is?("close")
+          return InklingCloseCmd
+        elsif ALL_KINDS.any? { |k| cmd.switch_is?(k) }
+          return InklingStartCmd
+        end
+
         stripped_raw = cmd.raw.to_s.strip.sub(/^[\/\+\=\@\&]/, "")
         if stripped_raw =~ /^inklings\s+\S+/i
           return InklingViewCmd
