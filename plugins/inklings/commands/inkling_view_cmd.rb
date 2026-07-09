@@ -29,6 +29,8 @@ module AresMUSH
       def handle
         inkling = Inklings.find_inkling(self.id)
 
+        Inklings.sync_job_replies(inkling)
+
         lines = inkling.messages.sort_by { |m| m.created_at }.map do |m|
           who = m.author ? m.author.name : "?"
           "#{m.created_at.strftime('%m/%d %H:%M')} #{who}: #{m.text}"

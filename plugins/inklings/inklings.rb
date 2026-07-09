@@ -50,25 +50,59 @@ module AresMUSH
         mirror_to_job(inkling, message, enactor)
         return inkling.job
       else
-        job = Jobs.create_job(self.job_category, title, message, enactor)
+        result = Jobs.create_job(self.job_category, title, message, enactor)
+        if result[:error]
+          Global.logger.error("Inklings: Failed to create job for inkling ##{inkling.id} - #{result[:error]}")
+          return nil
+        end
+        job = result[:job]
         inkling.update(job: job)
         return job
       end
     end
 
     # Adds a comment to an inkling's already-existing linked job.
-    # NOTE: Jobs.add_comment is a placeholder name/signature. The Jobs
-    # plugin's real public API (plugins/jobs/public/jobs_api.rb) has a
-    # confirmed Jobs.create_job and Jobs.close_job, but the method for
-    # adding a reply to an EXISTING job isn't documented anywhere I could
-    # verify - check that file for the actual method and swap it in here.
-    # This is the only place that call needs to happen.
+    # admin_only is false because this is a message the player submitted
+    # (or is meant to see), not an internal staff note.
     def self.mirror_to_job(inkling, message, enactor)
       return if !inkling.job
-      if Jobs.respond_to?(:add_comment)
-        Jobs.add_comment(enactor, inkling.job, message, true)
-      else
-        Global.logger.warn("Inklings: Jobs.add_comment not found - reply not mirrored to job ##{inkling.job.id}. Update Inklings.mirror_to_job in inklings.rb to match your Jobs API.")
+      Jobs.comment(inkling.job, enactor, message, false)
+    end
+
+    # There's no event fired when a JobReply is added, so instead of
+    # pushing job replies into Inklings, we pull: call this whenever an
+    # inkling is displayed, and it copies over any JobReply on the linked
+    # job that hasn't been mirrored into the thread yet. admin_only
+    # replies (internal staff notes on the job) are intentionally
+    # skipped - those aren't meant for the player to see.
+    def self.sync_job_replies(inkling)
+      return if !inkling.job
+
+      new_messages = false
+
+      JobReply.find(job_id: inkling.job.id).to_a.each do |reply|
+        next if reply.admin_only.to_s == "true"
+        next if InklingMessage.find(source_job_reply_id: reply.id).any?
+
+        InklingMessage.create(
+          inkling: inkling,
+          author: reply.author,
+          text: reply.message,
+          created_at: reply.respond_to?(:created_at) ? reply.created_at : Time.now,
+          is_staff: "true",
+          source_job_reply: reply)
+
+        new_messages = true
+      end
+
+      if new_messages
+        inkling.update(player_unread: "true")
+        # NOTE: t() is a CommandHandler helper and isn't available here,
+        # since this runs from a plain module method, not a command
+        # instance. Using a plain string instead - swap in your game's
+        # actual locale lookup (e.g. Global.locales.t(...)) if you want
+        # this localized.
+        Inklings.notify_player(inkling.character, "You have a new inkling message. Use +inklings to view it.")
       end
     end
 
@@ -96,19 +130,6 @@ module AresMUSH
         return InklingsCmd
       end
       return nil
-    end
-
-    def self.get_event_handler(event_name)
-      case event_name
-      # NOTE: "JobReplyAddedEvent" is a placeholder event name. Check
-      # plugins/jobs/public/*.rb in your install for the actual event
-      # class the Jobs plugin fires when a reply/comment is added to a
-      # job (via job/respond or job/discuss), and update this - and the
-      # field names read in JobReplyEventHandler#on_event - to match.
-      when "JobReplyAddedEvent"
-        return JobReplyEventHandler
-      end
-      nil
     end
   end
 end

@@ -8,6 +8,7 @@ module AresMUSH
 
       def handle
         inklings = enactor.inklings.to_a
+        inklings.each { |i| Inklings.sync_job_replies(i) }
 
         if cmd.switch_is?("closed")
           inklings = inklings.select { |i| i.status == "closed" }

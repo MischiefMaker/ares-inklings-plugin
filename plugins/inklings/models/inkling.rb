@@ -50,8 +50,13 @@ module AresMUSH
 
     reference :inkling, "AresMUSH::Inkling"
     reference :author, "AresMUSH::Character"
+    # Set only when this message was pulled in from a JobReply on the
+    # linked job (see Inklings.sync_job_replies). Lets the sync tell
+    # which replies it's already mirrored, so it doesn't duplicate them.
+    reference :source_job_reply, "AresMUSH::JobReply"
 
     index :inkling_id
+    index :source_job_reply_id
   end
 
   # Reverse reference so char.inklings gives every thread that character

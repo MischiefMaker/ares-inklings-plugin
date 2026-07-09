@@ -87,6 +87,14 @@ and `+inkling <id>` on any thread, not just ones they started.
 
 Whenever a player starts a thread, replies to one, or deletes one,
 Inklings notifies staff by creating or updating a job in the INKLINGS
-category - so nothing a player does here gets missed. Replying to that
-job (staff side) should update the inkling thread in turn, and closing
-an inkling closes its linked job automatically.
+category - so nothing a player does here gets missed.
+
+Staff replies flow back the other way too, but not instantly: replying
+to the linked job (not admin-only/internal notes - those stay
+staff-side) gets pulled into the inkling thread the next time anyone
+views or lists it. In practice that means using `+inkling/reply` is the
+most immediate way for staff to respond, since it updates both sides at
+once; replying directly on the job works too, it just catches up on the
+player's next look at their inklings.
+
+Closing an inkling closes its linked job automatically.

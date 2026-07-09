@@ -22,6 +22,7 @@ module AresMUSH
       def handle
         ClassTargetFinder.with_a_character(self.target_name, client, enactor) do |model|
           inklings = model.inklings.sort_by { |i| i.created_at }.reverse
+          inklings.each { |i| Inklings.sync_job_replies(i) }
 
           if inklings.empty?
             client.emit_success t('inklings.no_inklings_for', :name => model.name)
