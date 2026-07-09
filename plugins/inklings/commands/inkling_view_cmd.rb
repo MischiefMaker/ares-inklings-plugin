@@ -31,10 +31,13 @@ module AresMUSH
 
         Inklings.sync_job_replies(inkling)
 
-        lines = inkling.messages.sort_by { |m| m.created_at }.map do |m|
-          who = m.author ? m.author.name : "?"
-          "#{m.created_at.strftime('%m/%d %H:%M')} #{who}: #{m.text}"
-        end
+        lines = inkling.messages.sort_by { |m| m.created_at }
+          .select { |m| Inklings.can_see_message?(m, enactor) }
+          .map do |m|
+            who = m.author ? m.author.name : "?"
+            private_tag = m.is_private == "true" ? " [private]" : ""
+            "#{m.created_at.strftime('%m/%d %H:%M')} #{who}#{private_tag}: #{m.text}"
+          end
 
         job_line = inkling.job ? "\n\n(Linked job ##{inkling.job.id}, status #{inkling.job.status})" : ""
         title = "##{inkling.id} [#{inkling.kind.upcase}] (#{inkling.status})"

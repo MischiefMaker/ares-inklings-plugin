@@ -22,7 +22,7 @@ module AresMUSH
       def check_can_close
         inkling = Inklings.find_inkling(self.id)
         return nil if Inklings.can_manage_inklings?(enactor)
-        return nil if Inklings.is_participant?(inkling, enactor)
+        return nil if inkling.character == enactor
         return t('dispatcher.not_allowed')
       end
 

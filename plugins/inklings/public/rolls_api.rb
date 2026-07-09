@@ -6,8 +6,9 @@ module AresMUSH
       # roll_spec: skill/attribute name for player/npc, description for static
       # result: the result string (e.g. "8", "Good (7)")
       # result_value: numeric value for sorting
+      # npc_char_id: optional character ID for the NPC target (npc rolls only)
       # is_private: whether only player and staff can see this
-      def self.add_roll(inkling_id, viewer_id, roll_type, roll_spec, result, result_value, is_private = false)
+      def self.add_roll(inkling_id, viewer_id, roll_type, roll_spec, result, result_value, npc_char_id: nil, is_private: false)
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
@@ -28,7 +29,7 @@ module AresMUSH
           unless Inklings.can_manage_inklings?(viewer)
             return { error: "Only staff can add NPC or static rolls" }
           end
-          target = roll_type == "npc" ? Character[roll_spec.to_i] : nil
+          target = (roll_type == "npc" && npc_char_id) ? Character[npc_char_id] : nil
 
         else
           return { error: "Invalid roll type" }
@@ -68,13 +69,13 @@ module AresMUSH
         return { error: "Roll not found" } if !roll
 
         # Only the player who made the roll or staff can reroll with luck
-        unless viewer.id == roll.character.id || Inklings.can_manage_inklings?(viewer)
+        unless Inklings.can_manage_inklings?(viewer) || (roll.character && viewer.id == roll.character.id)
           return { error: "You cannot reroll this" }
         end
 
-        # Check if player has enough luck
+        # Check if player has enough luck (only when a player is spending their own)
         char = roll.character
-        if viewer.id == char.id  # Player spending their own luck
+        if char && viewer.id == char.id
           current_luck = char.respond_to?(:luck) ? char.luck : 0
           unless current_luck >= luck_cost
             return { error: "Not enough luck points. You have #{current_luck}, need #{luck_cost}" }

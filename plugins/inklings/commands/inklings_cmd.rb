@@ -7,7 +7,11 @@ module AresMUSH
       include CommandHandler
 
       def handle
-        inklings = enactor.inklings.to_a
+        own_inklings = enactor.inklings.to_a
+        shared_inklings = InklingParticipant.find(character_id: enactor.id)
+          .map(&:inkling).compact
+
+        inklings = (own_inklings + shared_inklings).uniq(&:id)
         inklings.each { |i| Inklings.sync_job_replies(i) }
 
         if cmd.switch_is?("closed")

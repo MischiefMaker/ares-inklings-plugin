@@ -26,7 +26,7 @@ module AresMUSH
       def check_can_delete
         inkling = Inklings.find_inkling(self.id)
         return nil if Inklings.can_manage_inklings?(enactor)
-        return nil if Inklings.is_participant?(inkling, enactor)
+        return nil if inkling.character == enactor
         return t('dispatcher.not_allowed')
       end
 
@@ -43,6 +43,8 @@ module AresMUSH
         end
 
         inkling.messages.each { |m| m.delete }
+        inkling.rolls.each { |r| r.delete }
+        InklingParticipant.find(inkling_id: inkling.id).each { |p| p.delete }
         inkling.delete
 
         client.emit_success t('inklings.inkling_deleted')
