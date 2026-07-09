@@ -14,7 +14,7 @@ en:
     reply_added: "Reply added."
     inkling_deleted: "Inkling deleted."
     deleted_notice_body: "The player deleted this inkling. Its contents were: %{text}"
-    new_message_notice: "You have a new inkling message. Use +inklings to view it."
+    new_message_notice: "<inklings> You have a new inkling message. Use +inklings to view it."
     kind_hint: "Hint"
     kind_vision: "Vision"
     kind_nudge: "Nudge"

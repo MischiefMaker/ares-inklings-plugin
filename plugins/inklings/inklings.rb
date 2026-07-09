@@ -102,7 +102,7 @@ module AresMUSH
         # instance. Using a plain string instead - swap in your game's
         # actual locale lookup (e.g. Global.locales.t(...)) if you want
         # this localized.
-        Inklings.notify_player(inkling.character, "You have a new inkling message. Use +inklings to view it.")
+        Inklings.notify_player(inkling.character, "<inklings> You have a new inkling message. Use +inklings to view it.")
       end
     end
 

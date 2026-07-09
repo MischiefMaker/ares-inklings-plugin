@@ -162,7 +162,7 @@ module AresMUSH
           # Mirror to job if it exists
           Inklings.mirror_to_job(inkling, text, viewer)
           # Notify player
-          Inklings.notify_player(inkling.character, "You have a new inkling message. Use +inklings to view it.")
+          Inklings.notify_player(inkling.character, "<inklings> You have a new inkling message. Use +inklings to view it.")
         else
           # Player replied - staff need to know
           Inklings.ensure_job(inkling,
