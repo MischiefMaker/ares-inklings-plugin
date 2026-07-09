@@ -28,7 +28,7 @@ module AresMUSH
     CHARGEN_KINDS = ["secret", "goal"]
 
     def self.find_inkling(id)
-      Inkling.find_one_by_id(id)
+      Inkling[id]
     end
 
     def self.time_value(value)
