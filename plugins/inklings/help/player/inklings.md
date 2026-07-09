@@ -15,7 +15,7 @@ Inklings are a system for tracking character development, plot threads, and impo
 - **Update** - A general update about your character's status or plans
 - **Pitch** - A pitch for a scene, plot arc, or event you'd like to happen
 - **Goal** - A long-term goal your character is working toward
-- **Secret** - A secret you want to share with staff (private, only staff can see)
+- **Secret** - An IC secret your character holds (shareable with other players)
 - **Roll** - A thread for tracking dice rolls and their outcomes
 
 **From staff:**
@@ -36,7 +36,13 @@ View a specific inkling thread and all messages in it. Mark it as read when you 
 Create a new inkling of a specific type. For example: `+inkling/goal Work on learning to sail` or `+inkling/request Can we schedule a scene about X?`
 
 **`+inkling/secret <text>`**
-Share a secret with staff. Staff are the only ones who can see it.
+Record an IC secret your character holds. Staff can always see this. You can share it with other players using `+inkling/share <id>=<character>`.
+
+**`+inkling/private <id>=<text>`**
+Add a private entry to any inkling thread. Private entries are visible only to you and staff — other participants in the thread cannot see them.
+
+**`+inkling/share <id>=<character>`**
+Share an inkling with another player, granting them read and reply access. Useful for secret inklings shared between characters who are in on the same secret.
 
 **`+inkling/reply <id>=<text>`**
 Reply to an inkling thread. Staff will be notified of player replies.
@@ -46,8 +52,6 @@ Close an inkling thread (you can do this for your own threads).
 
 **`+inkling/delete <id>`**
 Delete an inkling thread. Staff will be notified of what you deleted and why.
-
-## Web Portal
 
 You can also manage your inklings through the character profile on the web portal. The **Inklings** tab shows all your threads in an easy-to-read format, allows you to expand threads to see the full conversation, and lets you add replies and rolls directly from the web.
 

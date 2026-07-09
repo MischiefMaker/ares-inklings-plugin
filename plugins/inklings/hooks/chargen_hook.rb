@@ -11,7 +11,7 @@ module AresMUSH
 
         unless secret && goal
           if !secret
-            Login.emit_ooc_if_logged_in(char, "<inklings> %xh%crCharGen:%xn Please create a secret inkling describing a secret your character holds. Use: +inkling/secret <text>")
+            Login.emit_ooc_if_logged_in(char, "<inklings> %xh%crCharGen:%xn Please create a secret inkling describing an IC secret your character holds. Use: +inkling/secret <text>")
           end
 
           if !goal

@@ -16,7 +16,7 @@ Inklings are a system for tracking character development, plot threads, and impo
 - **Update** - A general update about your character's status or plans
 - **Pitch** - A pitch for a scene, plot arc, or event you'd like to happen
 - **Goal** - A long-term goal your character is working toward
-- **Secret** - A secret you want to share with staff (private, only staff can see)
+- **Secret** - An IC secret your character holds (shareable with other players)
 - **Roll** - A thread for tracking dice rolls and their outcomes
 
 **From staff:**
@@ -33,7 +33,11 @@ Inklings are a system for tracking character development, plot threads, and impo
 
 `+inkling/<kind> <text>` - Create a new inkling of a specific type. For example: `+inkling/goal Work on learning to sail` or `+inkling/request Can we schedule a scene about X?`
 
-`+inkling/secret <text>` - Share a secret with staff. Staff are the only ones who can see it.
+`+inkling/secret <text>` - Record an IC secret your character holds. Staff can see this; share it with other players using `+inkling/share`.
+
+`+inkling/private <id>=<text>` - Add a private entry to any inkling thread, visible only to you and staff.
+
+`+inkling/share <id>=<character>` - Share an inkling with another player.
 
 `+inkling/reply <id>=<text>` - Reply to an inkling thread. Staff will be notified of player replies.
 

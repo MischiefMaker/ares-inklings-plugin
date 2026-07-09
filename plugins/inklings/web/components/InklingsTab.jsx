@@ -10,6 +10,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
   const [showNewForm, setShowNewForm] = useState(false);
   const [newInkling, setNewInkling] = useState({ kind: 'goal', text: '' });
   const [replyText, setReplyText] = useState({});
+  const [privateReply, setPrivateReply] = useState({});
   const [fs3Attributes, setFs3Attributes] = useState([]);
   const [showRollForm, setShowRollForm] = useState(false);
   const [newRoll, setNewRoll] = useState({
@@ -105,7 +106,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
     }
   };
 
-  const handleReplyToInkling = async (id) => {
+  const handleReplyToInkling = async (id, isPrivate = false) => {
     const text = replyText[id];
     if (!text || !text.trim()) {
       setError('Please enter reply text');
@@ -115,6 +116,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
     try {
       const response = await api.post(`/api/characters/${characterId}/inklings/${id}/reply`, {
         text: text,
+        is_private: isPrivate,
         viewer_id: viewerId
       });
       // Reload the expanded inkling
@@ -343,10 +345,11 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
 
                   <div className="messages-section">
                     {expandedInkling.messages && expandedInkling.messages.map(msg => (
-                      <div key={msg.id} className={`message ${msg.is_staff ? 'staff' : 'player'}`}>
+                      <div key={msg.id} className={`message ${msg.is_staff ? 'staff' : 'player'} ${msg.is_private ? 'private' : ''}`}>
                         <div className="message-header">
                           <strong>{msg.author}</strong>
                           {msg.is_staff && <span className="staff-badge">STAFF</span>}
+                          {msg.is_private && <span className="private-badge">PRIVATE</span>}
                           <span className="message-time">
                             {new Date(msg.created_at).toLocaleString()}
                           </span>
@@ -456,12 +459,22 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                           placeholder="Add a reply..."
                           rows="3"
                         />
-                        <button
-                          className="btn btn-success"
-                          onClick={() => handleReplyToInkling(expandedInkling.id)}
-                        >
-                          Add Reply
-                        </button>
+                        <div className="reply-actions">
+                          <label className="private-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={privateReply[expandedInkling.id] || false}
+                              onChange={(e) => setPrivateReply({ ...privateReply, [expandedInkling.id]: e.target.checked })}
+                            />
+                            Private (only you and staff can see this)
+                          </label>
+                          <button
+                            className="btn btn-success"
+                            onClick={() => handleReplyToInkling(expandedInkling.id, privateReply[expandedInkling.id] || false)}
+                          >
+                            Add Reply
+                          </button>
+                        </div>
                       </div>
                     </>
                   )}

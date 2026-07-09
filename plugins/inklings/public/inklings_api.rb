@@ -75,7 +75,7 @@ module AresMUSH
         end
 
         {
-          inkling: format_inkling_detail(inkling)
+          inkling: format_inkling_detail(inkling, viewer)
         }
       end
 
@@ -110,13 +110,13 @@ module AresMUSH
         end
 
         {
-          inkling: format_inkling_detail(inkling)
+          inkling: format_inkling_detail(inkling, viewer)
         }
       end
 
       # POST /api/characters/:char_id/inklings/:inkling_id/reply
       # Add a reply to an inkling
-      def self.reply_to_inkling(char_id, inkling_id, viewer_id, text)
+      def self.reply_to_inkling(char_id, inkling_id, viewer_id, text, is_private: false)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
@@ -154,20 +154,20 @@ module AresMUSH
           author: viewer,
           text: text,
           created_at: Time.now,
-          is_staff: is_staff ? "true" : "false"
+          is_staff: is_staff ? "true" : "false",
+          is_private: is_private ? "true" : "false"
         )
+
+        job_text = is_private ? "[Private] #{text}" : text
 
         if is_staff
           inkling.update(player_unread: "true")
-          # Mirror to job if it exists
-          Inklings.mirror_to_job(inkling, text, viewer)
-          # Notify player
+          Inklings.mirror_to_job(inkling, job_text, viewer)
           Inklings.notify_player(inkling.character, "<inklings> You have a new inkling message. Use +inklings to view it.")
         else
-          # Player replied - staff need to know
           Inklings.ensure_job(inkling,
             "#{viewer.name} replied - #{inkling.kind.titleize}",
-            text,
+            job_text,
             viewer)
         end
 
@@ -223,9 +223,17 @@ module AresMUSH
         }
       end
 
-      def self.format_inkling_detail(inkling)
+      def self.format_inkling_detail(inkling, viewer = nil)
+        messages = inkling.messages.sort_by { |m| m.created_at }
+        if viewer
+          messages = messages.select do |m|
+            m.is_private.to_s != "true" ||
+              (m.author && m.author.id == viewer.id) ||
+              Inklings.can_manage_inklings?(viewer)
+          end
+        end
         format_inkling_summary(inkling).merge(
-          messages: inkling.messages.sort_by { |m| m.created_at }.map { |m| format_message(m) }
+          messages: messages.map { |m| format_message(m) }
         )
       end
 
@@ -236,7 +244,8 @@ module AresMUSH
           author_id: message.author ? message.author.id : nil,
           text: message.text,
           created_at: message.created_at,
-          is_staff: message.is_staff == "true"
+          is_staff: message.is_staff == "true",
+          is_private: message.is_private == "true"
         }
       end
     end

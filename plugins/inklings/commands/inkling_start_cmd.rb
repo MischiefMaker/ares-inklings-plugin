@@ -5,7 +5,6 @@ module AresMUSH
     #   +inkling/vision <char>=<text>
     #   +inkling/nudge <char>=<text>
     #   +inkling/hook <char>=<text>
-    #   +inkling/secret <char>=<text>     (staff sharing a secret with a player)
     #
     # Player-initiated (no target - always about themselves):
     #   +inkling/action <text>
@@ -14,12 +13,6 @@ module AresMUSH
     #   +inkling/update <text>
     #   +inkling/pitch <text>
     #   +inkling/goal <text>
-    #   +inkling/secret <text>            (player sharing a secret with staff)
-    #
-    # Secret is disambiguated by whether the argument contains "=" - if
-    # it does, it's treated as staff targeting a player (and requires
-    # staff permission). This means a player's own secret text shouldn't
-    # contain a literal "=", or it'll be misread as a target line.
     class InklingStartCmd
       include CommandHandler
 
@@ -28,8 +21,7 @@ module AresMUSH
       def parse_args
         self.kind = cmd.switch
 
-        needs_target = Inklings::STAFF_KINDS.include?(self.kind) ||
-          (self.kind == "secret" && cmd.args.to_s.include?("="))
+        needs_target = Inklings::STAFF_KINDS.include?(self.kind)
 
         if needs_target
           args = cmd.parse_args(ArgParser.arg1_equals_arg2)
@@ -50,8 +42,7 @@ module AresMUSH
       end
 
       def check_permission
-        if Inklings::STAFF_KINDS.include?(self.kind) ||
-           (self.kind == "secret" && self.target_name)
+        if Inklings::STAFF_KINDS.include?(self.kind)
           return nil if Inklings.can_manage_inklings?(enactor)
           return t('dispatcher.not_allowed')
         end

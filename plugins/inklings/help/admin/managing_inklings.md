@@ -24,7 +24,10 @@ Send a gentle nudge to encourage RP in a certain direction.
 Send a plot hook or opportunity to a character.
 
 **`+inkling/secret <character>=<text>`**
-Share a secret with a character (staff-to-player secret).
+Share an IC secret with a character (staff creating a secret on a player's behalf).
+
+**`+inkling/share <id>=<character>`**
+Grant another player access to an inkling thread.
 
 **`+inkling/reply <id>=<text>`**
 Reply to an inkling thread. This mirrors the response to any linked job.

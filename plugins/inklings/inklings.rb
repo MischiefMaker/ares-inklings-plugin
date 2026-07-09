@@ -27,11 +27,12 @@ module AresMUSH
     end
 
     # Whether char is meaningfully attached to this thread (as its
-    # subject or the one who started it). Staff can always act on any
-    # thread regardless of this check.
+    # subject, the one who started it, or an explicitly added participant).
+    # Staff can always act on any thread regardless of this check.
     def self.is_participant?(inkling, char)
       return true if inkling.character == char
       return true if inkling.creator == char
+      return true if InklingParticipant.find(inkling_id: inkling.id, character_id: char.id).any?
       false
     end
 
@@ -119,6 +120,10 @@ module AresMUSH
           return InklingDeleteCmd
         elsif cmd.switch_is?("reply")
           return InklingReplyCmd
+        elsif cmd.switch_is?("private")
+          return InklingPrivateCmd
+        elsif cmd.switch_is?("share")
+          return InklingShareCmd
         elsif cmd.switch_is?("close")
           return InklingCloseCmd
         elsif ALL_KINDS.any? { |k| cmd.switch_is?(k) }

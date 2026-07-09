@@ -11,7 +11,8 @@ module AresMUSH
 
     # kind is one of: hint, vision, nudge, hook (staff -> player),
     # action, research, request, update, pitch, goal (player -> staff),
-    # secret, or roll (either direction).
+    # secret (IC character secret, shareable with other players),
+    # or roll (either direction).
     attribute :kind
     # "open" or "closed"
     attribute :status
@@ -33,6 +34,7 @@ module AresMUSH
 
     collection :messages, "AresMUSH::InklingMessage"
     collection :rolls, "AresMUSH::InklingRoll"
+    collection :participants, "AresMUSH::InklingParticipant"
 
     index :character_id
     index :kind
@@ -48,6 +50,9 @@ module AresMUSH
     attribute :created_at
     # "true"/"false" - was the author staff at the time they wrote this
     attribute :is_staff
+    # "true"/"false" - visible only to the author and staff; hidden from
+    # other participants in the thread.
+    attribute :is_private
 
     reference :inkling, "AresMUSH::Inkling"
     reference :author, "AresMUSH::Character"
@@ -106,6 +111,20 @@ module AresMUSH
     index :character_id
     index :target_character_id
     index :created_at
+  end
+
+  # Tracks additional players who have been granted access to an inkling
+  # thread (e.g. the other party in a shared IC secret). The owning
+  # character and creator always have access; this covers anyone else.
+  class InklingParticipant < Ohm::Model
+    include ObjectModel
+
+    reference :inkling, "AresMUSH::Inkling"
+    reference :character, "AresMUSH::Character"
+    attribute :added_at
+
+    index :inkling_id
+    index :character_id
   end
 
   # Reverse reference so char.inklings gives every thread that character

@@ -19,7 +19,9 @@ Inklings are player-initiated threads for tracking character development, plot r
 
 `+inkling/hook <character>=<text>` - Send a plot hook or opportunity to a character.
 
-`+inkling/secret <character>=<text>` - Share a secret with a character (staff-to-player secret).
+`+inkling/secret <character>=<text>` - Create an IC secret inkling for a character (staff on behalf of player).
+
+`+inkling/share <id>=<character>` - Grant another player access to an inkling thread.
 
 `+inkling/reply <id>=<text>` - Reply to an inkling thread. This mirrors the response to any linked job.
 
