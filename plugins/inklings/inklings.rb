@@ -68,44 +68,23 @@ module AresMUSH
       query = group_name.to_s.strip
       return [] if query.blank?
 
-      matches = Character.all.select do |char|
-        groups = char.respond_to?(:groups) ? (char.groups || {}) : {}
+      all_chars = Character.all.to_a
 
-        if query.include?(":")
-          group_key, group_value = query.split(":", 2).map(&:strip)
-          next false if group_key.blank? || group_value.blank?
+      if query.include?(":")
+        group_key, group_value = query.split(":", 2).map(&:strip)
+        return [] if group_key.blank? || group_value.blank?
 
-          group_value_for_char = if char.respond_to?(:group)
-            char.group(group_key)
-          else
-            groups[group_key.downcase]
-          end
-
-          next group_value_for_char.to_s.casecmp?(group_value)
-        end
-
-        groups.values.any? do |value|
-          value.to_s.casecmp?(query)
-        end
+        return all_chars.select { |c|
+          c.respond_to?(:group) && c.group(group_key).to_s.downcase == group_value.downcase
+        }.uniq(&:id)
       end
 
-      # If demographics is available, include any key-based checks as well.
-      if defined?(Demographics)
-        configured_keys = Demographics.all_groups.keys
-        key_matches = Character.all.select do |char|
-          configured_keys.any? do |group_key|
-            value = if char.respond_to?(:group)
-              char.group(group_key)
-            else
-              (char.respond_to?(:groups) ? (char.groups || {}) : {})[group_key.to_s.downcase]
-            end
-            value.to_s.casecmp?(query)
-          end
-        end
-        matches.concat(key_matches)
-      end
+      group_keys = defined?(Demographics) ? Demographics.all_groups.keys : []
 
-      matches.uniq(&:id)
+      all_chars.select { |c|
+        next false unless c.respond_to?(:group)
+        group_keys.any? { |key| c.group(key).to_s.downcase == query.downcase }
+      }.uniq(&:id)
     end
 
     def self.add_participant(inkling, target, added_by)
