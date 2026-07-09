@@ -18,6 +18,12 @@ module AresMUSH
         [self.id]
       end
 
+      def check_approved
+        return nil if Inklings.can_manage_inklings?(enactor)
+        return t('inklings.char_not_approved') unless enactor.is_approved?
+        nil
+      end
+
       def check_valid_inkling
         return t('inklings.invalid_id') if !Inklings.find_inkling(self.id)
         return nil
@@ -26,7 +32,7 @@ module AresMUSH
       def check_can_delete
         inkling = Inklings.find_inkling(self.id)
         return nil if Inklings.can_manage_inklings?(enactor)
-        return nil if Inklings.is_participant?(inkling, enactor)
+        return nil if inkling.character == enactor
         return t('dispatcher.not_allowed')
       end
 
@@ -43,6 +49,8 @@ module AresMUSH
         end
 
         inkling.messages.each { |m| m.delete }
+        inkling.rolls.each { |r| r.delete }
+        InklingParticipant.find(inkling_id: inkling.id).each { |p| p.delete }
         inkling.delete
 
         client.emit_success t('inklings.inkling_deleted')

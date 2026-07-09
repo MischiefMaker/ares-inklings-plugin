@@ -6,29 +6,32 @@ module AresMUSH
       # roll_spec: skill/attribute name for player/npc, description for static
       # result: the result string (e.g. "8", "Good (7)")
       # result_value: numeric value for sorting
+      # npc_char_id: optional character ID for the NPC target (npc rolls only)
       # is_private: whether only player and staff can see this
-      def self.add_roll(inkling_id, viewer_id, roll_type, roll_spec, result, result_value, is_private = false)
+      def self.add_roll(inkling_id, viewer_id, roll_type, roll_spec, result, result_value, npc_char_id: nil, is_private: false)
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
         viewer = Character[viewer_id]
         return { error: "Viewer not found" } if !viewer
 
-        # Check permissions based on roll type
+        unless Inklings.can_manage_inklings?(viewer) || Inklings.is_participant?(inkling, viewer)
+          return { error: "Not authorized" }
+        end
+
+        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved?
+          return { error: "Your character must be approved to add rolls." }
+        end
+
         case roll_type
         when "player"
-          # Player can only roll for themselves; must be the character or staff
-          unless viewer.id == inkling.character.id || Inklings.can_manage_inklings?(viewer)
-            return { error: "You can only roll for your own character" }
-          end
-          target = inkling.character
+          target = viewer
 
         when "npc", "static"
-          # Only staff can add NPC or static rolls
           unless Inklings.can_manage_inklings?(viewer)
             return { error: "Only staff can add NPC or static rolls" }
           end
-          target = roll_type == "npc" ? Character[roll_spec.to_i] : nil
+          target = (roll_type == "npc" && npc_char_id) ? Character[npc_char_id] : nil
 
         else
           return { error: "Invalid roll type" }
@@ -37,7 +40,7 @@ module AresMUSH
         # Create the roll
         roll = InklingRoll.create(
           inkling: inkling,
-          character: (roll_type == "player") ? inkling.character : nil,
+          character: (roll_type == "player") ? viewer : nil,
           target_character: target,
           creator: viewer,
           roll_type: roll_type,
@@ -68,13 +71,13 @@ module AresMUSH
         return { error: "Roll not found" } if !roll
 
         # Only the player who made the roll or staff can reroll with luck
-        unless viewer.id == roll.character.id || Inklings.can_manage_inklings?(viewer)
+        unless Inklings.can_manage_inklings?(viewer) || (roll.character && viewer.id == roll.character.id)
           return { error: "You cannot reroll this" }
         end
 
-        # Check if player has enough luck
+        # Check if player has enough luck (only when a player is spending their own)
         char = roll.character
-        if viewer.id == char.id  # Player spending their own luck
+        if char && viewer.id == char.id
           current_luck = char.respond_to?(:luck) ? char.luck : 0
           unless current_luck >= luck_cost
             return { error: "Not enough luck points. You have #{current_luck}, need #{luck_cost}" }
@@ -112,25 +115,12 @@ module AresMUSH
         viewer = Character[viewer_id]
         return { error: "Viewer not found" } if !viewer
 
-        # Only character and staff can view rolls
-        unless viewer.id == inkling.character.id || Inklings.can_manage_inklings?(viewer)
+        unless Inklings.can_manage_inklings?(viewer) || Inklings.is_participant?(inkling, viewer)
           return { error: "Not authorized" }
         end
 
         rolls = InklingRoll.find(inkling_id: inkling.id).to_a.sort_by { |r| r.created_at }
-
-        # Filter private rolls if viewer is not staff or the character
-        is_staff = Inklings.can_manage_inklings?(viewer)
-        is_character = viewer.id == inkling.character.id
-
-        visible_rolls = rolls.select do |r|
-          # Private rolls only visible to character and staff
-          if r.private.to_s == "true"
-            is_staff || is_character
-          else
-            true
-          end
-        end
+        visible_rolls = rolls.select { |r| Inklings.can_see_roll?(r, viewer) }
 
         {
           rolls: visible_rolls.map { |r| format_roll(r) }
@@ -149,8 +139,12 @@ module AresMUSH
           roll_spec: roll.roll_spec,
           result: roll.result,
           result_value: roll.result_value,
+          character: roll.character ? roll.character.name : nil,
+          character_id: roll.character ? roll.character.id : nil,
           target_character: target_name,
+          target_character_id: roll.target_character ? roll.target_character.id : nil,
           creator: creator_name,
+          creator_id: roll.creator ? roll.creator.id : nil,
           private: roll.private == "true",
           reroll_count: roll.reroll_count.to_i,
           luck_cost: roll.luck_cost.to_i,

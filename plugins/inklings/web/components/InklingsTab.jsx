@@ -8,13 +8,18 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showNewForm, setShowNewForm] = useState(false);
-  const [newInkling, setNewInkling] = useState({ kind: 'goal', text: '' });
+  const [newInkling, setNewInkling] = useState({ kind: 'goal', title: '', text: '' });
   const [replyText, setReplyText] = useState({});
+  const [privateReply, setPrivateReply] = useState({});
+  const [statusFilter, setStatusFilter] = useState('open');
+  const [shareTarget, setShareTarget] = useState({});
   const [fs3Attributes, setFs3Attributes] = useState([]);
   const [showRollForm, setShowRollForm] = useState(false);
   const [newRoll, setNewRoll] = useState({
     rollType: 'player',
     rollSpec: '',
+    npcCharId: '',
+    npcResult: '',
     isPrivate: false
   });
 
@@ -29,23 +34,22 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
     request: 'Request',
     update: 'Update',
     pitch: 'Pitch',
-    goal: 'Goal',
-    roll: 'Roll'
+    goal: 'Goal'
   };
 
   const staffKinds = ['hint', 'vision', 'nudge', 'hook'];
   const playerKinds = ['action', 'research', 'request', 'update', 'pitch', 'goal'];
-  const allKinds = [...staffKinds, ...playerKinds, 'secret', 'roll'];
+  const allKinds = [...staffKinds, ...playerKinds, 'secret'];
 
   useEffect(() => {
     loadInklings();
     loadFS3Attributes();
-  }, [characterId]);
+  }, [characterId, statusFilter]);
 
   const loadInklings = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/api/characters/${characterId}/inklings?viewer_id=${viewerId}`);
+      const response = await api.get(`/api/characters/${characterId}/inklings?viewer_id=${viewerId}&status=${statusFilter}`);
       setInklings(response.data.inklings || []);
       setError(null);
     } catch (err) {
@@ -69,6 +73,11 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
   };
 
   const handleCreateInkling = async () => {
+    if (!newInkling.title.trim()) {
+      setError('Please enter an inkling title');
+      return;
+    }
+
     if (!newInkling.text.trim()) {
       setError('Please enter inkling text');
       return;
@@ -77,11 +86,12 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
     try {
       const response = await api.post(`/api/characters/${characterId}/inklings`, {
         kind: newInkling.kind,
+        title: newInkling.title,
         text: newInkling.text,
         viewer_id: viewerId
       });
       setInklings([response.data.inkling, ...inklings]);
-      setNewInkling({ kind: 'goal', text: '' });
+      setNewInkling({ kind: 'goal', title: '', text: '' });
       setShowNewForm(false);
       setError(null);
     } catch (err) {
@@ -105,7 +115,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
     }
   };
 
-  const handleReplyToInkling = async (id) => {
+  const handleReplyToInkling = async (id, isPrivate = false) => {
     const text = replyText[id];
     if (!text || !text.trim()) {
       setError('Please enter reply text');
@@ -115,6 +125,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
     try {
       const response = await api.post(`/api/characters/${characterId}/inklings/${id}/reply`, {
         text: text,
+        is_private: isPrivate,
         viewer_id: viewerId
       });
       // Reload the expanded inkling
@@ -132,41 +143,46 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
       setError('Please select or enter a roll spec');
       return;
     }
+    if ((newRoll.rollType === 'npc' || newRoll.rollType === 'static') && !newRoll.npcResult.trim()) {
+      setError('Please enter a result');
+      return;
+    }
 
     try {
-      // For player rolls, we need to actually roll
-      let result, resultValue;
-      
+      let result, resultValue, rollPayload;
+
       if (newRoll.rollType === 'player') {
-        // Call FS3 API to roll the skill/attribute
         const rollResponse = await api.post(`/api/characters/${characterId}/roll`, {
           attribute: newRoll.rollSpec,
           viewer_id: viewerId
         });
         result = rollResponse.data.result;
         resultValue = rollResponse.data.result_value;
+        rollPayload = { roll_type: 'player', roll_spec: newRoll.rollSpec, result, result_value: resultValue };
+      } else if (newRoll.rollType === 'npc') {
+        result = newRoll.npcResult;
+        resultValue = parseInt(result) || 0;
+        rollPayload = {
+          roll_type: 'npc',
+          roll_spec: newRoll.rollSpec,
+          npc_char_id: newRoll.npcCharId || null,
+          result,
+          result_value: resultValue
+        };
       } else {
-        // Staff is entering the result manually
-        result = newRoll.rollSpec;
-        resultValue = parseInt(newRoll.rollSpec) || 0;
+        result = newRoll.npcResult;
+        resultValue = parseInt(result) || 0;
+        rollPayload = { roll_type: 'static', roll_spec: newRoll.rollSpec, result, result_value: resultValue };
       }
 
-      const response = await api.post(
+      await api.post(
         `/api/characters/${characterId}/inklings/${inklingId}/roll`,
-        {
-          roll_type: newRoll.rollType,
-          roll_spec: newRoll.rollSpec,
-          result: result,
-          result_value: resultValue,
-          is_private: newRoll.isPrivate,
-          viewer_id: viewerId
-        }
+        { ...rollPayload, is_private: newRoll.isPrivate, viewer_id: viewerId }
       );
 
-      // Reload the expanded inkling
       const fullResponse = await api.get(`/api/characters/${characterId}/inklings/${inklingId}?viewer_id=${viewerId}`);
       setInklings(inklings.map(i => i.id === inklingId ? fullResponse.data.inkling : i));
-      setNewRoll({ rollType: 'player', rollSpec: '', isPrivate: false });
+      setNewRoll({ rollType: 'player', rollSpec: '', npcCharId: '', npcResult: '', isPrivate: false });
       setShowRollForm(false);
       setError(null);
     } catch (err) {
@@ -219,8 +235,43 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
     }
   };
 
-  const expandedInkling = expandedId ? inklings.find(i => i.id === expandedId) : null;
+  const handleDeleteInkling = async (id) => {
+    if (!window.confirm('Delete this inkling? This cannot be undone.')) return;
 
+    try {
+      await api.delete(`/api/characters/${characterId}/inklings/${id}`, {
+        data: { viewer_id: viewerId }
+      });
+      setInklings(inklings.filter(i => i.id !== id));
+      setExpandedId(null);
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to delete inkling');
+    }
+  };
+
+  const handleShareInkling = async (id) => {
+    const target = shareTarget[id];
+    if (!target || !target.trim()) {
+      setError('Please enter a character name to share with');
+      return;
+    }
+
+    try {
+      await api.post(`/api/characters/${characterId}/inklings/${id}/share`, {
+        target_name: target,
+        viewer_id: viewerId
+      });
+      setShareTarget({ ...shareTarget, [id]: '' });
+      setError(null);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to share inkling');
+    }
+  };
+
+  const availableKinds = isStaff ? allKinds : playerKinds.concat(['secret']);
+
+  const expandedInkling = expandedId ? inklings.find(i => i.id === expandedId) : null;
   if (loading) {
     return <div className="inklings-tab">Loading inklings...</div>;
   }
@@ -231,6 +282,17 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
 
       <div className="inklings-header">
         <h2>Inklings</h2>
+        <div className="inklings-filters">
+          {['open', 'closed', 'all'].map(f => (
+            <button
+              key={f}
+              className={`btn btn-filter ${statusFilter === f ? 'active' : ''}`}
+              onClick={() => setStatusFilter(f)}
+            >
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
         <button
           className="btn btn-primary"
           onClick={() => setShowNewForm(!showNewForm)}
@@ -247,12 +309,21 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
               value={newInkling.kind}
               onChange={(e) => setNewInkling({ ...newInkling, kind: e.target.value })}
             >
-              {allKinds.map(kind => (
+              {availableKinds.map(kind => (
                 <option key={kind} value={kind}>
                   {kindDisplayNames[kind]}
                 </option>
               ))}
             </select>
+          </div>
+          <div className="form-group">
+            <label>Title</label>
+            <input
+              type="text"
+              value={newInkling.title}
+              onChange={(e) => setNewInkling({ ...newInkling, title: e.target.value })}
+              placeholder="Enter a short title"
+            />
           </div>
           <div className="form-group">
             <label>Text</label>
@@ -285,9 +356,13 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                   <span className={`inkling-kind ${inkling.kind}`}>
                     {kindDisplayNames[inkling.kind]}
                   </span>
+                  <span className="inkling-title">{inkling.title}</span>
                   <span className={`inkling-status ${inkling.status}`}>
                     {inkling.status}
                   </span>
+                  {inkling.character_id !== viewerId && inkling.character_name && (
+                    <span className="inkling-owner">for {inkling.character_name}</span>
+                  )}
                   {inkling.player_unread && (
                     <span className="unread-badge">unread</span>
                   )}
@@ -310,8 +385,8 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
 
               {expandedId === inkling.id && expandedInkling && (
                 <div className="inkling-detail">
-                  {/* Display rolls if this is a roll inkling */}
-                  {expandedInkling.kind === 'roll' && expandedInkling.rolls && expandedInkling.rolls.length > 0 && (
+                  {/* Rolls — available on any inkling */}
+                  {expandedInkling.rolls && expandedInkling.rolls.length > 0 && (
                     <div className="rolls-section">
                       <h3>Rolls</h3>
                       {expandedInkling.rolls.map(roll => (
@@ -343,10 +418,12 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
 
                   <div className="messages-section">
                     {expandedInkling.messages && expandedInkling.messages.map(msg => (
-                      <div key={msg.id} className={`message ${msg.is_staff ? 'staff' : 'player'}`}>
+                      <div key={msg.id} className={`message ${msg.is_staff ? 'staff' : 'player'} ${msg.is_private ? 'private' : ''}`}>
                         <div className="message-header">
                           <strong>{msg.author}</strong>
                           {msg.is_staff && <span className="staff-badge">STAFF</span>}
+                          {msg.is_gm_note && <span className="staff-badge">GM</span>}
+                          {msg.is_private && <span className="private-badge">PRIVATE</span>}
                           <span className="message-time">
                             {new Date(msg.created_at).toLocaleString()}
                           </span>
@@ -358,8 +435,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
 
                   {expandedInkling.status === 'open' && (
                     <>
-                      {expandedInkling.kind === 'roll' && (
-                        <div className="roll-form-section">
+                      <div className="roll-form-section">
                           {!showRollForm ? (
                             <button
                               className="btn btn-success"
@@ -407,14 +483,38 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                                 </div>
                               )}
 
+                               {newRoll.rollType === 'npc' && (
+                                <div className="form-group">
+                                  <label>Character (optional)</label>
+                                  <input
+                                    type="text"
+                                    value={newRoll.npcCharId}
+                                    onChange={(e) => setNewRoll({ ...newRoll, npcCharId: e.target.value })}
+                                    placeholder="Character name or ID"
+                                  />
+                                </div>
+                              )}
+
                               {(newRoll.rollType === 'npc' || newRoll.rollType === 'static') && (
                                 <div className="form-group">
-                                  <label>{newRoll.rollType === 'npc' ? 'Character / Result' : 'Number'}</label>
+                                  <label>Skill / Attribute</label>
                                   <input
                                     type="text"
                                     value={newRoll.rollSpec}
                                     onChange={(e) => setNewRoll({ ...newRoll, rollSpec: e.target.value })}
-                                    placeholder={newRoll.rollType === 'npc' ? 'NPC name or ID' : 'Enter a number'}
+                                    placeholder={newRoll.rollType === 'static' ? 'Description' : 'Skill or attribute rolled'}
+                                  />
+                                </div>
+                              )}
+
+                              {(newRoll.rollType === 'npc' || newRoll.rollType === 'static') && (
+                                <div className="form-group">
+                                  <label>{newRoll.rollType === 'static' ? 'Number' : 'Result'}</label>
+                                  <input
+                                    type="text"
+                                    value={newRoll.npcResult}
+                                    onChange={(e) => setNewRoll({ ...newRoll, npcResult: e.target.value })}
+                                    placeholder={newRoll.rollType === 'static' ? 'Enter a number' : 'e.g. Good (7)'}
                                   />
                                 </div>
                               )}
@@ -447,7 +547,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                             </div>
                           )}
                         </div>
-                      )}
+                      </div>
 
                       <div className="reply-section">
                         <textarea
@@ -456,23 +556,58 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                           placeholder="Add a reply..."
                           rows="3"
                         />
-                        <button
-                          className="btn btn-success"
-                          onClick={() => handleReplyToInkling(expandedInkling.id)}
-                        >
-                          Add Reply
-                        </button>
+                        <div className="reply-actions">
+                          <label className="private-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={privateReply[expandedInkling.id] || false}
+                              onChange={(e) => setPrivateReply({ ...privateReply, [expandedInkling.id]: e.target.checked })}
+                            />
+                            Private (only you and staff can see this)
+                          </label>
+                          <button
+                            className="btn btn-success"
+                            onClick={() => handleReplyToInkling(expandedInkling.id, privateReply[expandedInkling.id] || false)}
+                          >
+                            Add Reply
+                          </button>
+                        </div>
                       </div>
                     </>
                   )}
 
-                  {(expandedInkling.status === 'open' && isStaff) && (
+                  {(expandedInkling.status === 'open' && (isStaff || expandedInkling.character_id === viewerId)) && (
                     <div className="inkling-actions">
+                      <div className="share-form">
+                        <input
+                          type="text"
+                          value={shareTarget[expandedInkling.id] || ''}
+                          onChange={(e) => setShareTarget({ ...shareTarget, [expandedInkling.id]: e.target.value })}
+                          placeholder="Share with character(s)..."
+                        />
+                        <button
+                          className="btn btn-secondary"
+                          onClick={() => handleShareInkling(expandedInkling.id)}
+                        >
+                          Share
+                        </button>
+                      </div>
                       <button
-                        className="btn btn-danger"
+                        className="btn btn-warning"
                         onClick={() => handleCloseInkling(expandedInkling.id)}
                       >
                         Close Inkling
+                      </button>
+                    </div>
+                  )}
+
+                  {(isStaff || expandedInkling.character_id === viewerId) && (
+                    <div className="inkling-actions inkling-actions-danger">
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleDeleteInkling(expandedInkling.id)}
+                      >
+                        Delete Inkling
                       </button>
                     </div>
                   )}

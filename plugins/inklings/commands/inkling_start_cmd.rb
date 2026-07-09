@@ -5,7 +5,12 @@ module AresMUSH
     #   +inkling/vision <char>=<text>
     #   +inkling/nudge <char>=<text>
     #   +inkling/hook <char>=<text>
-    #   +inkling/secret <char>=<text>     (staff sharing a secret with a player)
+    #
+    # Player or staff (no target = own character):
+    #   +inkling/secret <text>
+    #
+    # Staff creating a secret for a player (args contain "="):
+    #   +inkling/secret <char>=<text>
     #
     # Player-initiated (no target - always about themselves):
     #   +inkling/action <text>
@@ -14,12 +19,6 @@ module AresMUSH
     #   +inkling/update <text>
     #   +inkling/pitch <text>
     #   +inkling/goal <text>
-    #   +inkling/secret <text>            (player sharing a secret with staff)
-    #
-    # Secret is disambiguated by whether the argument contains "=" - if
-    # it does, it's treated as staff targeting a player (and requires
-    # staff permission). This means a player's own secret text shouldn't
-    # contain a literal "=", or it'll be misread as a target line.
     class InklingStartCmd
       include CommandHandler
 
@@ -42,6 +41,13 @@ module AresMUSH
 
       def required_args
         self.target_name ? [self.target_name, self.text] : [self.text]
+      end
+
+      def check_approved
+        return nil if Inklings.can_manage_inklings?(enactor)
+        return nil if Inklings::CHARGEN_KINDS.include?(self.kind)
+        return t('inklings.char_not_approved') unless enactor.is_approved?
+        nil
       end
 
       def check_valid_kind
@@ -70,9 +76,12 @@ module AresMUSH
 
       def start_thread(subject, creator)
         staff_started = subject != creator
+        legacy_title = self.text.to_s.split(/\r?\n/).first.to_s[0, 60]
+        legacy_title = t("inklings.kind_#{self.kind}") if legacy_title.blank?
 
         inkling = Inkling.create(
           kind: self.kind,
+          title: legacy_title,
           status: "open",
           character: subject,
           creator: creator,
@@ -84,7 +93,9 @@ module AresMUSH
           author: creator,
           text: self.text,
           created_at: Time.now,
-          is_staff: Inklings.can_manage_inklings?(creator) ? "true" : "false")
+          is_staff: Inklings.can_manage_inklings?(creator) ? "true" : "false",
+          is_private: "false",
+          is_gm_note: "false")
 
         if !staff_started
           # Player started this thread themselves - staff need to know.

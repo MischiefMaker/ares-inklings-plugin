@@ -17,22 +17,69 @@ module AresMUSH
       enactor.is_staff?
     end
 
-    STAFF_KINDS = ["hint", "vision", "nudge", "hook"]
-    PLAYER_KINDS = ["action", "research", "request", "update", "pitch", "goal"]
-    SHARED_KINDS = ["secret"]
-    ALL_KINDS = STAFF_KINDS + PLAYER_KINDS + SHARED_KINDS
+    STAFF_KINDS   = ["hint", "vision", "nudge", "hook"]
+    PLAYER_KINDS  = ["action", "research", "request", "update", "pitch", "goal"]
+    SHARED_KINDS  = ["secret"]
+    ALL_KINDS     = STAFF_KINDS + PLAYER_KINDS + SHARED_KINDS
+
+    # Kinds that can be created by unapproved characters (during chargen).
+    # All other player commands require an approved character.
+    CHARGEN_KINDS = ["secret", "goal"]
 
     def self.find_inkling(id)
       Inkling.find_one_by_id(id)
     end
 
     # Whether char is meaningfully attached to this thread (as its
-    # subject or the one who started it). Staff can always act on any
-    # thread regardless of this check.
+    # subject, the one who started it, or an explicitly added participant).
+    # Staff can always act on any thread regardless of this check.
     def self.is_participant?(inkling, char)
       return true if inkling.character == char
       return true if inkling.creator == char
+      return true if InklingParticipant.find(inkling_id: inkling.id, character_id: char.id).any?
       false
+    end
+
+    def self.split_list(value)
+      value.to_s.split(",").map(&:strip).reject(&:empty?)
+    end
+
+    def self.find_matching_group_chars(group_name)
+      matches = []
+
+      if group_name.to_s.include?(":")
+        group_key, group_value = group_name.split(":", 2).map(&:strip)
+        return [] if group_key.blank? || group_value.blank?
+
+        matches = Character.all.select do |char|
+          char.is_approved? && char.group(group_key).to_s.casecmp?(group_value)
+        end
+      else
+        group_keys = (defined?(Demographics) ? Demographics.all_groups.keys : [])
+        matches = Character.all.select do |char|
+          next false if !char.is_approved?
+
+          group_keys.any? do |group_key|
+            char.group(group_key).to_s.casecmp?(group_name.to_s.strip)
+          end
+        end
+      end
+
+      matches.uniq(&:id)
+    end
+
+    def self.add_participant(inkling, target, added_by)
+      return :already_shared if Inklings.is_participant?(inkling, target)
+
+      InklingParticipant.create(
+        inkling: inkling,
+        character: target,
+        added_at: Time.now)
+
+      Inklings.notify_player(target,
+        "<inklings> #{added_by.name} has shared an inkling with you. Use +inkling #{inkling.id} to view it.")
+
+      :added
     end
 
     # Fixed job category so inkling-linked jobs land on their own board.
@@ -64,9 +111,9 @@ module AresMUSH
     # Adds a comment to an inkling's already-existing linked job.
     # admin_only is false because this is a message the player submitted
     # (or is meant to see), not an internal staff note.
-    def self.mirror_to_job(inkling, message, enactor)
+    def self.mirror_to_job(inkling, message, enactor, admin_only = false)
       return if !inkling.job
-      Jobs.comment(inkling.job, enactor, message, false)
+      Jobs.comment(inkling.job, enactor, message, admin_only)
     end
 
     # There's no event fired when a JobReply is added, so instead of
@@ -110,6 +157,27 @@ module AresMUSH
       Login.emit_ooc_if_logged_in(char, message)
     end
 
+    # Whether a viewer is allowed to see a specific message.
+    # Non-private messages are always visible. Private messages are
+    # visible to: staff, the message author, and any character IDs
+    # listed in private_recipient_ids.
+    def self.can_see_message?(message, viewer)
+      return Inklings.can_manage_inklings?(viewer) if message.is_gm_note.to_s == "true"
+      return true if message.is_private.to_s != "true"
+      return true if Inklings.can_manage_inklings?(viewer)
+      return true if message.author && message.author.id == viewer.id
+      ids = message.private_recipient_ids.to_s.split(",").map(&:strip).reject(&:empty?)
+      ids.include?(viewer.id)
+    end
+
+    def self.can_see_roll?(roll, viewer)
+      return true if Inklings.can_manage_inklings?(viewer)
+      return true if roll.private.to_s != "true"
+      return true if roll.character && roll.character.id == viewer.id
+      return true if roll.creator && roll.creator.id == viewer.id
+      false
+    end
+
     def self.get_cmd_handler(client, cmd, enactor)
       case cmd.root
       when "inkling"
@@ -117,8 +185,20 @@ module AresMUSH
           return InklingListCmd
         elsif cmd.switch_is?("delete")
           return InklingDeleteCmd
-        elsif cmd.switch_is?("reply")
+        elsif cmd.switch_is?("advance") || cmd.switch_is?("reply")
           return InklingReplyCmd
+        elsif cmd.switch_is?("gm")
+          return InklingGmCmd
+        elsif cmd.switch_is?("private")
+          return InklingPrivateCmd
+        elsif cmd.switch_is?("share")
+          return InklingShareCmd
+        elsif cmd.switch_is?("group")
+          return InklingGroupCmd
+        elsif cmd.switch_is?("roll")
+          return InklingRollCmd
+        elsif cmd.switch_is?("new")
+          return InklingNewCmd
         elsif cmd.switch_is?("close")
           return InklingCloseCmd
         elsif ALL_KINDS.any? { |k| cmd.switch_is?(k) }

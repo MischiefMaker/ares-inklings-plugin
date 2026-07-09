@@ -11,8 +11,10 @@ module AresMUSH
 
     # kind is one of: hint, vision, nudge, hook (staff -> player),
     # action, research, request, update, pitch, goal (player -> staff),
-    # secret, or roll (either direction).
+    # or secret (IC character secret, shareable with other players).
+    # Rolls are not a kind — they can be attached to any inkling.
     attribute :kind
+    attribute :title
     # "open" or "closed"
     attribute :status
     attribute :created_at
@@ -33,6 +35,7 @@ module AresMUSH
 
     collection :messages, "AresMUSH::InklingMessage"
     collection :rolls, "AresMUSH::InklingRoll"
+    collection :participants, "AresMUSH::InklingParticipant"
 
     index :character_id
     index :kind
@@ -48,6 +51,16 @@ module AresMUSH
     attribute :created_at
     # "true"/"false" - was the author staff at the time they wrote this
     attribute :is_staff
+    # "true"/"false" - visible only to the author, staff, and any IDs
+    # listed in private_recipient_ids.
+    attribute :is_private
+    # "true"/"false" - visible only to staff via can_manage_inklings?.
+    attribute :is_gm_note
+    # Comma-separated character IDs of non-staff players who can see
+    # this private message. For player private entries this is empty
+    # (only the author + staff). For staff private entries this defaults
+    # to the inkling's subject character.
+    attribute :private_recipient_ids
 
     reference :inkling, "AresMUSH::Inkling"
     reference :author, "AresMUSH::Character"
@@ -106,6 +119,20 @@ module AresMUSH
     index :character_id
     index :target_character_id
     index :created_at
+  end
+
+  # Tracks additional players who have been granted access to an inkling
+  # thread (e.g. the other party in a shared IC secret). The owning
+  # character and creator always have access; this covers anyone else.
+  class InklingParticipant < Ohm::Model
+    include ObjectModel
+
+    reference :inkling, "AresMUSH::Inkling"
+    reference :character, "AresMUSH::Character"
+    attribute :added_at
+
+    index :inkling_id
+    index :character_id
   end
 
   # Reverse reference so char.inklings gives every thread that character

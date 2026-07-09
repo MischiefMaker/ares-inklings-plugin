@@ -6,8 +6,18 @@ module AresMUSH
     class InklingsCmd
       include CommandHandler
 
+      def check_approved
+        return nil if Inklings.can_manage_inklings?(enactor)
+        return t('inklings.char_not_approved') unless enactor.is_approved?
+        nil
+      end
+
       def handle
-        inklings = enactor.inklings.to_a
+        own_inklings = enactor.inklings.to_a
+        shared_inklings = InklingParticipant.find(character_id: enactor.id)
+          .map(&:inkling).compact
+
+        inklings = (own_inklings + shared_inklings).uniq(&:id)
         inklings.each { |i| Inklings.sync_job_replies(i) }
 
         if cmd.switch_is?("closed")
@@ -26,8 +36,10 @@ module AresMUSH
         end
 
         list = inklings.map do |i|
-          flag = i.player_unread == "true" ? "%xh*%xn " : "  "
-          "#{flag}##{i.id} [#{i.kind.upcase}] (#{i.status}) #{i.created_at.strftime('%m/%d')} - #{i.messages.to_a.size} msg(s)"
+          flag = i.character == enactor && i.player_unread == "true" ? "%xh*%xn " : "  "
+          title = i.title.to_s.blank? ? t("inklings.kind_#{i.kind}") : i.title
+          visible_message_count = i.messages.to_a.count { |m| Inklings.can_see_message?(m, enactor) }
+          "#{flag}##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{i.created_at.strftime('%m/%d')} - #{visible_message_count} msg(s)"
         end
 
         template = BorderedPagedListTemplate.new list, cmd.page, 25, t('inklings.inklings_title')

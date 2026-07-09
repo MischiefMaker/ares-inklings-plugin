@@ -14,6 +14,12 @@ module AresMUSH
         [self.id]
       end
 
+      def check_approved
+        return nil if Inklings.can_manage_inklings?(enactor)
+        return t('inklings.char_not_approved') unless enactor.is_approved?
+        nil
+      end
+
       def check_valid_inkling
         return t('inklings.invalid_id') if !Inklings.find_inkling(self.id)
         return nil
@@ -31,13 +37,32 @@ module AresMUSH
 
         Inklings.sync_job_replies(inkling)
 
-        lines = inkling.messages.sort_by { |m| m.created_at }.map do |m|
-          who = m.author ? m.author.name : "?"
-          "#{m.created_at.strftime('%m/%d %H:%M')} #{who}: #{m.text}"
+        events = []
+
+        inkling.messages.sort_by { |m| m.created_at }
+          .select { |m| Inklings.can_see_message?(m, enactor) }
+          .each do |m|
+            who = m.author ? m.author.name : "?"
+            tags = []
+            tags << "gm" if m.is_gm_note == "true"
+            tags << "private" if m.is_private == "true"
+            tag_text = tags.empty? ? "" : " [#{tags.join(", ")}]"
+            events << [m.created_at, "#{m.created_at.strftime('%m/%d %H:%M')} #{who}#{tag_text}: #{m.text}"]
+          end
+
+        inkling.rolls.to_a.sort_by { |r| r.created_at }.each do |roll|
+          next if !Inklings.can_see_roll?(roll, enactor)
+
+          who = roll.creator ? roll.creator.name : "?"
+          private_tag = roll.private == "true" ? " [private]" : ""
+          events << [roll.created_at, "#{roll.created_at.strftime('%m/%d %H:%M')} #{who} rolled #{roll.roll_spec}#{private_tag}: #{roll.result}"]
         end
 
+        lines = events.sort_by { |time, _line| time }.map(&:last)
+
         job_line = inkling.job ? "\n\n(Linked job ##{inkling.job.id}, status #{inkling.job.status})" : ""
-        title = "##{inkling.id} [#{inkling.kind.upcase}] (#{inkling.status})"
+        header_title = inkling.title.to_s.blank? ? t("inklings.kind_#{inkling.kind}") : inkling.title
+        title = "##{inkling.id} [#{inkling.kind.upcase}] #{header_title} (#{inkling.status})"
 
         template = BorderedDisplayTemplate.new lines.join("\n") + job_line, title
         client.emit template.render
