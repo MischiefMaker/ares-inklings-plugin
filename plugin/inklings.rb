@@ -10,11 +10,10 @@ module AresMUSH
 
     # Whether this character can manage inklings as staff (send hints,
     # visions, nudges, hooks; audit/delete other people's threads).
-    # NOTE: Adjust this to whatever permission convention your game uses -
-    # e.g. enactor.has_permission?('inklings') if you have a granular
-    # permissions system. is_staff? is used here as a placeholder.
+    # Reuse the Jobs plugin's existing staff permission gate so anyone who
+    # manages jobs can also manage staff-side inklings.
     def self.can_manage_inklings?(enactor)
-      enactor.is_staff?
+      Jobs.can_manage_jobs?(enactor)
     end
 
     STAFF_KINDS   = ["hint", "vision", "nudge", "hook"]
