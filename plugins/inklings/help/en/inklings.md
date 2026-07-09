@@ -1,100 +1,53 @@
 ---
 toc: Inklings
-summary: Threaded plot communication between staff and players.
-order: 1
+summary: Tracking character development and plot threads with inklings.
 ---
+
 # Inklings
 
-Inklings are threaded plot communications between staff and players.
-Every inkling can carry multiple messages back and forth, and player
-activity is mirrored into a job on the INKLINGS board so staff always
-have a single place to track what needs a response.
+Inklings are a system for tracking character development, plot threads, and important notes about your character. They're private conversations between you and staff, or between you and other players in a shared thread.
 
-## Kinds
+## Types of Inklings
 
-**Staff -> player:**
+**Your own:**
+- **Plot Action** - Something your character is doing that's relevant to the game world
+- **Research** - Something your character is researching or studying
+- **Request** - A request for staff assistance or plot
+- **Update** - A general update about your character's status or plans
+- **Pitch** - A pitch for a scene, plot arc, or event you'd like to happen
+- **Goal** - A long-term goal your character is working toward
+- **Secret** - A secret you want to share with staff (private, only staff can see)
+- **Roll** - A thread for tracking dice rolls and their outcomes
 
-- `hint` - a nudge toward something worth investigating
-- `vision` - something the character glimpses, dreams, or senses
-- `nudge` - a gentle push toward a plot thread
-- `hook` - an open invitation into a new thread
+**From staff:**
+- **Hint** - A hint or guidance from staff about something
+- **Vision** - An in-character vision or supernatural experience
+- **Nudge** - A gentle nudge from staff to encourage RP in a certain direction
+- **Hook** - A plot hook or opportunity from staff
 
-**Player -> staff:**
+## Commands
 
-- `action` - an in-character plot action you're taking
-- `research` - digging into something, in character or out
-- `request` - an OOC ask related to a plot
-- `update` - a status update on an ongoing thread
-- `pitch` - a plot idea or scene you'd like to run
-- `goal` - a character goal you want staff aware of
+`+inklings` - Show all your open inklings. Use `/closed` to see closed threads, or `/all` to see everything.
 
-**Either direction:**
+`+inkling <id>` - View a specific inkling thread and all messages in it. Mark it as read when you view it.
 
-- `secret` - something staff wants to plant on a character, or something
-  a player wants to share with staff privately
+`+inkling/<kind> <text>` - Create a new inkling of a specific type. For example: `+inkling/goal Work on learning to sail` or `+inkling/request Can we schedule a scene about X?`
 
-## Starting a thread
+`+inkling/secret <text>` - Share a secret with staff. Staff are the only ones who can see it.
 
-Staff (targets a player):
+`+inkling/reply <id>=<text>` - Reply to an inkling thread. Staff will be notified of player replies.
 
-    +inkling/hint <char>=<text>
-    +inkling/vision <char>=<text>
-    +inkling/nudge <char>=<text>
-    +inkling/hook <char>=<text>
-    +inkling/secret <char>=<text>
+`+inkling/close <id>` - Close an inkling thread (you can do this for your own threads).
 
-Players (always about yourself, no target needed):
+`+inkling/delete <id>` - Delete an inkling thread. Staff will be notified of what you deleted.
 
-    +inkling/action <text>
-    +inkling/research <text>
-    +inkling/request <text>
-    +inkling/update <text>
-    +inkling/pitch <text>
-    +inkling/goal <text>
-    +inkling/secret <text>
+## Web Portal
 
-Note: since staff secrets use `<char>=<text>`, your own secret text
-shouldn't contain a literal `=`, or it'll be misread as a target line.
+You can also manage your inklings through the character profile on the web portal. The **Inklings** tab shows all your threads in an easy-to-read format, allows you to expand threads to see the full conversation, and lets you add replies and rolls directly from the web.
 
-## Everyone
+## Tips
 
-`+inklings` - View your own open threads.
-
-`+inklings/closed` - View your own closed threads.
-
-`+inklings/all` - View everything.
-
-`+inkling <id>` - View a thread's full message history.
-
-`+inkling/reply <id>=<text>` - Add a message to a thread you're part of.
-
-`+inkling/close <id>` - Close a thread you're part of. Closes the linked
-job too, if there is one.
-
-`+inkling/delete <id>` - Delete a thread you're part of. If you're a
-player, this notifies staff via a job (opening one if the thread didn't
-already have one), since the content won't be recoverable afterward.
-
-## Staff only
-
-`+inkling/list <char>` - View every thread a character is involved in,
-along with any linked job numbers and statuses.
-
-Staff can also `+inkling/reply`, `+inkling/close`, `+inkling/delete`,
-and `+inkling <id>` on any thread, not just ones they started.
-
-## How this ties into jobs
-
-Whenever a player starts a thread, replies to one, or deletes one,
-Inklings notifies staff by creating or updating a job in the INKLINGS
-category - so nothing a player does here gets missed.
-
-Staff replies flow back the other way too, but not instantly: replying
-to the linked job (not admin-only/internal notes - those stay
-staff-side) gets pulled into the inkling thread the next time anyone
-views or lists it. In practice that means using `+inkling/reply` is the
-most immediate way for staff to respond, since it updates both sides at
-once; replying directly on the job works too, it just catches up on the
-player's next look at their inklings.
-
-Closing an inkling closes its linked job automatically.
+- **Be specific:** Include details about what you're working on or what you need
+- **Check regularly:** Staff may reply to your requests with guidance or plot opportunities
+- **Use the right type:** Choosing the appropriate inkling type helps staff prioritize
+- **Privacy matters:** Mark sensitive rolls or information as private if you want only staff to see them
