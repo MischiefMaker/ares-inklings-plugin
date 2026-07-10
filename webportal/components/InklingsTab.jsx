@@ -368,6 +368,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                   )}
                   <span className="message-count">
                     {inkling.message_count} message{inkling.message_count !== 1 ? 's' : ''}
+                    {inkling.player_unread && <span className="unread-asterisk">*</span>}
                   </span>
                   <span className="created-date">
                     {new Date(inkling.created_at).toLocaleDateString()}
@@ -422,7 +423,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                               {roll.luck_cost > 0 && ` (cost: ${roll.luck_cost} luck)`}
                             </div>
                           )}
-                          {roll.roll_type === 'player' && roll.character === roll.creator && expandedInkling.status === 'open' && (
+                          {roll.roll_type === 'player' && roll.character_id && roll.character_id === roll.creator_id && expandedInkling.status === 'open' && (
                             <button
                               className="btn btn-small btn-secondary"
                               onClick={() => handleRerollWithLuck(expandedInkling.id, roll.id)}
@@ -447,7 +448,9 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                             <span className="private-badge">
                               {msg.private_recipient_names && msg.private_recipient_names.length > 0
                                 ? `PRIVATE TO ${msg.private_recipient_names.join(', ').toUpperCase()}`
-                                : 'PRIVATE'}
+                                : !msg.is_staff
+                                  ? 'PRIVATE TO STAFF'
+                                  : 'PRIVATE'}
                             </span>
                           )}
                           <span className="message-time">

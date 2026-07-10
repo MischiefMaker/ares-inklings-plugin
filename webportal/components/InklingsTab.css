@@ -241,6 +241,12 @@
   font-size: 13px;
 }
 
+.unread-asterisk {
+  color: #ffc107;
+  font-weight: bold;
+  margin-left: 1px;
+}
+
 .created-date {
   color: #999;
   font-size: 12px;
@@ -359,6 +365,77 @@
   word-break: break-word;
 }
 
+.rolls-section {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.rolls-section h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+}
+
+.roll {
+  margin-bottom: 10px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: #f9f9f9;
+}
+
+.roll.private {
+  border-left: 3px solid #9b59b6;
+  background: rgba(155, 89, 182, 0.05);
+}
+
+.roll-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.roll-result {
+  font-weight: bold;
+  color: #333;
+}
+
+.roll-meta {
+  color: #999;
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.roll-reroll-info {
+  color: #666;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.roll-form-section {
+  margin-bottom: 15px;
+}
+
+.roll-form {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 15px;
+}
+
+.form-group.checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .reply-section {
   margin-bottom: 15px;
 }
@@ -425,6 +502,29 @@
 
 .btn-danger:hover {
   background: #c82333;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.btn-warning {
+  background: #e0a800;
+  color: #212529;
+}
+
+.btn-warning:hover {
+  background: #c69500;
+}
+
+.btn-small {
+  padding: 4px 10px;
+  font-size: 12px;
 }
 
 .btn:disabled {

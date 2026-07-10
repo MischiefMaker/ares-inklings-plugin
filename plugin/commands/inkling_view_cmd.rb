@@ -90,10 +90,7 @@ module AresMUSH
         who = message.author ? message.author.name : "?"
         tags = []
         tags << "gm" if message.is_gm_note == "true"
-        if message.is_private == "true"
-          recipients = Inklings.private_recipient_names(message)
-          tags << (recipients.any? ? "private to #{recipients.join(", ")}" : "private")
-        end
+        tags << Inklings.private_tag_label(message) if message.is_private == "true"
         tag_text = tags.empty? ? "" : " [#{tags.join(", ")}]"
 
         ref = Inklings.event_ref(inkling, message.seq)

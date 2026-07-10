@@ -305,6 +305,20 @@ module AresMUSH
       ids.map { |id| Character[id] }.compact.map(&:name).uniq.sort
     end
 
+    # Human-readable label for a private message's tag:
+    #   - "private to <names>" when the message has explicit recipients
+    #     (always true for staff-authored private entries)
+    #   - "private to staff" for a player's own private entry, which
+    #     has no explicit recipient stored since it's just visible to
+    #     the author + staff
+    #   - "private" as a fallback for any other case
+    def self.private_tag_label(message)
+      recipients = private_recipient_names(message)
+      return "private to #{recipients.join(", ")}" if recipients.any?
+      return "private to staff" if message.is_staff.to_s != "true"
+      "private"
+    end
+
     # Whether a viewer is allowed to see a specific message.
     # Non-private messages are always visible. Private messages are
     # visible to: staff, the message author, and any character IDs

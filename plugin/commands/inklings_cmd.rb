@@ -37,10 +37,12 @@ module AresMUSH
         end
 
         list = inklings.map do |i|
-          flag = i.character == enactor && i.player_unread == "true" ? "%xh*%xn " : "  "
+          unread = i.character == enactor && i.player_unread == "true"
+          flag = unread ? "%xh*%xn " : "  "
           title = i.title.to_s.blank? ? t("inklings.kind_#{i.kind}") : i.title
           visible_message_count = i.messages.to_a.count { |m| Inklings.can_see_message?(m, enactor) }
-          "#{flag}##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} - #{visible_message_count} msg(s)"
+          count_text = "#{visible_message_count} msg(s)#{unread ? "%xh*%xn" : ""}"
+          "#{flag}##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} - #{count_text}"
         end
 
         template = BorderedPagedListTemplate.new list, cmd.page, 25, t('inklings.inklings_title')

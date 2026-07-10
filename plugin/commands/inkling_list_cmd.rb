@@ -32,7 +32,9 @@ module AresMUSH
           list = inklings.map do |i|
             job_ref = i.job ? "job ##{i.job.id} [#{i.job.status}]" : t('inklings.no_linked_job')
             title = i.title.to_s.blank? ? t("inklings.kind_#{i.kind}") : i.title
-            "##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} #{job_ref} - #{i.messages.to_a.size} msg(s)"
+            unread = i.player_unread == "true"
+            count_text = "#{i.messages.to_a.size} msg(s)#{unread ? "%xh*%xn" : ""}"
+            "##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} #{job_ref} - #{count_text}"
           end
 
           template = BorderedPagedListTemplate.new list, cmd.page, 25,
