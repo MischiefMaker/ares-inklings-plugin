@@ -18,6 +18,18 @@ module AresMUSH
       Jobs.can_manage_jobs?(enactor)
     end
 
+    # Whether this character can run the destructive +inkling/reset
+    # command. Deliberately narrower than can_manage_inklings? (which
+    # many ordinary Inklings staff have) - this checks the "manage_game"
+    # permission directly, per the standard Ares permission system
+    # (see https://aresmush.com/tutorials/manage/roles.html). That
+    # permission is normally only granted to the Coder role, though
+    # Admins implicitly have every permission.
+    def self.can_reset_system?(enactor)
+      return false if !enactor
+      enactor.has_permission?("manage_game")
+    end
+
     STAFF_KINDS   = ["hint", "vision", "nudge", "hook"]
     PLAYER_KINDS  = ["initiative", "request", "update", "pitch", "goal"]
     SHARED_KINDS  = ["secret"]
@@ -156,6 +168,56 @@ module AresMUSH
       :added
     end
 
+    # Character names shown in the "Shared With" section of a thread:
+    # the thread's subject character (unless they're staff) plus anyone
+    # explicitly added as a participant, either directly or via a
+    # matching group (via +inkling/share or +inkling/group) - excluding
+    # any staff members. Staff always have access regardless of
+    # sharing, so listing them here would just be noise (and could
+    # inadvertently out a staff alt).
+    def self.shared_with_names(inkling)
+      names = []
+
+      if inkling.character && !can_manage_inklings?(inkling.character)
+        names << inkling.character.name
+      end
+
+      InklingParticipant.find(inkling_id: inkling.id).each do |p|
+        next if !p.character
+        next if can_manage_inklings?(p.character)
+        names << p.character.name
+      end
+
+      names.uniq.sort
+    end
+
+    # Group specs shared on this inkling (e.g. ["Navy", "Faction:Marines"]),
+    # for display in the "Shared With" section.
+    def self.shared_group_list(inkling)
+      split_list(inkling.shared_groups)
+    end
+
+    # Next sequence number for a new message or roll on this inkling.
+    # Messages and rolls share one incrementing counter so every event
+    # in a thread - message or roll - gets a unique, permanent number
+    # regardless of type (e.g. 2.1, 2.2, 2.3...). Based on the highest
+    # seq already assigned rather than a simple count, so it stays
+    # stable even if individual entries are ever deleted.
+    def self.next_event_seq(inkling)
+      seqs = inkling.messages.to_a.map { |m| m.seq.to_i } +
+        inkling.rolls.to_a.map { |r| r.seq.to_i }
+      (seqs.max || 0) + 1
+    end
+
+    # The stable "2.1" style reference for a message or roll: inkling
+    # ID, dot, per-thread sequence number. Use this (rather than the
+    # underlying database ID) any time you need to point at a specific
+    # message or roll from elsewhere, since it stays human-readable and
+    # meaningful within the context of its thread.
+    def self.event_ref(inkling, seq)
+      "#{inkling.id}.#{seq}"
+    end
+
     # Fixed job category so inkling-linked jobs land on their own board.
     # Create this category in-game with: job/category create INKLINGS
     # (override in inklings.yml if you want a different category name).
@@ -210,6 +272,7 @@ module AresMUSH
           author: reply.author,
           text: reply.message,
           created_at: reply.respond_to?(:created_at) ? reply.created_at : Time.now,
+          seq: Inklings.next_event_seq(inkling),
           is_staff: "true",
           source_job_reply: reply)
 
@@ -229,6 +292,17 @@ module AresMUSH
 
     def self.notify_player(char, message)
       Login.emit_ooc_if_logged_in(char, message)
+    end
+
+    # Character names a private message's recipient IDs resolve to, for
+    # display purposes (e.g. showing "[private to Bob]" in the thread
+    # view). Player-authored private entries leave private_recipient_ids
+    # empty (visible only to the author + staff), so those correctly
+    # return an empty array - there's no specific "someone" to name in
+    # that case, just "[private]".
+    def self.private_recipient_names(message)
+      ids = message.private_recipient_ids.to_s.split(",").map(&:strip).reject(&:empty?)
+      ids.map { |id| Character[id] }.compact.map(&:name).uniq.sort
     end
 
     # Whether a viewer is allowed to see a specific message.
@@ -259,6 +333,8 @@ module AresMUSH
           return InklingListCmd
         elsif cmd.switch_is?("delete")
           return InklingDeleteCmd
+        elsif cmd.switch_is?("reset")
+          return InklingResetCmd
         elsif cmd.switch_is?("advance") || cmd.switch_is?("reply")
           return InklingReplyCmd
         elsif cmd.switch_is?("gm")
@@ -283,6 +359,8 @@ module AresMUSH
       when "inklings"
         if cmd.switch_is?("delete")
           return InklingDeleteCmd
+        elsif cmd.switch_is?("reset")
+          return InklingResetCmd
         elsif cmd.switch_is?("advance") || cmd.switch_is?("reply")
           return InklingReplyCmd
         elsif cmd.switch_is?("gm")

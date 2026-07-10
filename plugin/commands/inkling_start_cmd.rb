@@ -93,6 +93,7 @@ module AresMUSH
           author: creator,
           text: self.text,
           created_at: Time.now,
+          seq: Inklings.next_event_seq(inkling),
           is_staff: Inklings.can_manage_inklings?(creator) ? "true" : "false",
           is_private: "false",
           is_gm_note: "false")

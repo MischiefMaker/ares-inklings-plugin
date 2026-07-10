@@ -385,6 +385,24 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
 
               {expandedId === inkling.id && expandedInkling && (
                 <div className="inkling-detail">
+                  {/* Shared With - non-staff participants and shared groups */}
+                  {expandedInkling.shared_with &&
+                    (expandedInkling.shared_with.players.length > 0 || expandedInkling.shared_with.groups.length > 0) && (
+                    <div className="shared-with-section">
+                      <h3>Shared With</h3>
+                      {expandedInkling.shared_with.players.length > 0 && (
+                        <div className="shared-with-row">
+                          <span className="shared-with-label">Players:</span> {expandedInkling.shared_with.players.join(', ')}
+                        </div>
+                      )}
+                      {expandedInkling.shared_with.groups.length > 0 && (
+                        <div className="shared-with-row">
+                          <span className="shared-with-label">Groups:</span> {expandedInkling.shared_with.groups.join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Rolls — available on any inkling */}
                   {expandedInkling.rolls && expandedInkling.rolls.length > 0 && (
                     <div className="rolls-section">
@@ -392,6 +410,7 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                       {expandedInkling.rolls.map(roll => (
                         <div key={roll.id} className={`roll ${roll.private ? 'private' : 'public'}`}>
                           <div className="roll-header">
+                            <span className="message-ref">#{roll.ref}</span>
                             <strong>{roll.roll_spec}</strong>
                             {roll.private && <span className="private-badge">PRIVATE</span>}
                             <span className="roll-result">{roll.result}</span>
@@ -420,10 +439,17 @@ export const InklingsTab = ({ characterId, viewerId, isStaff }) => {
                     {expandedInkling.messages && expandedInkling.messages.map(msg => (
                       <div key={msg.id} className={`message ${msg.is_staff ? 'staff' : 'player'} ${msg.is_private ? 'private' : ''}`}>
                         <div className="message-header">
+                          <span className="message-ref">#{msg.ref}</span>
                           <strong>{msg.author}</strong>
                           {msg.is_staff && <span className="staff-badge">STAFF</span>}
                           {msg.is_gm_note && <span className="staff-badge">GM</span>}
-                          {msg.is_private && <span className="private-badge">PRIVATE</span>}
+                          {msg.is_private && (
+                            <span className="private-badge">
+                              {msg.private_recipient_names && msg.private_recipient_names.length > 0
+                                ? `PRIVATE TO ${msg.private_recipient_names.join(', ').toUpperCase()}`
+                                : 'PRIVATE'}
+                            </span>
+                          )}
                           <span className="message-time">
                             {new Date(msg.created_at).toLocaleString()}
                           </span>

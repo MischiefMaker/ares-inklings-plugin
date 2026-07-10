@@ -29,6 +29,7 @@ module AresMUSH
           author: author,
           text: message_text,
           created_at: Time.now,
+          seq: Inklings.next_event_seq(inkling),
           is_staff: "true")
 
         inkling.update(player_unread: "true")

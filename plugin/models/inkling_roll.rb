@@ -28,6 +28,13 @@ module AresMUSH
     # The raw numeric result for sorting/comparison
     attribute :result_value
 
+    # Per-thread sequence number, assigned once at creation and never
+    # reused. Messages and rolls share one counter per inkling (see
+    # Inklings.next_event_seq), so combined with the inkling's own ID
+    # this gives a stable reference like "2.3" that can be used to
+    # point at this specific roll later.
+    attribute :seq
+
     # "true"/"false" - whether this roll is visible only to the player
     # and staff, or visible to all participants in the inkling thread
     attribute :private

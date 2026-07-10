@@ -29,7 +29,7 @@ Inklings are a system for tracking character development, plot threads, and impo
 
 `+inklings` - Show all your open inklings. Use `/closed` to see closed threads, or `/all` to see everything.
 
-`+inkling <id>` - View a specific inkling thread and all messages in it. Mark it as read when you view it.
+`+inkling <id>` - View a specific inkling thread and all messages in it. Mark it as read when you view it. Each message and roll is shown as its own block with a permanent reference number (like `14.3`) you can use to refer back to it later.
 
 `+inkling/new <kind>=<title>/<text>` - Create a new inkling with a title and opening text. Example: `+inkling/new goal=Learn to Sail/Work toward buying lessons this month.`
 
@@ -42,8 +42,6 @@ Inklings are a system for tracking character development, plot threads, and impo
 `+inkling/roll <id>=<roll command>` - Attach a roll to the inkling thread. Example: `+inkling/roll 14=Firearms+Reflexes`
 
 `+inkling/private <id>=<text>` - Add a private entry visible only to you and staff.
-
-`+inkling/private <id>=<name>/<text>` - Staff can direct a private entry to a specific participant in the thread. Example: `+inkling/private 14=Bob/Keep this between you and staff.`
 
 `+inkling/close <id>` - Close an inkling thread (you can do this for your own threads).
 

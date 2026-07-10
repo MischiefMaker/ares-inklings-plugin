@@ -28,6 +28,11 @@ module AresMUSH
 
       def check_not_closed
         inkling = Inklings.find_inkling(self.id)
+        # Checks run in alphabetical order by method name, not
+        # declaration order, so check_valid_inkling may not have run
+        # yet. Bail out quietly here and let check_valid_inkling report
+        # the real "invalid ID" error instead of crashing on nil.
+        return nil if !inkling
         return t('inklings.thread_is_closed') if inkling.status == "closed"
         nil
       end
@@ -40,6 +45,7 @@ module AresMUSH
           author: enactor,
           text: self.text,
           created_at: Time.now,
+          seq: Inklings.next_event_seq(inkling),
           is_staff: "true",
           is_private: "false",
           is_gm_note: "true",

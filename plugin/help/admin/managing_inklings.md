@@ -53,7 +53,18 @@ Close an inkling thread and its linked job (if any).
 **`+inkling/delete <id>`**
 Delete an inkling thread. Players may delete their own threads; staff may delete any thread.
 
+**`+inkling/reset`**
+Permanently deletes every inkling thread, message, and roll for every character. Restricted to the `manage_game` permission (Coders/Admins only), not general Inklings staff. Must be entered twice within 60 seconds to confirm - the first entry just arms it and shows a warning.
+
 ## How It Works
+
+### Message & Roll References
+
+Every message and roll in a thread is assigned a permanent reference number in the format `<inkling id>.<sequence>` (e.g. `14.3` is the third event posted to inkling #14). This number is shown in the thread view and can be used to refer back to a specific entry later.
+
+### Shared With
+
+The thread view shows a "Shared With" section listing which non-staff characters and groups currently have access to the thread (via `+inkling/share` or `+inkling/group`). Staff are never listed here, since they always have access regardless of sharing.
 
 ### Automatic Job Creation
 When a player creates or advances an inkling, a job is automatically created in the **INKLINGS** job category. This notifies staff through the normal job system. If staff respond via the inkling, that response mirrors back to the job.
@@ -75,7 +86,7 @@ Staff can manage inklings from the character profile **Inklings** tab on the web
 
 **Job Category:** Inklings are automatically placed in the `INKLINGS` job category. Create this category in-game with: `job/category create INKLINGS`
 
-**Permissions:** By default, staff are determined by `is_staff?` Check. Customize this in `plugins/inklings/inklings.rb` in the `can_manage_inklings?` method.
+**Permissions:** By default, staff are determined by the `Jobs.can_manage_jobs?` check. Customize this in `plugin/inklings.rb` in the `can_manage_inklings?` method. The destructive `+inkling/reset` command uses a separate, narrower check (`can_reset_system?`) tied to the `manage_game` permission.
 
 ## Tips for Staff
 
@@ -84,3 +95,4 @@ Staff can manage inklings from the character profile **Inklings** tab on the web
 - **Link to jobs:** The automatic job creation keeps everything in one place
 - **Monitor privately:** Private rolls let players and staff discuss outcomes without spoiling others
 - **Close resolved threads:** Keep the list clean by closing threads once plots are complete
+- **Reset with care:** `+inkling/reset` wipes every thread for every character game-wide. There is no undo.

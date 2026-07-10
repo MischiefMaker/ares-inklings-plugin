@@ -74,6 +74,7 @@ module AresMUSH
           author: viewer,
           text: text,
           created_at: Time.now,
+          seq: Inklings.next_event_seq(inkling),
           is_staff: Inklings.can_manage_inklings?(viewer) ? "true" : "false",
           is_private: "false",
           is_gm_note: "false",
@@ -144,6 +145,7 @@ module AresMUSH
           author: viewer,
           text: text,
           created_at: Time.now,
+          seq: Inklings.next_event_seq(inkling),
           is_staff: is_staff ? "true" : "false",
           is_private: is_private ? "true" : "false",
           is_gm_note: "false",
@@ -311,13 +313,22 @@ module AresMUSH
 
         format_inkling_summary(inkling, viewer).merge(
           messages: messages.map { |m| format_message(m) },
-          rolls: rolls.map { |r| format_roll(r) }
+          rolls: rolls.map { |r| format_roll(r) },
+          shared_with: format_shared_with(inkling)
         )
+      end
+
+      def self.format_shared_with(inkling)
+        {
+          players: Inklings.shared_with_names(inkling),
+          groups: Inklings.shared_group_list(inkling)
+        }
       end
 
       def self.format_message(message)
         {
           id: message.id,
+          ref: Inklings.event_ref(message.inkling, message.seq),
           author: message.author ? message.author.name : "Unknown",
           author_id: message.author ? message.author.id : nil,
           text: message.text,
@@ -325,13 +336,15 @@ module AresMUSH
           is_staff: message.is_staff == "true",
           is_private: message.is_private == "true",
           is_gm_note: message.is_gm_note == "true",
-          private_recipient_ids: message.is_private == "true" ? message.private_recipient_ids.to_s.split(",").map(&:strip).reject(&:empty?) : []
+          private_recipient_ids: message.is_private == "true" ? message.private_recipient_ids.to_s.split(",").map(&:strip).reject(&:empty?) : [],
+          private_recipient_names: message.is_private == "true" ? Inklings.private_recipient_names(message) : []
         }
       end
 
       def self.format_roll(roll)
         {
           id: roll.id,
+          ref: Inklings.event_ref(roll.inkling, roll.seq),
           roll_type: roll.roll_type,
           roll_spec: roll.roll_spec,
           result: roll.result,

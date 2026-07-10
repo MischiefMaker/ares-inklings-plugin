@@ -47,6 +47,7 @@ module AresMUSH
           roll_spec: roll_spec,
           result: result,
           result_value: result_value.to_i,
+          seq: Inklings.next_event_seq(inkling),
           private: is_private ? "true" : "false",
           reroll_count: "0",
           luck_cost: "0",
@@ -135,6 +136,7 @@ module AresMUSH
 
         {
           id: roll.id,
+          ref: Inklings.event_ref(roll.inkling, roll.seq),
           roll_type: roll.roll_type,
           roll_spec: roll.roll_spec,
           result: roll.result,

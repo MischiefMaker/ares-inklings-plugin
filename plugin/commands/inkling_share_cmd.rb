@@ -33,6 +33,11 @@ module AresMUSH
 
       def check_can_share
         inkling = Inklings.find_inkling(self.id)
+        # Checks run in alphabetical order by method name, not
+        # declaration order, so check_valid_inkling may not have run
+        # yet. Bail out quietly here and let check_valid_inkling report
+        # the real "invalid ID" error instead of crashing on nil.
+        return nil if !inkling
         return nil if Inklings.can_manage_inklings?(enactor)
         return nil if inkling.character == enactor
         return t('dispatcher.not_allowed')
@@ -40,6 +45,7 @@ module AresMUSH
 
       def check_not_closed
         inkling = Inklings.find_inkling(self.id)
+        return nil if !inkling
         return t('inklings.thread_is_closed') if inkling.status == "closed"
         return nil
       end

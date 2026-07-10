@@ -39,7 +39,17 @@ Inklings are player-initiated threads for tracking character development, plot r
 
 `+inkling/delete <id>` - Delete an inkling thread. Players may delete their own threads; staff may delete any thread.
 
+`+inkling/reset` - Permanently deletes every inkling thread, message, and roll for every character. Restricted to the `manage_game` permission (Coders/Admins). Must be entered twice within 60 seconds to confirm.
+
 ## How It Works
+
+### Message & Roll References
+
+Every message and roll in a thread gets a permanent reference number, `<inkling id>.<sequence>` (e.g. `14.3`), shown in the thread view for pointing back at a specific entry later.
+
+### Shared With
+
+The thread view includes a "Shared With" section listing non-staff characters and groups with access to the thread. Staff members are never listed, since they always have access.
 
 ### Automatic Job Creation
 
@@ -65,7 +75,7 @@ Staff can manage inklings from the character profile **Inklings** tab on the web
 
 **Job Category:** Inklings are automatically placed in the `INKLINGS` job category. Create this category in-game with: `job/category create INKLINGS`
 
-**Permissions:** By default, staff are determined by `is_staff?` Check. Customize this in `plugins/inklings/inklings.rb` in the `can_manage_inklings?` method.
+**Permissions:** By default, staff are determined by the `Jobs.can_manage_jobs?` check. Customize this in `plugin/inklings.rb` in the `can_manage_inklings?` method. The `+inkling/reset` command uses a separate, narrower `manage_game` permission check.
 
 ## Tips for Staff
 
@@ -74,3 +84,4 @@ Staff can manage inklings from the character profile **Inklings** tab on the web
 - **Link to jobs:** The automatic job creation keeps everything in one place
 - **Monitor privately:** Private rolls let players and staff discuss outcomes without spoiling others
 - **Close resolved threads:** Keep the list clean by closing threads once plots are complete
+- **Reset with care:** There is no undo for `+inkling/reset`.
