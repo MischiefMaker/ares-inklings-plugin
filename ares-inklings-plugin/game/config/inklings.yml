@@ -1,0 +1,7 @@
+inklings:
+  shortcuts: {}
+  # Job category used for jobs Inklings creates to notify staff of
+  # player activity (new threads, replies, deletions). Create this
+  # category in-game with: job/category create INKLINGS
+  # and set access roles with: job/categoryroles INKLINGS=<roles>
+  job_category: INKLINGS
