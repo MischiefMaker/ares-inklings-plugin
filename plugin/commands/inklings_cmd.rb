@@ -13,7 +13,10 @@ module AresMUSH
       end
 
       def handle
-        own_inklings = enactor.inklings.to_a
+        # Query explicitly by character_id rather than enactor.inklings
+        # (a reverse-collection macro) - see the note in
+        # InklingListCmd for why this is safer.
+        own_inklings = Inkling.find(character_id: enactor.id).to_a
         shared_inklings = InklingParticipant.find(character_id: enactor.id)
           .map(&:inkling).compact
         group_inklings = Inkling.all.to_a.select { |i| Inklings.is_group_participant?(i, enactor) }
@@ -39,10 +42,11 @@ module AresMUSH
         list = inklings.map do |i|
           unread = i.character == enactor && i.player_unread == "true"
           flag = unread ? "%xh*%xn " : "  "
-          title = i.title.to_s.blank? ? t("inklings.kind_#{i.kind}") : i.title
+          title = i.title.to_s.blank? ? Inklings.kind_label(i.kind) : i.title
           visible_message_count = i.messages.to_a.count { |m| Inklings.can_see_message?(m, enactor) }
           count_text = "#{visible_message_count} msg(s)#{unread ? "%xh*%xn" : ""}"
-          "#{flag}##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} - #{count_text}"
+          lock_text = i.locked == "true" ? " %xh%crLOCKED%xn" : ""
+          "#{flag}##{i.id} [#{Inklings.color_type(i.kind.upcase)}] #{Inklings.color_title(title)} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} - #{count_text}#{lock_text}"
         end
 
         template = BorderedPagedListTemplate.new list, cmd.page, 25, t('inklings.inklings_title')

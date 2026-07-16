@@ -1,0 +1,37 @@
+{{!
+  MERGE-IN SNIPPET - not a complete file.
+
+  Add this <div> inside the existing tab-content container in your
+  game's ares-webportal/app/templates/components/chargen-custom.hbs,
+  alongside any other plugins' custom chargen steps already there.
+  Pair with chargen-custom.snippet.js (same directory) for the
+  backing actions/data.
+
+  Secret and goal both require a title now (matching the in-game
+  +inkling/secret <title>/<text> and +inkling/goal <title>/<text>
+  syntax - see Inklings.chargen_kinds in plugin/inklings.rb), so this
+  collects four fields rather than the tutorial's single "goals" text
+  box. If your game has a markdown-editor-style component already
+  (the official tutorial's own worked example uses one -
+  {{markdown-editor text=this.char.custom.goals}}), swap the plain
+  textareas below for it if you'd like richer formatting.
+}}
+<div class="tab-pane fade" id="chargen-inklings-pane">
+  <div class="form-group">
+    <label for="chargen-secret-title">Secret - Title</label>
+    {{input id="chargen-secret-title" type="text" value=this.char.custom.inkling_secret_title placeholder="A short title for your secret"}}
+  </div>
+  <div class="form-group">
+    <label for="chargen-secret-text">Secret - Description</label>
+    {{textarea id="chargen-secret-text" value=this.char.custom.inkling_secret_text placeholder="Describe an IC secret your character holds..." rows=4}}
+  </div>
+
+  <div class="form-group">
+    <label for="chargen-goal-title">Goal - Title</label>
+    {{input id="chargen-goal-title" type="text" value=this.char.custom.inkling_goal_title placeholder="A short title for your goal"}}
+  </div>
+  <div class="form-group">
+    <label for="chargen-goal-text">Goal - Description</label>
+    {{textarea id="chargen-goal-text" value=this.char.custom.inkling_goal_text placeholder="Describe what your character is working toward..." rows=4}}
+  </div>
+</div>

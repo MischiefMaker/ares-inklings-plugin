@@ -30,14 +30,106 @@ module AresMUSH
       enactor.has_permission?("manage_game")
     end
 
-    STAFF_KINDS   = ["hint", "vision", "nudge", "hook"]
-    PLAYER_KINDS  = ["initiative", "request", "update", "pitch", "goal"]
-    SHARED_KINDS  = ["secret"]
-    ALL_KINDS     = STAFF_KINDS + PLAYER_KINDS + SHARED_KINDS
+    # --- Ansi color helpers -------------------------------------------
+    # Applied to character/group Names, Inkling Titles, and Inkling
+    # Types in text emitted directly to a client (list rows, thread
+    # view, warnings, share confirmations). Per
+    # https://aresmush.com/tutorials/code/formatting.html, colors are
+    # applied with %x<code> and must be closed with %xn.
+    #
+    # Deliberately NOT used on persisted data like Inkling#title or Job
+    # titles - those get read back by other systems (the Jobs web view,
+    # this plugin's own web portal) that shouldn't have to deal with
+    # raw ansi escape codes showing up in their text.
+    def self.color_name(text)
+      "%xc#{text}%xn"
+    end
 
-    # Kinds that can be created by unapproved characters (during chargen).
-    # All other player commands require an approved character.
-    CHARGEN_KINDS = ["secret", "goal"]
+    def self.color_title(text)
+      "%xg#{text}%xn"
+    end
+
+    def self.color_type(text)
+      "%xm#{text}%xn"
+    end
+
+    # Title used when a player explicitly submits an inkling for staff
+    # review (see +inkling/submit / Inklings.submit_inkling).
+    # Deliberately short and free of the inkling ID / redundant
+    # "submitted by" text that the Jobs plugin's own "New Job!"
+    # announcement already includes.
+    def self.submission_job_title(char, kind)
+      "[ACTION] #{char.name} submitted a #{kind_label(kind)} inkling for review."
+    end
+
+    # Title used for the job filed when a player requests their inkling
+    # be deleted (see the +inkling/delete deletion-request workflow).
+    def self.deletion_request_title(char, inkling_id)
+      "#{char.name} is requesting to delete inkling ##{inkling_id}."
+    end
+
+    # --- Inkling types (kinds) -----------------------------------------
+    # Types live in game config (game/config/inklings.yml, under
+    # "types") rather than as hardcoded constants, so game admins can
+    # add, remove, rename, or redescribe them without touching code.
+    # Read fresh each call (not memoized) so config edits take effect
+    # immediately without needing a full plugin reload.
+    #
+    # NOTE: "update" is intentionally not a type. A player typing
+    # "+inkling/update 3=blah" reads as "update thread #3", but since
+    # updating an existing thread is what +inkling/advance (or /reply)
+    # is for, having a *type* called "update" meant that command
+    # instead silently started a brand-new thread with the literal text
+    # "3=blah". Removing it avoids that confusion; use +inkling/advance
+    # or +inkling/reply to add an update to an existing thread.
+    #
+    # Rolls are NOT a type - see the note in inklings.yml.
+    def self.type_config
+      Global.read_config("inklings", "types") || {}
+    end
+
+    def self.kinds_in_category(category)
+      type_config.select { |_k, v| v["category"] == category.to_s }.keys
+    end
+
+    def self.staff_kinds
+      kinds_in_category("staff")
+    end
+
+    def self.player_kinds
+      kinds_in_category("player")
+    end
+
+    def self.shared_kinds
+      kinds_in_category("shared")
+    end
+
+    def self.all_kinds
+      type_config.keys
+    end
+
+    # Kinds that can be created by unapproved characters (during
+    # chargen). All other player commands require an approved character.
+    def self.chargen_kinds
+      type_config.select { |_k, v| v["chargen"] }.keys
+    end
+
+    def self.valid_kind?(kind)
+      type_config.key?(kind.to_s)
+    end
+
+    # Display label for a kind, e.g. "Secret" for "secret". Falls back
+    # to a capitalized version of the raw kind if it's missing from
+    # config entirely - this covers old data using a kind that's since
+    # been removed from config (like the legacy "update" kind) so it
+    # still renders something reasonable instead of erroring.
+    def self.kind_label(kind)
+      (type_config[kind.to_s] || {})["name"] || kind.to_s.capitalize
+    end
+
+    def self.kind_description(kind)
+      (type_config[kind.to_s] || {})["description"]
+    end
 
     def self.find_inkling(id)
       Inkling[id]
@@ -55,10 +147,12 @@ module AresMUSH
       time_value(value).strftime(format)
     end
 
-    def self.staff_target_warning(char)
+    def self.staff_target_warning(char, inkling_id = nil)
       return nil if !char
-      return "%xyWarning:%xn #{char.name} is not approved. You're creating this inkling on an unapproved character." if !char.is_approved?
-      return "%xyWarning:%xn #{char.name} can manage staff-side systems. Make sure this inkling belongs on a real character, not a staff utility/player record." if Inklings.can_manage_inklings?(char)
+      id_part = inkling_id ? "inkling ##{inkling_id}" : "this inkling"
+      name = color_name(char.name)
+      return "%xyWarning:%xn #{name} is not approved. You're creating #{id_part} on an unapproved character." if !char.is_approved?
+      return "%xyWarning:%xn #{name} can manage staff-side systems. Make sure #{id_part} belongs on a real character, not a staff utility/player record." if Inklings.can_manage_inklings?(char)
       nil
     end
 
@@ -131,29 +225,6 @@ module AresMUSH
       specs.any? { |spec| char_matches_group_spec?(char, spec) }
     end
 
-    def self.find_matching_group_chars(group_name)
-      query = group_name.to_s.strip
-      return [] if query.blank?
-
-      all_chars = Character.all.to_a
-
-      if query.include?(":")
-        group_key, group_value = query.split(":", 2).map(&:strip)
-        return [] if group_key.blank? || group_value.blank?
-
-        return all_chars.select { |c|
-          c.respond_to?(:group) && c.group(group_key).to_s.downcase == group_value.downcase
-        }.uniq(&:id)
-      end
-
-      group_keys = defined?(Demographics) ? Demographics.all_groups.keys : []
-
-      all_chars.select { |c|
-        next false unless c.respond_to?(:group)
-        group_keys.any? { |key| c.group(key).to_s.downcase == query.downcase }
-      }.uniq(&:id)
-    end
-
     def self.add_participant(inkling, target, added_by)
       return :already_shared if Inklings.is_participant?(inkling, target)
 
@@ -163,7 +234,7 @@ module AresMUSH
         added_at: Time.now)
 
       Inklings.notify_player(target,
-        "<inklings> #{added_by.name} has shared an inkling with you. Use +inkling #{inkling.id} to view it.")
+        "<inklings> #{Inklings.color_name(added_by.name)} has shared an inkling with you. Use +inkling #{inkling.id} to view it.")
 
       :added
     end
@@ -218,18 +289,45 @@ module AresMUSH
       "#{inkling.id}.#{seq}"
     end
 
+    # Shared JSON shape for a roll, used by both InklingApi and
+    # RollsApi (previously duplicated identically in both files).
+    def self.format_roll_json(roll)
+      {
+        id: roll.id,
+        ref: event_ref(roll.inkling, roll.seq),
+        roll_type: roll.roll_type,
+        roll_spec: roll.roll_spec,
+        result: roll.result,
+        result_value: roll.result_value,
+        character: roll.character ? roll.character.name : nil,
+        character_id: roll.character ? roll.character.id : nil,
+        target_character: roll.target_character ? roll.target_character.name : roll.npc_name,
+        target_character_id: roll.target_character ? roll.target_character.id : nil,
+        npc_name: roll.npc_name,
+        creator: roll.creator ? roll.creator.name : "Unknown",
+        creator_id: roll.creator ? roll.creator.id : nil,
+        private: roll.private == "true",
+        reroll_count: roll.reroll_count.to_i,
+        luck_cost: roll.luck_cost.to_i,
+        created_at: roll.created_at,
+        rolled_at: roll.rolled_at
+      }
+    end
+
     # Fixed job category so inkling-linked jobs land on their own board.
-    # Create this category in-game with: job/category create INKLINGS
+    # Create this category in-game with: job/createcategory INKLINGS
     # (override in inklings.yml if you want a different category name).
     def self.job_category
       Global.read_config("inklings", "job_category") || "INKLINGS"
     end
 
     # Makes sure the given inkling has a linked job, so staff are
-    # notified. Creates one if it doesn't have one yet; otherwise mirrors
-    # the message onto the existing job as a comment.
+    # notified. Creates one if it doesn't have one yet - or if the
+    # previously-linked one has since been closed, since mirroring
+    # onto a closed job isn't useful - otherwise mirrors the message
+    # onto the existing open job as a comment.
     def self.ensure_job(inkling, title, message, enactor)
-      if inkling.job
+      if inkling.job && inkling.job.status != "closed"
         mirror_to_job(inkling, message, enactor)
         return inkling.job
       else
@@ -280,7 +378,10 @@ module AresMUSH
       end
 
       if new_messages
-        inkling.update(player_unread: "true")
+        # A staff response arrived (via the linked job rather than an
+        # in-game +inkling command) - unlock the thread the same way a
+        # direct +inkling/advance or +inkling/private staff reply does.
+        inkling.update(player_unread: "true", locked: "false")
         # NOTE: t() is a CommandHandler helper and isn't available here,
         # since this runs from a plain module method, not a command
         # instance. Using a plain string instead - swap in your game's
@@ -288,6 +389,57 @@ module AresMUSH
         # this localized.
         Inklings.notify_player(inkling.character, "<inklings> You have a new inkling message. Use +inklings to view it.")
       end
+    end
+
+    # Renders the entire thread (every message and roll, in
+    # chronological order) as plain text, for the job body when a
+    # player submits. Deliberately includes everything regardless of
+    # per-message privacy flags, since it's going to staff - the same
+    # audience that can already see every private message/roll in the
+    # thread anyway. Deliberately plain (no ansi color codes), since
+    # this text is persisted onto a Job that's read back both in-game
+    # and through the web portal's Job view.
+    def self.compile_thread_text(inkling)
+      events = []
+
+      inkling.messages.to_a.each do |m|
+        who = m.author ? m.author.name : "?"
+        tags = []
+        tags << "gm" if m.is_gm_note == "true"
+        tags << private_tag_label(m, colorize: false) if m.is_private == "true"
+        tag_text = tags.empty? ? "" : " [#{tags.join(", ")}]"
+        ref = event_ref(inkling, m.seq)
+        header = "##{ref} #{format_time(m.created_at, '%m/%d %H:%M')} #{who}#{tag_text}"
+        events << [time_value(m.created_at), "#{header}\n#{m.text}"]
+      end
+
+      inkling.rolls.to_a.each do |r|
+        who = r.creator ? r.creator.name : "?"
+        target = r.target_character ? r.target_character.name : r.npc_name
+        target_text = target.to_s.blank? ? "" : " for #{target}"
+        private_tag = r.private.to_s == "true" ? " [private]" : ""
+        ref = event_ref(inkling, r.seq)
+        events << [time_value(r.created_at), "##{ref} #{format_time(r.created_at, '%m/%d %H:%M')} #{who} rolled #{r.roll_spec}#{target_text}#{private_tag}: #{r.result}"]
+      end
+
+      events.sort_by { |time, _text| time }.map { |_time, text| text }.join("\n#{'-' * 40}\n")
+    end
+
+    # +inkling/submit - locks the thread and sends its full current
+    # contents to a single staff job. If the inkling already has an
+    # OPEN linked job (e.g. this is a second round of submission after
+    # staff replied and the player added more), the full thread is
+    # mirrored as a fresh comment onto that same job rather than
+    # creating a second one - "a single job" means one ongoing job per
+    # inkling for as long as it stays open, not one job per submit. If
+    # the previously-linked job was closed, a new one is created,
+    # since that represents a finished round of review.
+    def self.submit_inkling(inkling, submitter)
+      title = submission_job_title(submitter, inkling.kind)
+      body = compile_thread_text(inkling)
+
+      ensure_job(inkling, title, body, submitter)
+      inkling.update(locked: "true")
     end
 
     def self.notify_player(char, message)
@@ -312,9 +464,12 @@ module AresMUSH
     #     has no explicit recipient stored since it's just visible to
     #     the author + staff
     #   - "private" as a fallback for any other case
-    def self.private_tag_label(message)
+    def self.private_tag_label(message, colorize: true)
       recipients = private_recipient_names(message)
-      return "private to #{recipients.join(", ")}" if recipients.any?
+      if recipients.any?
+        names = colorize ? recipients.map { |n| color_name(n) } : recipients
+        return "private to #{names.join(", ")}"
+      end
       return "private to staff" if message.is_staff.to_s != "true"
       "private"
     end
@@ -345,6 +500,8 @@ module AresMUSH
       when "inkling"
         if cmd.switch_is?("list")
           return InklingListCmd
+        elsif cmd.switch_is?("types")
+          return InklingTypesCmd
         elsif cmd.switch_is?("delete")
           return InklingDeleteCmd
         elsif cmd.switch_is?("reset")
@@ -363,9 +520,11 @@ module AresMUSH
           return InklingRollCmd
         elsif cmd.switch_is?("new")
           return InklingNewCmd
+        elsif cmd.switch_is?("submit")
+          return InklingSubmitCmd
         elsif cmd.switch_is?("close")
           return InklingCloseCmd
-        elsif ALL_KINDS.any? { |k| cmd.switch_is?(k) }
+        elsif all_kinds.any? { |k| cmd.switch_is?(k) }
           return InklingStartCmd
         else
           return InklingViewCmd
@@ -373,6 +532,8 @@ module AresMUSH
       when "inklings"
         if cmd.switch_is?("delete")
           return InklingDeleteCmd
+        elsif cmd.switch_is?("types")
+          return InklingTypesCmd
         elsif cmd.switch_is?("reset")
           return InklingResetCmd
         elsif cmd.switch_is?("advance") || cmd.switch_is?("reply")
@@ -389,9 +550,11 @@ module AresMUSH
           return InklingRollCmd
         elsif cmd.switch_is?("new")
           return InklingNewCmd
+        elsif cmd.switch_is?("submit")
+          return InklingSubmitCmd
         elsif cmd.switch_is?("close")
           return InklingCloseCmd
-        elsif ALL_KINDS.any? { |k| cmd.switch_is?(k) }
+        elsif all_kinds.any? { |k| cmd.switch_is?(k) }
           return InklingStartCmd
         end
 
@@ -402,6 +565,90 @@ module AresMUSH
         return InklingsCmd
       end
       return nil
+    end
+
+    # Per https://www.aresmush.com/tutorials/code/events.html - the
+    # Dispatcher asks every plugin for a handler by event name; we
+    # only care about CronEvent (see InklingXpCronHandler).
+    def self.get_event_handler(event_name)
+      case event_name
+      when "CronEvent"
+        return InklingXpCronHandler
+      end
+      nil
+    end
+
+    # --- Bonus XP for a configured inkling type -------------------------
+    # See the inkling_type_xp/xp_amount/award_cron settings documented
+    # in game/config/inklings.yml, and InklingXpCronHandler for the
+    # CronEvent hookup (https://www.aresmush.com/tutorials/code/cron.html).
+
+    def self.xp_award_type
+      Global.read_config("inklings", "inkling_type_xp") || "update"
+    end
+
+    def self.xp_award_amount
+      Global.read_config("inklings", "xp_amount") || 1
+    end
+
+    def self.xp_cron_state
+      InklingXpCronState.all.to_a.first || InklingXpCronState.create
+    end
+
+    # Runs one award cycle: finds every approved character who has
+    # submitted an inkling of the configured type since the last cycle
+    # completed, and awards them bonus XP via FS3Skills.modify_xp -
+    # the same helper FS3's own XP-granting code uses (see
+    # plugins/fs3skills/helpers/xp.rb) - rather than reimplementing XP
+    # logic here. No-ops entirely if FS3Skills isn't loaded.
+    #
+    # Idempotent/restart-safe: the "period_start" identifying this
+    # cycle only advances once every character has been processed and
+    # InklingXpCronState is updated, at the very end. If the process
+    # crashes partway through, a retry reuses the same period_start,
+    # and the per-character InklingXpAward records already written
+    # prevent re-awarding anyone already processed - only the
+    # remaining, not-yet-processed characters get evaluated. (The one
+    # remaining edge case: a crash in the narrow window between
+    # granting XP and writing that character's award record could in
+    # theory cause one extra award for that one character - an
+    # intentionally-accepted, very small risk, favoring "might award
+    # once extra in a rare crash" over "might silently skip someone.")
+    def self.run_xp_award_cycle(now)
+      return if !defined?(FS3Skills)
+
+      state = xp_cron_state
+      # First-ever run: look back a bounded window (1 week) rather
+      # than "since the beginning of time", so turning this feature on
+      # doesn't suddenly sweep in and reward every matching inkling in
+      # the game's entire history.
+      period_start = state.last_period_end ? time_value(state.last_period_end) : (now - (86400 * 7))
+      period_key = period_start.to_s
+
+      kind = xp_award_type
+      amount = xp_award_amount
+
+      Character.all.to_a.select { |c| c.is_approved? }.each do |char|
+        next if InklingXpAward.find(character_id: char.id, period_start: period_key).any?
+
+        submitted = Inkling.find(character_id: char.id, kind: kind).to_a.any? { |i|
+          t = time_value(i.created_at)
+          t > period_start && t <= now
+        }
+        next if !submitted
+
+        FS3Skills.modify_xp(char, amount)
+
+        InklingXpAward.create(
+          character: char,
+          period_start: period_key,
+          awarded_at: Time.now,
+          xp_amount: amount)
+
+        Global.logger.info("Inklings: awarded #{amount} XP to #{char.name} for a #{kind} inkling.")
+      end
+
+      state.update(last_period_end: now.to_s)
     end
   end
 end

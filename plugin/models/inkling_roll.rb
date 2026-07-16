@@ -21,6 +21,12 @@ module AresMUSH
     # For static: description of what this number represents
     attribute :roll_spec
 
+    # Free-text NPC name for "npc" rolls that aren't tied to an actual
+    # Character record (e.g. a one-off NPC with no character sheet).
+    # Used for display when target_character isn't set. Ignored for
+    # "player" and "static" rolls.
+    attribute :npc_name
+
     # The result of the roll as a string (e.g. "8" or "Mediocre (5)")
     # This is free-form to support any roll system
     attribute :result

@@ -21,18 +21,18 @@ module AresMUSH
 
       def check_approved
         return nil if Inklings.can_manage_inklings?(enactor)
-        return nil if Inklings::CHARGEN_KINDS.include?(self.kind)
+        return nil if Inklings.chargen_kinds.include?(self.kind)
         return t('inklings.char_not_approved') unless enactor.is_approved?
         nil
       end
 
       def check_valid_kind
-        return nil if Inklings::ALL_KINDS.include?(self.kind)
+        return nil if Inklings.valid_kind?(self.kind)
         return t('inklings.invalid_kind')
       end
 
       def check_permission
-        return nil if !Inklings::STAFF_KINDS.include?(self.kind)
+        return nil if !Inklings.staff_kinds.include?(self.kind)
         return nil if Inklings.can_manage_inklings?(enactor)
         return t('dispatcher.not_allowed')
       end
@@ -45,7 +45,8 @@ module AresMUSH
           character: enactor,
           creator: enactor,
           created_at: Time.now,
-          player_unread: "false")
+          player_unread: "false",
+          locked: "false")
 
         InklingMessage.create(
           inkling: inkling,
@@ -57,15 +58,10 @@ module AresMUSH
           is_private: "false",
           is_gm_note: "false")
 
-        if !Inklings.can_manage_inklings?(enactor)
-          Inklings.ensure_job(inkling,
-            "#{enactor.name} - #{self.title}",
-            self.text,
-            enactor)
-        end
-
-        client.emit_success t('inklings.thread_started', :id => inkling.id)
-        warning = Inklings.staff_target_warning(enactor) if Inklings.can_manage_inklings?(enactor)
+        notice = t('inklings.thread_started', :id => inkling.id)
+        notice << " #{t('inklings.not_yet_submitted_notice', :id => inkling.id)}" unless Inklings.can_manage_inklings?(enactor)
+        client.emit_success notice
+        warning = Inklings.staff_target_warning(enactor, inkling.id) if Inklings.can_manage_inklings?(enactor)
         client.emit warning if warning
       end
     end

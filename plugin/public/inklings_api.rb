@@ -1,6 +1,23 @@
 module AresMUSH
   module Inklings
     class InklingApi
+      # GET /api/inklings/types
+      # Live type list, sourced from the same game/config/inklings.yml
+      # config that +inkling/types reads in-game - so the web portal
+      # never needs its own hardcoded copy of the type list (which
+      # previously drifted out of sync with the actual backend kinds).
+      def self.get_types
+        types = Inklings.all_kinds.each_with_object({}) do |kind, hash|
+          hash[kind] = {
+            name: Inklings.kind_label(kind),
+            description: Inklings.kind_description(kind),
+            category: (Inklings.type_config[kind] || {})["category"]
+          }
+        end
+
+        { types: types }
+      end
+
       # GET /api/characters/:char_id/inklings
       def self.get_inklings(char_id, viewer_id, status_filter: "open")
         char = Character[char_id]
@@ -17,7 +34,10 @@ module AresMUSH
           return { error: "Your character must be approved to access inklings." }
         end
 
-        own = char.inklings.to_a
+        # Query explicitly by character_id rather than char.inklings
+        # (a reverse-collection macro) - see the note in
+        # InklingListCmd for why this is safer.
+        own = Inkling.find(character_id: char.id).to_a
         shared = InklingParticipant.find(character_id: viewer.id).map(&:inkling).compact
         group_matched = Inkling.all.to_a.select { |i| Inklings.is_group_participant?(i, viewer) }
         inklings = (own + shared + group_matched).uniq(&:id)
@@ -48,12 +68,12 @@ module AresMUSH
           return { error: "Not authorized" }
         end
 
-        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved? || Inklings::CHARGEN_KINDS.include?(kind)
+        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved? || Inklings.chargen_kinds.include?(kind)
           return { error: "Your character must be approved to create inklings." }
         end
 
-        return { error: "Invalid inkling kind" } if !Inklings::ALL_KINDS.include?(kind)
-        if Inklings::STAFF_KINDS.include?(kind) && !Inklings.can_manage_inklings?(viewer)
+        return { error: "Invalid inkling kind" } if !Inklings.valid_kind?(kind)
+        if Inklings.staff_kinds.include?(kind) && !Inklings.can_manage_inklings?(viewer)
           return { error: "Not authorized" }
         end
 
@@ -67,7 +87,8 @@ module AresMUSH
           character: char,
           creator: viewer,
           created_at: Time.now,
-          player_unread: viewer.id == char.id ? "false" : "true")
+          player_unread: viewer.id == char.id ? "false" : "true",
+          locked: "false")
 
         InklingMessage.create(
           inkling: inkling,
@@ -80,9 +101,7 @@ module AresMUSH
           is_gm_note: "false",
           private_recipient_ids: "")
 
-        if viewer.id == char.id
-          Inklings.ensure_job(inkling, "#{viewer.name} - #{title}", text, viewer)
-        else
+        if viewer.id != char.id
           Inklings.notify_player(char, "<inklings> You have a new inkling.")
         end
 
@@ -124,6 +143,7 @@ module AresMUSH
         return { error: "Not authorized" } if !can_view_inkling?(inkling, viewer)
         return { error: "Your character must be approved to reply to inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
         return { error: "This inkling is closed" } if inkling.status == "closed"
+        return { error: "This inkling has been submitted and is locked until staff respond." } if inkling.locked == "true" && !Inklings.can_manage_inklings?(viewer)
         return { error: "Reply text cannot be empty" } if text.to_s.blank?
 
         is_staff = Inklings.can_manage_inklings?(viewer)
@@ -153,13 +173,12 @@ module AresMUSH
 
         job_text = is_private ? "[Private] #{text}" : text
         if is_staff
-          inkling.update(player_unread: "true")
+          # A staff reply is what unlocks a submitted thread.
+          inkling.update(player_unread: "true", locked: "false")
           Inklings.mirror_to_job(inkling, job_text, viewer)
           recipients = recipient_ids.to_s.split(",").map(&:strip).reject(&:empty?)
           notify_target = recipients.first ? Character[recipients.first] : inkling.character
           Inklings.notify_player(notify_target || inkling.character, "<inklings> You have a new inkling message. Use +inklings to view it.")
-        else
-          Inklings.ensure_job(inkling, "#{viewer.name} advanced #{inkling.title}", job_text, viewer)
         end
 
         { message: format_message(message) }
@@ -186,7 +205,38 @@ module AresMUSH
         { inkling: format_inkling_summary(inkling, viewer) }
       end
 
+      # POST /api/characters/:char_id/inklings/:inkling_id/submit
+      # Locks the thread and sends its full contents to a single staff
+      # job - see Inklings.submit_inkling. Building up a thread does
+      # NOT notify staff by itself; nothing reaches staff until this
+      # is called (in-game: +inkling/submit).
+      def self.submit_inkling(char_id, inkling_id, viewer_id)
+        char = Character[char_id]
+        return { error: "Character not found" } if !char
+
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        viewer = Character[viewer_id]
+        return { error: "Viewer not found" } if !viewer
+
+        return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
+        return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
+        return { error: "Your character must be approved to submit inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
+        return { error: "This inkling is closed" } if inkling.status == "closed"
+        return { error: "This inkling has already been submitted and is awaiting a staff response." } if inkling.locked == "true"
+
+        Inklings.submit_inkling(inkling, viewer)
+
+        { inkling: format_inkling_summary(inkling, viewer) }
+      end
+
       # DELETE /api/characters/:char_id/inklings/:inkling_id
+      # Staff delete the thread outright and immediately. Players can
+      # no longer delete their own thread directly - this closes it and
+      # files a job asking staff to review and approve a permanent
+      # deletion (a staff member then carries that out themselves,
+      # either here or via +inkling/delete in-game).
       def self.delete_inkling(char_id, inkling_id, viewer_id)
         char = Character[char_id]
         return { error: "Character not found" } if !char
@@ -201,17 +251,23 @@ module AresMUSH
         return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
         return { error: "Your character must be approved to delete inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
 
-        unless Inklings.can_manage_inklings?(viewer)
-          transcript = inkling.messages.map { |m| "#{m.author ? m.author.name : "?"}: #{m.text}" }.join(" / ")
-          Inklings.ensure_job(inkling, "#{viewer.name} deleted #{inkling.title}", "The player deleted this inkling. Its contents were: #{transcript}", viewer)
+        if Inklings.can_manage_inklings?(viewer)
+          inkling.messages.each { |m| m.delete }
+          inkling.rolls.each { |r| r.delete }
+          InklingParticipant.find(inkling_id: inkling.id).each { |p| p.delete }
+          inkling.delete
+
+          return { success: true, deleted: true }
         end
 
-        inkling.messages.each { |m| m.delete }
-        inkling.rolls.each { |r| r.delete }
-        InklingParticipant.find(inkling_id: inkling.id).each { |p| p.delete }
-        inkling.delete
+        inkling.update(status: "closed")
+        transcript = inkling.messages.map { |m| "#{m.author ? m.author.name : "?"}: #{m.text}" }.join(" / ")
+        Inklings.ensure_job(inkling,
+          Inklings.deletion_request_title(viewer, inkling.id),
+          "The player has requested this inkling be permanently deleted. Current contents: #{transcript}",
+          viewer)
 
-        { success: true }
+        { success: true, deleted: false, inkling: format_inkling_summary(inkling, viewer) }
       end
 
       # POST /api/characters/:char_id/inklings/:inkling_id/share
@@ -288,9 +344,12 @@ module AresMUSH
         inkling.rolls.to_a.sort_by { |r| Inklings.time_value(r.created_at) }.select { |r| Inklings.can_see_roll?(r, viewer) }
       end
 
-      def self.format_inkling_summary(inkling, viewer = nil)
-        visible_messages = viewer ? visible_messages_for(inkling, viewer) : inkling.messages.to_a
-        visible_rolls = viewer ? visible_rolls_for(inkling, viewer) : inkling.rolls.to_a
+      # visible_messages/visible_rolls can be passed in when the caller
+      # (format_inkling_detail) has already computed them, to avoid
+      # doing the sort+filter pass over the same records twice.
+      def self.format_inkling_summary(inkling, viewer = nil, visible_messages: nil, visible_rolls: nil)
+        visible_messages ||= viewer ? visible_messages_for(inkling, viewer) : inkling.messages.to_a
+        visible_rolls ||= viewer ? visible_rolls_for(inkling, viewer) : inkling.rolls.to_a
 
         {
           id: inkling.id,
@@ -303,6 +362,7 @@ module AresMUSH
           message_count: visible_messages.size,
           roll_count: visible_rolls.size,
           player_unread: viewer && inkling.character != viewer ? false : inkling.player_unread == "true",
+          locked: inkling.locked == "true",
           linked_job: inkling.job ? { id: inkling.job.id, status: inkling.job.status } : nil
         }
       end
@@ -311,7 +371,7 @@ module AresMUSH
         messages = viewer ? visible_messages_for(inkling, viewer) : inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }
         rolls = viewer ? visible_rolls_for(inkling, viewer) : inkling.rolls.to_a.sort_by { |r| Inklings.time_value(r.created_at) }
 
-        format_inkling_summary(inkling, viewer).merge(
+        format_inkling_summary(inkling, viewer, visible_messages: messages, visible_rolls: rolls).merge(
           messages: messages.map { |m| format_message(m) },
           rolls: rolls.map { |r| format_roll(r) },
           shared_with: format_shared_with(inkling)
@@ -342,25 +402,7 @@ module AresMUSH
       end
 
       def self.format_roll(roll)
-        {
-          id: roll.id,
-          ref: Inklings.event_ref(roll.inkling, roll.seq),
-          roll_type: roll.roll_type,
-          roll_spec: roll.roll_spec,
-          result: roll.result,
-          result_value: roll.result_value,
-          character: roll.character ? roll.character.name : nil,
-          character_id: roll.character ? roll.character.id : nil,
-          target_character: roll.target_character ? roll.target_character.name : nil,
-          target_character_id: roll.target_character ? roll.target_character.id : nil,
-          creator: roll.creator ? roll.creator.name : "Unknown",
-          creator_id: roll.creator ? roll.creator.id : nil,
-          private: roll.private == "true",
-          reroll_count: roll.reroll_count.to_i,
-          luck_cost: roll.luck_cost.to_i,
-          created_at: roll.created_at,
-          rolled_at: roll.rolled_at
-        }
+        Inklings.format_roll_json(roll)
       end
     end
   end

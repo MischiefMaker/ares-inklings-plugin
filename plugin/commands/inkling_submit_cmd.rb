@@ -1,7 +1,14 @@
 module AresMUSH
   module Inklings
-    # +inkling/close <id>
-    class InklingCloseCmd
+    # +inkling/submit <id>
+    #
+    # Locks the inkling and sends its full current contents to a
+    # single staff job for review. Building up a thread (replies,
+    # rolls) does NOT notify staff or create a job by itself - nothing
+    # reaches staff until this command is run. See
+    # Inklings.submit_inkling for what "locks" and "a single job"
+    # actually mean.
+    class InklingSubmitCmd
       include CommandHandler
 
       attr_accessor :id
@@ -14,8 +21,8 @@ module AresMUSH
         [self.id]
       end
 
-      # Memoized so check_valid_inkling, check_can_close, and handle
-      # don't each independently re-fetch the same record.
+      # Memoized so the checks below and handle don't each
+      # independently re-fetch the same record.
       def inkling
         @inkling ||= Inklings.find_inkling(self.id)
       end
@@ -31,7 +38,7 @@ module AresMUSH
         return nil
       end
 
-      def check_can_close
+      def check_can_submit
         # Checks run in alphabetical order by method name, not
         # declaration order, so check_valid_inkling may not have run
         # yet. Bail out quietly here and let check_valid_inkling report
@@ -42,14 +49,21 @@ module AresMUSH
         return t('dispatcher.not_allowed')
       end
 
+      def check_not_closed
+        return nil if !inkling
+        return t('inklings.thread_is_closed') if inkling.status == "closed"
+        nil
+      end
+
+      def check_not_already_locked
+        return nil if !inkling
+        return t('inklings.already_submitted') if inkling.locked == "true"
+        nil
+      end
+
       def handle
-        inkling.update(status: "closed")
-
-        if inkling.job
-          Jobs.close_job(enactor, inkling.job, t('inklings.closed_via_inkling'))
-        end
-
-        client.emit_success t('inklings.thread_closed_msg')
+        Inklings.submit_inkling(inkling, enactor)
+        client.emit_success t('inklings.submitted_success')
       end
     end
   end

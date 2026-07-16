@@ -16,6 +16,13 @@ module AresMUSH
         [self.id, self.text]
       end
 
+      # Memoized so check_valid_inkling, check_can_reply,
+      # check_not_closed, and handle don't each independently re-fetch
+      # the same record.
+      def inkling
+        @inkling ||= Inklings.find_inkling(self.id)
+      end
+
       def check_approved
         return nil if Inklings.can_manage_inklings?(enactor)
         return t('inklings.char_not_approved') unless enactor.is_approved?
@@ -23,12 +30,11 @@ module AresMUSH
       end
 
       def check_valid_inkling
-        return t('inklings.invalid_id') if !Inklings.find_inkling(self.id)
+        return t('inklings.invalid_id') if !inkling
         return nil
       end
 
       def check_can_reply
-        inkling = Inklings.find_inkling(self.id)
         # Checks run in alphabetical order by method name, not
         # declaration order, so check_valid_inkling may not have run
         # yet. Bail out quietly here and let check_valid_inkling report
@@ -40,14 +46,23 @@ module AresMUSH
       end
 
       def check_not_closed
-        inkling = Inklings.find_inkling(self.id)
         return nil if !inkling
         return t('inklings.thread_is_closed') if inkling.status == "closed"
         return nil
       end
 
+      def check_not_locked
+        # Checks run in alphabetical order by method name, not
+        # declaration order, so check_valid_inkling may not have run
+        # yet. Staff always bypass the lock - it's their reply that
+        # clears it in the first place.
+        return nil if !inkling
+        return nil if Inklings.can_manage_inklings?(enactor)
+        return t('inklings.thread_is_locked') if inkling.locked == "true"
+        nil
+      end
+
       def handle
-        inkling = Inklings.find_inkling(self.id)
         is_staff = Inklings.can_manage_inklings?(enactor)
 
         # Auto-private: if staff are replying and the last message in the
@@ -77,16 +92,14 @@ module AresMUSH
           private_recipient_ids: auto_recipients)
 
         if is_staff
-          inkling.update(player_unread: "true")
+          # A staff reply is what unlocks a submitted thread.
+          inkling.update(player_unread: "true", locked: "false")
           Inklings.mirror_to_job(inkling, job_text, enactor)
           Inklings.notify_player(inkling.character, t('inklings.new_message_notice'))
-        else
-          Inklings.ensure_job(inkling,
-            "#{enactor.name} replied - #{t("inklings.kind_#{inkling.kind}")}",
-            self.text, enactor)
         end
 
         notice = auto_private ? t('inklings.advance_added_auto_private') : t('inklings.advance_added')
+        notice << " #{t('inklings.not_yet_submitted_notice', :id => inkling.id)}" unless is_staff
         client.emit_success notice
       end
     end

@@ -1,0 +1,22 @@
+{{!
+  MERGE-IN SNIPPET - not a complete file.
+
+  Add this <div> inside the existing tab-content container in your
+  game's ares-webportal/app/templates/components/profile-custom.hbs,
+  alongside any other plugins' custom tab panes already there. The id
+  here must match the href in profile-custom-tabs.snippet.hbs.
+
+  This is a self-contained invocation of this plugin's own
+  inklings-tab component (app/components/inklings-tab.js +
+  app/templates/components/inklings-tab.hbs) - it makes its own API
+  calls and saves its own changes immediately, so it doesn't need to
+  participate in the surrounding Profile page's overall save flow.
+
+  Adjust this.char / this.viewer / this.isStaff below to whatever the
+  surrounding profile-custom.hbs actually calls those properties in
+  your install - these are the common names, but verify against the
+  rest of that template.
+}}
+<div class="tab-pane fade" id="inklings-tab-pane">
+  {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
+</div>

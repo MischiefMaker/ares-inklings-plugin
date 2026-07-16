@@ -6,9 +6,10 @@ module AresMUSH
       # roll_spec: skill/attribute name for player/npc, description for static
       # result: the result string (e.g. "8", "Good (7)")
       # result_value: numeric value for sorting
-      # npc_char_id: optional character ID for the NPC target (npc rolls only)
+      # npc_char_id: optional character ID for the NPC target, if it's tied to an actual Character record (npc rolls only)
+      # npc_name: optional free-text NPC name for display, for NPCs with no Character record (npc rolls only)
       # is_private: whether only player and staff can see this
-      def self.add_roll(inkling_id, viewer_id, roll_type, roll_spec, result, result_value, npc_char_id: nil, is_private: false)
+      def self.add_roll(inkling_id, viewer_id, roll_type, roll_spec, result, result_value, npc_char_id: nil, npc_name: nil, is_private: false)
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
@@ -21,6 +22,10 @@ module AresMUSH
 
         unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved?
           return { error: "Your character must be approved to add rolls." }
+        end
+
+        if inkling.locked == "true" && !Inklings.can_manage_inklings?(viewer)
+          return { error: "This inkling has been submitted and is locked until staff respond." }
         end
 
         case roll_type
@@ -42,6 +47,7 @@ module AresMUSH
           inkling: inkling,
           character: (roll_type == "player") ? viewer : nil,
           target_character: target,
+          npc_name: (roll_type == "npc" && !target) ? npc_name.to_s.strip.presence : nil,
           creator: viewer,
           roll_type: roll_type,
           roll_spec: roll_spec,
@@ -131,28 +137,7 @@ module AresMUSH
       private
 
       def self.format_roll(roll)
-        target_name = roll.target_character ? roll.target_character.name : nil
-        creator_name = roll.creator ? roll.creator.name : "Unknown"
-
-        {
-          id: roll.id,
-          ref: Inklings.event_ref(roll.inkling, roll.seq),
-          roll_type: roll.roll_type,
-          roll_spec: roll.roll_spec,
-          result: roll.result,
-          result_value: roll.result_value,
-          character: roll.character ? roll.character.name : nil,
-          character_id: roll.character ? roll.character.id : nil,
-          target_character: target_name,
-          target_character_id: roll.target_character ? roll.target_character.id : nil,
-          creator: creator_name,
-          creator_id: roll.creator ? roll.creator.id : nil,
-          private: roll.private == "true",
-          reroll_count: roll.reroll_count.to_i,
-          luck_cost: roll.luck_cost.to_i,
-          created_at: roll.created_at,
-          rolled_at: roll.rolled_at
-        }
+        Inklings.format_roll_json(roll)
       end
     end
   end

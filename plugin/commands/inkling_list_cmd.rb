@@ -21,7 +21,13 @@ module AresMUSH
 
       def handle
         ClassTargetFinder.with_a_character(self.target_name, client, enactor) do |model|
-          inklings = model.inklings.sort_by { |i| Inklings.time_value(i.created_at) }.reverse
+          # Query explicitly by character_id rather than using
+          # model.inklings (a reverse-collection macro). That macro was
+          # found to sometimes return the enactor's own threads instead
+          # of the target's, so an explicit query removes any ambiguity
+          # about which character's threads we're pulling.
+          inklings = Inkling.find(character_id: model.id).to_a
+            .sort_by { |i| Inklings.time_value(i.created_at) }.reverse
           inklings.each { |i| Inklings.sync_job_replies(i) }
 
           if inklings.empty?
@@ -31,10 +37,11 @@ module AresMUSH
 
           list = inklings.map do |i|
             job_ref = i.job ? "job ##{i.job.id} [#{i.job.status}]" : t('inklings.no_linked_job')
-            title = i.title.to_s.blank? ? t("inklings.kind_#{i.kind}") : i.title
+            title = i.title.to_s.blank? ? Inklings.kind_label(i.kind) : i.title
             unread = i.player_unread == "true"
             count_text = "#{i.messages.to_a.size} msg(s)#{unread ? "%xh*%xn" : ""}"
-            "##{i.id} [#{i.kind.upcase}] #{title} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} #{job_ref} - #{count_text}"
+            lock_text = i.locked == "true" ? " %xh%crLOCKED%xn" : ""
+            "##{i.id} [#{Inklings.color_type(i.kind.upcase)}] #{Inklings.color_title(title)} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} #{job_ref} - #{count_text}#{lock_text}"
           end
 
           template = BorderedPagedListTemplate.new list, cmd.page, 25,

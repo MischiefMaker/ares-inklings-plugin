@@ -11,11 +11,11 @@ module AresMUSH
 
         unless secret && goal
           if !secret
-            Login.emit_ooc_if_logged_in(char, "<inklings> %xh%crCharGen:%xn Please create a secret inkling describing an IC secret your character holds. Use: +inkling/secret <text>")
+            Login.emit_ooc_if_logged_in(char, "<inklings> %xh%crCharGen:%xn Please create a secret inkling describing an IC secret your character holds. Use: +inkling/secret <title>/<text>")
           end
 
           if !goal
-            Login.emit_ooc_if_logged_in(char, "<inklings> %xh%crCharGen:%xn Please create a goal inkling describing what your character is working toward. Use: +inkling/goal <text>")
+            Login.emit_ooc_if_logged_in(char, "<inklings> %xh%crCharGen:%xn Please create a goal inkling describing what your character is working toward. Use: +inkling/goal <title>/<text>")
           end
 
           return false  # Return false to indicate chargen is not yet complete

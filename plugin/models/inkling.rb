@@ -9,10 +9,11 @@ module AresMUSH
   class Inkling < Ohm::Model
     include ObjectModel
 
-    # kind is one of: hint, vision, nudge, hook (staff -> player),
-    # action, research, request, update, pitch, goal (player -> staff),
-    # or secret (IC character secret, shareable with other players).
-    # Rolls are not a kind — they can be attached to any inkling.
+    # kind is a configurable type - see the "types" section of
+    # game/config/inklings.yml for the authoritative list of valid
+    # kinds, their categories, names, and descriptions
+    # (Inklings.type_config reads it). Rolls are not a kind — they can
+    # be attached to any inkling.
     attribute :kind
     attribute :title
     # "open" or "closed"
@@ -25,6 +26,14 @@ module AresMUSH
     # "true"/"false" - whether the player has unread staff messages
     # on this thread.
     attribute :player_unread
+    # "true"/"false" - whether the thread is locked pending a staff
+    # response. Set by +inkling/submit (see Inklings.submit_inkling),
+    # cleared automatically the moment staff reply (in-game via
+    # +inkling/advance or +inkling/private, or via the linked job
+    # itself - see Inklings.sync_job_replies). While locked, non-staff
+    # cannot add replies, private replies, or rolls - see
+    # check_not_locked in the relevant commands.
+    attribute :locked
 
     # The player this thread concerns. Always a player character,
     # regardless of who started the thread or which direction it runs.
@@ -97,9 +106,10 @@ module AresMUSH
     index :character_id
   end
 
-  # Reverse reference so char.inklings gives every thread that character
-  # is the subject of.
-  class Character
-    collection :inklings, "AresMUSH::Inkling"
-  end
+  # NOTE: There is intentionally no `collection :inklings` reverse
+  # reference on Character here. That reverse-collection macro was the
+  # source of a bug where it could return the wrong character's
+  # threads. Everywhere in this plugin that needs a character's
+  # inklings queries explicitly instead:
+  #   Inkling.find(character_id: char.id).to_a
 end

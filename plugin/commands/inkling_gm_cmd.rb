@@ -16,8 +16,14 @@ module AresMUSH
         [self.id, self.text]
       end
 
+      # Memoized so check_valid_inkling, check_not_closed, and handle
+      # don't each independently re-fetch the same record.
+      def inkling
+        @inkling ||= Inklings.find_inkling(self.id)
+      end
+
       def check_valid_inkling
-        return t('inklings.invalid_id') if !Inklings.find_inkling(self.id)
+        return t('inklings.invalid_id') if !inkling
         nil
       end
 
@@ -27,7 +33,6 @@ module AresMUSH
       end
 
       def check_not_closed
-        inkling = Inklings.find_inkling(self.id)
         # Checks run in alphabetical order by method name, not
         # declaration order, so check_valid_inkling may not have run
         # yet. Bail out quietly here and let check_valid_inkling report
@@ -38,8 +43,6 @@ module AresMUSH
       end
 
       def handle
-        inkling = Inklings.find_inkling(self.id)
-
         InklingMessage.create(
           inkling: inkling,
           author: enactor,

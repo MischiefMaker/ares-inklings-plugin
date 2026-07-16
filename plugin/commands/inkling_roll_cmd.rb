@@ -16,6 +16,13 @@ module AresMUSH
         [self.id, self.roll_command]
       end
 
+      # Memoized so check_valid_inkling, check_can_roll,
+      # check_not_closed, and handle don't each independently re-fetch
+      # the same record.
+      def inkling
+        @inkling ||= Inklings.find_inkling(self.id)
+      end
+
       def check_approved
         return nil if Inklings.can_manage_inklings?(enactor)
         return t('inklings.char_not_approved') unless enactor.is_approved?
@@ -23,12 +30,11 @@ module AresMUSH
       end
 
       def check_valid_inkling
-        return t('inklings.invalid_id') if !Inklings.find_inkling(self.id)
+        return t('inklings.invalid_id') if !inkling
         nil
       end
 
       def check_can_roll
-        inkling = Inklings.find_inkling(self.id)
         # Checks run in alphabetical order by method name, not
         # declaration order, so check_valid_inkling may not have run
         # yet. Bail out quietly here and let check_valid_inkling report
@@ -40,9 +46,16 @@ module AresMUSH
       end
 
       def check_not_closed
-        inkling = Inklings.find_inkling(self.id)
         return nil if !inkling
         return t('inklings.thread_is_closed') if inkling.status == "closed"
+        nil
+      end
+
+      def check_not_locked
+        # Staff always bypass the lock.
+        return nil if !inkling
+        return nil if Inklings.can_manage_inklings?(enactor)
+        return t('inklings.thread_is_locked') if inkling.locked == "true"
         nil
       end
 
@@ -52,8 +65,6 @@ module AresMUSH
       end
 
       def handle
-        inkling = Inklings.find_inkling(self.id)
-
         target_name = nil
         roll_str = self.roll_command
         if self.roll_command.include?("/")

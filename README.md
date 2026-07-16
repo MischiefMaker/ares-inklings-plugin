@@ -4,30 +4,78 @@ Inklings is a plugin for [AresMUSH](https://aresmush.com) that gives players and
 
 ## Features
 
-- **Player-initiated threads:** initiative, request, update, pitch, goal, secret
-- **Staff-initiated threads:** hint, vision, nudge, hook
+- **Configurable types:** inkling types (hint, vision, goal, secret, etc.) are defined in `game/config/inklings.yml`, not hardcoded - add, remove, rename, or redescribe them there. Run `+inkling/types` in-game for the current live listing.
+- Every thread requires a title, whether started by a player or staff (matching `+inkling/new`'s `<title>/<text>` syntax)
 - Messages can be public, private (to specific participants + staff), or GM-only notes
 - Threads can be shared with individual characters or with everyone matching a demographics group
-- Dice rolls (FS3 or custom/static) can be attached to any thread, with optional luck-point rerolls from the web portal
-- Every thread automatically gets a linked job in an `INKLINGS` job category, so staff are notified through the normal job workflow without duplicating data
+- Dice rolls (FS3, custom/static, or NPC rolls with a free-text NPC name) can be attached to any thread, with optional luck-point rerolls from the web portal
+- Players build up a thread freely - staff see nothing until the player explicitly runs `+inkling/submit`, which locks the thread and sends its full contents to a single staff job. The lock clears automatically the moment staff reply.
+- Players can no longer delete their own thread outright - `+inkling/delete` closes it and files a job requesting staff approval for the permanent deletion
 - Every message and roll gets a permanent reference number in the form `<inkling id>.<sequence>` (e.g. `14.3`) for pointing back at a specific entry later
 - The thread view shows a "Shared With" section listing which non-staff characters and groups have access
-- A React tab (`InklingsTab.jsx`) for managing inklings from the character's web portal profile
+- Names, titles, and inkling types are ansi-colored in in-game output (see [Using Formatting Codes](https://aresmush.com/tutorials/code/formatting.html))
+- Optional periodic bonus XP (via a Cron job) for characters who've submitted a configured inkling type - requires FS3Skills
+- A native Ember web portal component (`inklings-tab`) for browsing/managing inklings - see "Chargen & Profile Web Integration" for installation
 - Chargen and app-review hooks that require a secret and a goal inkling before a character can be approved
 - A coder-only, double-confirmation `+inkling/reset` command for wiping the system during development/testing
 
 ## Installation
 
 1. Copy the `plugin/` folder into your game's `plugins/inklings/` directory.
-2. Copy the contents of `webportal/components/` into your game's web portal component directory (wherever your install serves character-profile tab components from).
+2. See **"Chargen & Profile Web Integration"** below for the web portal side - it's a native Ember component plus a couple of small merge-in snippets, none of which are a simple drop-in-and-restart step.
 3. Copy `game/config/inklings.yml` into your game's `game/config/` directory, or merge its contents into an existing config if you already have one.
 4. Restart your game.
 5. In-game, create the job category Inklings expects:
    ```
-   job/category create INKLINGS
+   job/createcategory INKLINGS
    job/categoryroles INKLINGS=<roles that should see inkling-related jobs>
    ```
 6. Confirm the `manage_game` permission exists and is assigned to your Coder role, since `+inkling/reset` depends on it. See [Using Permissions in Code](https://aresmush.com/tutorials/manage/roles.html#using-permissions-in-code) if you need to add it.
+
+## Chargen & Profile Web Integration
+
+The web portal side is now native AresMUSH (classic Ember - `.hbs` templates + `.js` component classes), not the earlier React reference version. It's split into two independent pieces:
+
+1. **A real, self-contained `inklings-tab` component** (`webportal/app/components/inklings-tab.js` + `webportal/app/templates/components/inklings-tab.hbs`) with the full browsing/reply/roll/share/close/delete feature set. It talks directly to this plugin's own REST API (`plugin/public/inklings_api.rb`, `rolls_api.rb`) and saves its own changes immediately, so it does **not** need to participate in AresMUSH's [Custom Character Fields](https://www.aresmush.com/tutorials/code/hooks/char-fields.html) hook or the Profile page's save flow at all - it only needs to be *displayed* somewhere.
+2. **A small Custom Character Fields integration** for just the two chargen-required fields (secret, goal), since that hook is genuinely designed for simple fields - the tutorial's own worked example is a single "goals" text box - not a full threaded-messaging UI.
+
+### Installing the `inklings-tab` component
+
+Copy into your `ares-webportal` checkout, preserving the paths:
+
+| From this plugin | To your `ares-webportal` |
+|---|---|
+| `webportal/app/components/inklings-tab.js` | `app/components/inklings-tab.js` |
+| `webportal/app/templates/components/inklings-tab.hbs` | `app/templates/components/inklings-tab.hbs` |
+| `webportal/app/helpers/*.js` (7 files) | `app/helpers/` |
+| `webportal/app/styles/inklings-tab.css` | append into your main stylesheet (e.g. `app/styles/app.scss`) - Ember apps typically compile one global stylesheet rather than loading per-component CSS files |
+
+The 7 helper files (`eq`, `and`, `or`, `not`, `format-date`, `join-list`, `join-list-upper`) exist because those aren't built into core Ember (only `{{get}}`, `{{if}}`, `{{each}}`, `{{with}}`, `{{action}}`, `{{input}}`, `{{textarea}}` are) - they're shipped rather than assuming an addon like `ember-truth-helpers` is already installed on your game.
+
+Then invoke it from wherever you want it to appear - see `webportal/snippets/profile-custom-tabs.snippet.hbs` and `profile-custom.snippet.hbs` for the two small merge-in fragments that add it as its own tab on the character Profile page:
+
+```hbs
+{{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
+```
+
+Everything in `webportal/snippets/` is a **fragment to merge into an existing shared file**, not a complete file to drop in and overwrite - `profile-custom-tabs.hbs`/`profile-custom.hbs` are single shared files per game, and other plugins may already have their own tabs defined there.
+
+### Installing the chargen secret/goal fields
+
+`chargen_hook.rb` requires a secret and goal inkling before chargen can complete, but only the actual Custom Character Fields hook can put those fields into the chargen web flow itself. Merge these snippets into your game's existing shared hook files:
+
+| Snippet | Merges into |
+|---|---|
+| `webportal/snippets/chargen-custom-tabs.snippet.hbs` | `ares-webportal/app/templates/components/chargen-custom-tabs.hbs` |
+| `webportal/snippets/chargen-custom.snippet.hbs` | `ares-webportal/app/templates/components/chargen-custom.hbs` |
+| `webportal/snippets/chargen-custom.snippet.js` | `ares-webportal/app/components/chargen-custom.js` |
+| `webportal/snippets/custom_char_fields.snippet.rb` | `plugins/profile/custom_char_fields.rb` |
+
+Since secret/goal both require a title (matching `+inkling/secret <title>/<text>` and `+inkling/goal <title>/<text>` in-game), the chargen form collects four fields (title + text for each) rather than the tutorial's single "goals" box. The Ruby snippet's `save_inkling_field` helper calls into `InklingApi.create_inkling`/`reply_to_inkling` rather than writing to the `Inkling` model directly, so chargen submissions still go through this plugin's normal validation and title requirements.
+
+**A verified note on file paths:** AresMUSH's own tutorial series is inconsistent about exactly where each hook's `.hbs` lives - Profile Display and Chargen templates live under `app/templates/components/`, while Profile Edit's live under `app/components/` (alongside their `.js`). The paths above match what's actually documented for each hook; if your install's directory layout differs, treat these as strong defaults to verify against your own `ares-webportal` checkout rather than as absolute certainties.
+
+For a full worked example of wiring a field through this entire pipeline end-to-end, see AresMUSH's own step-by-step series: [Modifying the Web Portal](https://www.aresmush.com/tutorials/code/add-web) (its example field is literally called "Goals").
 
 ## Commands
 
@@ -38,32 +86,45 @@ Quick reference:
 | Command | Who | Purpose |
 |---|---|---|
 | `+inklings` | Everyone | List your open inklings (`/closed`, `/all`) |
+| `+inkling/types` | Everyone | List available inkling types with descriptions, live from config |
 | `+inkling <id>` | Participants + staff | View a thread |
 | `+inkling/new <kind>=<title>/<text>` | Players (own) / staff | Start a titled thread |
-| `+inkling/hint`, `/vision`, `/nudge`, `/hook <char>=<text>` | Staff | Start a staff-initiated thread |
-| `+inkling/secret <text>` or `<char>=<text>` | Players / staff | Start a secret thread |
+| `+inkling/hint`, `/vision`, `/nudge`, `/hook <char>=<title>/<text>` | Staff | Start a staff-initiated thread |
+| `+inkling/secret <title>/<text>` or `<char>=<title>/<text>` | Players / staff | Start a secret thread |
 | `+inkling/advance <id>=<text>` | Participants + staff | Add a visible update |
 | `+inkling/private <id>=<text>` or `<name>/<text>` | Participants + staff | Add a private entry |
 | `+inkling/gm <id>=<text>` | Staff | Add a staff-only note |
 | `+inkling/roll <id>=<roll>` | Participants + staff | Attach a roll |
+| `+inkling/submit <id>` | Owner + staff | Lock the thread and send it to staff as a single job - nothing reaches staff before this |
 | `+inkling/share <id>=<char>,<char>` | Owner + staff | Grant access to specific characters |
 | `+inkling/group <id>=<group>,<group>` | Owner + staff | Grant access to a demographics group |
 | `+inkling/close <id>` | Owner + staff | Close a thread |
-| `+inkling/delete <id>` | Owner + staff | Delete a thread |
+| `+inkling/delete <id>` | Owner + staff | Staff: delete immediately. Players: close + request staff approval |
 | `+inkling/list <char>` | Staff | List all of a character's threads |
 | `+inkling/reset` | `manage_game` permission only | Wipe the entire system (type twice to confirm) |
 
 ## Configuration
 
-`game/config/inklings.yml`:
+`game/config/inklings.yml` (see the file itself for full inline comments):
 
 ```yaml
 inklings:
   shortcuts: {}
   job_category: INKLINGS
+  types:
+    hint: { category: staff, name: Hint, description: "..." }
+    # ...one entry per type...
+  inkling_type_xp: update
+  xp_amount: 1
+  award_cron:
+    day_of_week: [Sat]
+    hour: [21]
+    minute: [0]
 ```
 
 - `job_category` - the job category new inkling threads are linked into. Defaults to `INKLINGS` if omitted.
+- `types` - the full list of valid inkling types. See "Inkling Types" below.
+- `inkling_type_xp`, `xp_amount`, `award_cron` - the optional bonus-XP cron feature. See "Bonus XP" below.
 
 Permission checks live in `plugin/inklings.rb`:
 
@@ -72,13 +133,57 @@ Permission checks live in `plugin/inklings.rb`:
 
 Adjust either method if your game's staff/coder structure differs from the defaults.
 
+## Inkling Types
+
+Types are entirely config-driven (`game/config/inklings.yml`, under `types`) rather than hardcoded - add, remove, rename, or redescribe them without touching code. Each entry has a `category` (`staff`, `player`, or `shared` - see the inline comments in the config file for what each means), a `name`, a `description`, and an optional `chargen: true` flag. Run `+inkling/types` in-game to see the current live listing, always pulled straight from config so it can never drift out of sync with a doc page.
+
+`Inklings.staff_kinds`, `.player_kinds`, `.shared_kinds`, `.all_kinds`, `.chargen_kinds`, `.valid_kind?`, `.kind_label`, and `.kind_description` (all in `plugin/inklings.rb`) read this config; nothing else in the plugin hardcodes the type list.
+
+## Bonus XP
+
+An optional feature that periodically awards bonus XP to characters who've submitted a configured inkling type, via a [Cron job](https://www.aresmush.com/tutorials/code/cron.html). Requires the **FS3Skills** plugin - if it isn't loaded, the cron job is a complete no-op (checked with `defined?(FS3Skills)`).
+
+**Config** (`game/config/inklings.yml`):
+
+- `inkling_type_xp` - the inkling type that qualifies for the bonus. **Defaults to `"update"`, which is not a creatable type in this plugin** (see the "Inkling Types" note above / the comment in the config file) - left at that literal default, the reward can only ever match legacy data, never a newly-created inkling. Point it at a real type (e.g. `"goal"`) to actually use the feature, or add an `update` entry back into `types` if you want a dedicated type just for this reward.
+- `xp_amount` - bonus XP per qualifying character per award period. Default `1`.
+- `award_cron` - standard Ares cron config controlling how often the cycle runs. Default is weekly, Saturday 9pm. Set to `{}` to disable without removing the other settings.
+
+**How it works:** `InklingXpCronHandler` (`plugin/events/`) handles the engine's `CronEvent`, checks it against `award_cron` via `Cron.is_cron_match?`, and if it matches, calls `Inklings.run_xp_award_cycle`. That method walks every approved character, and for anyone who has *created* an inkling of the configured type since the last cycle completed, calls `FS3Skills.modify_xp(char, xp_amount)` - the same helper FS3's own XP-granting code uses ([`plugins/fs3skills/helpers/xp.rb`](https://github.com/AresMUSH/aresmush/blob/master/plugins/fs3skills/helpers/xp.rb)) - rather than reimplementing XP logic here.
+
+**Note on the job workflow change:** eligibility here is based on when an inkling was *created* (`Inkling#created_at`), not on `+inkling/submit`. A character can create a matching inkling, never submit it, and still earn the bonus. If you'd rather reward actual staff-facing engagement (i.e. only inklings that were submitted at least once), that's a straightforward change to `Inklings.run_xp_award_cycle` - check for an `InklingMessage` or a submitted state instead of `Inkling#created_at` - but it isn't implemented that way currently.
+
+**Duplicate prevention:** each award cycle is identified by a `period_start` timestamp that only advances once the *entire* cycle finishes (tracked in the `InklingXpCronState` singleton record). Every award is logged in `InklingXpAward` (character + that cycle's `period_start`). If the cycle is interrupted partway through - a crash, a restart, or the cron firing again before `period_start` advances - a retry reuses the same `period_start`, and characters who already have an award record for it are skipped, so only the remaining, not-yet-processed characters get evaluated. (The one accepted residual risk: a crash in the narrow window between granting XP and writing that character's award record could in theory cause one extra award for that one character - intentionally accepted as a far smaller problem than silently never rewarding someone.)
+
+On the very first run ever (no prior `InklingXpCronState`), the eligibility window looks back 1 week rather than the game's entire history, so turning the feature on doesn't suddenly sweep in and reward every matching inkling ever created.
+
+## Color Conventions
+
+Per [Using Formatting Codes](https://aresmush.com/tutorials/code/formatting.html), in-game output (list rows, thread view, warnings, share/group confirmations) colors:
+
+- **Names** (character and group names) - cyan (`%xc`)
+- **Titles** - green (`%xg`)
+- **Inkling Types** (kind labels like `HINT`, `GOAL`, `SECRET`) - magenta (`%xm`)
+
+These are implemented as `Inklings.color_name`, `Inklings.color_title`, and `Inklings.color_type` in `plugin/inklings.rb`. They're deliberately only applied to text emitted directly to a client (`client.emit_success`, `notify_player`, etc.) - never to persisted data like `Inkling#title` or Job titles, since those get read back by other systems (the Jobs web view, this plugin's own web portal JSON API) that shouldn't have to deal with raw ansi escape codes.
+
 ## Known Limitations / Things to Verify Before Production Use
 
+- **The lock only blocks replies, private replies, and rolls** (`+inkling/advance`, `+inkling/private`, `+inkling/roll` and their web equivalents) for non-staff. `+inkling/share`, `+inkling/group`, `+inkling/close`, and `+inkling/delete` all still work on a locked thread, since none of those are "building up content for staff to review" - a player can still close or request deletion of a thread that's awaiting a response, for example. Adjust the relevant commands' `check_not_locked` if you want a stricter scope.
+- **Resubmitting sends the whole thread again, not just what's new.** `+inkling/submit` always compiles and sends/mirrors the *entire* current thread, every time - so a second submission after a back-and-forth will repeat earlier messages in the job's comment history rather than showing only the delta. This was a deliberate simplicity choice (see `Inklings.compile_thread_text`/`submit_inkling`) rather than tracking exactly which messages were already sent in a prior submission.
+- **Bonus XP eligibility is based on when an inkling was created, not on `+inkling/submit`.** See the note in "Bonus XP" above - a character can create a qualifying inkling, never submit it, and still earn the bonus under the current implementation.
+
+- **The `inklings-tab` Ember component talks to the game via plain `fetch()`.** If your game's Ember app already has its own AJAX/API service, swap the `ajaxRequest()` method in `webportal/app/components/inklings-tab.js` to use it - the rest of the component doesn't need to change. It also assumes `/api/characters/:char_id/inklings...` and `/api/inklings/types` are reachable at those exact paths via the same "files under `plugin/public/` are auto-routed" convention the rest of this plugin's API already relies on; verify that convention holds for a non-character-scoped endpoint like `/api/inklings/types` on your install.
+- **The merge-in snippets in `webportal/snippets/` assume a Bootstrap-style tab structure** (`nav-item`/`nav-link`/`tab-pane`/`data-toggle="tab"`) matching what AresMUSH's own tutorial examples use. If your game's Profile/Chargen pages use a different tab component, adapt the markup rather than pasting it verbatim.
 - **`plugin/events/job_reply_event_handler.rb` is unconfirmed scaffolding.** There's no documented event fired when a `JobReply` is added in stock Ares, so the event class name and field names in that file are best-effort guesses. The plugin does **not** currently rely on this handler being wired up - instead, `Inklings.sync_job_replies` pulls in new job replies on demand whenever a thread is viewed or listed. If you want push-based notification instead, check `plugins/jobs/public/*.rb` on your install for the actual event Jobs fires (if any) and update this handler + `Inklings.get_event_handler` to match before enabling it.
 - **FS3 integration is optional.** `+inkling/roll` requires `FS3Skills.parse_and_roll` to exist; if your game doesn't use FS3, that command will report the roll system as unavailable, but the rest of the plugin works fine without it.
 - **Luck rerolls assume a `luck` attribute** (`char.luck`) on your character model, used by the web portal's reroll button. If your game doesn't track luck points, that feature is a no-op/error from the API side - the rest of the roll system doesn't depend on it.
 - **`seq` (the `14.3`-style reference number) is not backfilled** for inklings created before this plugin adopted it. If you're upgrading an existing install with pre-existing data, write a one-off migration that walks every `Inkling`, sorts its `messages` and `rolls` by `created_at`, and assigns `seq` in order before relying on references being complete for old threads.
 - **`+inkling/reset` is irreversible** and deletes every inkling thread, message, roll, and participant record for every character on the game. It does not touch linked jobs. Confirmation is a simple "type the command again within 60 seconds," held in memory only (a server restart clears any pending confirmation).
+- **A character's inklings are looked up via an explicit `Inkling.find(character_id: ...)` query, not `char.inklings`.** An earlier version of this plugin used a `collection :inklings` reverse-reference macro on `Character`, which was found to sometimes return the wrong character's threads (e.g. staff seeing their own list instead of the target's when running `+inkling/list`). If you're extending this plugin, keep using the explicit query rather than reintroducing that macro.
+- **NPC rolls accept a free-text name** (`npc_name` on `InklingRoll`) that isn't tied to any `Character` record, for NPCs without a character sheet. The web portal's NPC roll form uses this by default; `npc_char_id` is still available for API callers who want to link an actual `Character`.
+- **Bonus XP requires FS3Skills.** `Inklings.run_xp_award_cycle` checks `defined?(FS3Skills)` and does nothing at all if that plugin isn't loaded - it never falls back to any other XP system.
+- **Bonus XP eligibility is "approved characters," full stop** - it doesn't currently exclude staff-permission characters, since a staff member's own PC arguably still deserves XP for playing. Narrow `run_xp_award_cycle`'s `Character.all.to_a.select { |c| c.is_approved? }` filter if you want a different definition of "eligible."
 
 ## License
 

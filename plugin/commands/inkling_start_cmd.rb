@@ -1,63 +1,77 @@
 module AresMUSH
   module Inklings
-    # Staff-initiated (require a target):
-    #   +inkling/hint <char>=<text>
-    #   +inkling/vision <char>=<text>
-    #   +inkling/nudge <char>=<text>
-    #   +inkling/hook <char>=<text>
+    # A title is now mandatory for every kind (matching +inkling/new's
+    # "<title>/<text>" syntax) - rolls are the only exception, since
+    # they aren't a kind at all.
     #
-    # Player or staff (no target = own character):
-    #   +inkling/secret <text>
+    # Staff-initiated (require a target - any "staff" category type in
+    # config, see game/config/inklings.yml):
+    #   +inkling/hint <char>=<title>/<text>
+    #   +inkling/vision <char>=<title>/<text>
+    #   +inkling/nudge <char>=<title>/<text>
+    #   +inkling/hook <char>=<title>/<text>
     #
-    # Staff creating a secret for a player (args contain "="):
-    #   +inkling/secret <char>=<text>
+    # Player or staff (no target = own character - any "shared"
+    # category type, "secret" by default):
+    #   +inkling/secret <title>/<text>
     #
-    # Player-initiated (no target - always about themselves):
-    #   +inkling/action <text>
-    #   +inkling/research <text>
-    #   +inkling/request <text>
-    #   +inkling/update <text>
-    #   +inkling/pitch <text>
-    #   +inkling/goal <text>
+    # Staff creating a shared-type thread for a player (args contain "="):
+    #   +inkling/secret <char>=<title>/<text>
+    #
+    # Player-initiated (no target - always about themselves, any
+    # "player" category type):
+    #   +inkling/initiative <title>/<text>
+    #   +inkling/request <title>/<text>
+    #   +inkling/pitch <title>/<text>
+    #   +inkling/goal <title>/<text>
     class InklingStartCmd
       include CommandHandler
 
-      attr_accessor :kind, :target_name, :text
+      attr_accessor :kind, :target_name, :title, :text
 
       def parse_args
         self.kind = cmd.switch
 
-        needs_target = Inklings::STAFF_KINDS.include?(self.kind) ||
-          (self.kind == "secret" && cmd.args.to_s.include?("="))
+        needs_target = Inklings.staff_kinds.include?(self.kind) ||
+          (Inklings.shared_kinds.include?(self.kind) && cmd.args.to_s.include?("="))
 
         if needs_target
           args = cmd.parse_args(ArgParser.arg1_equals_arg2)
           self.target_name = titlecase_arg(args.arg1)
-          self.text = args.arg2
+          remainder = args.arg2
         else
-          self.text = trim_arg(cmd.args)
+          remainder = cmd.args
         end
+
+        # Title is mandatory: split on the first "/", same convention
+        # as +inkling/new. required_args below rejects the command if
+        # there's no "/" (title.blank?) rather than silently falling
+        # back to an auto-generated title.
+        title_and_text = remainder.to_s.split("/", 2)
+        self.title = trim_arg(title_and_text[0])
+        self.text = trim_arg(title_and_text[1])
       end
 
       def required_args
-        self.target_name ? [self.target_name, self.text] : [self.text]
+        base = self.target_name ? [self.target_name] : []
+        base + [self.title, self.text]
       end
 
       def check_approved
         return nil if Inklings.can_manage_inklings?(enactor)
-        return nil if Inklings::CHARGEN_KINDS.include?(self.kind)
+        return nil if Inklings.chargen_kinds.include?(self.kind)
         return t('inklings.char_not_approved') unless enactor.is_approved?
         nil
       end
 
       def check_valid_kind
-        return nil if Inklings::ALL_KINDS.include?(self.kind)
+        return nil if Inklings.valid_kind?(self.kind)
         return t('inklings.invalid_kind')
       end
 
       def check_permission
-        if Inklings::STAFF_KINDS.include?(self.kind) ||
-           (self.kind == "secret" && self.target_name)
+        if Inklings.staff_kinds.include?(self.kind) ||
+           (Inklings.shared_kinds.include?(self.kind) && self.target_name)
           return nil if Inklings.can_manage_inklings?(enactor)
           return t('dispatcher.not_allowed')
         end
@@ -76,17 +90,16 @@ module AresMUSH
 
       def start_thread(subject, creator)
         staff_started = subject != creator
-        legacy_title = self.text.to_s.split(/\r?\n/).first.to_s[0, 60]
-        legacy_title = t("inklings.kind_#{self.kind}") if legacy_title.blank?
 
         inkling = Inkling.create(
           kind: self.kind,
-          title: legacy_title,
+          title: self.title,
           status: "open",
           character: subject,
           creator: creator,
           created_at: Time.now,
-          player_unread: staff_started ? "true" : "false")
+          player_unread: staff_started ? "true" : "false",
+          locked: "false")
 
         InklingMessage.create(
           inkling: inkling,
@@ -98,15 +111,10 @@ module AresMUSH
           is_private: "false",
           is_gm_note: "false")
 
-        if !staff_started
-          # Player started this thread themselves - staff need to know.
-          Inklings.ensure_job(inkling,
-            "#{creator.name} - #{t("inklings.kind_#{self.kind}")}",
-            self.text, creator)
-        end
-
-        client.emit_success t('inklings.thread_started', :id => inkling.id)
-        warning = Inklings.staff_target_warning(subject) if Inklings.can_manage_inklings?(creator)
+        notice = t('inklings.thread_started', :id => inkling.id)
+        notice << " #{t('inklings.not_yet_submitted_notice', :id => inkling.id)}" unless staff_started
+        client.emit_success notice
+        warning = Inklings.staff_target_warning(subject, inkling.id) if Inklings.can_manage_inklings?(creator)
         client.emit warning if warning
 
         if staff_started
@@ -116,3 +124,4 @@ module AresMUSH
     end
   end
 end
+

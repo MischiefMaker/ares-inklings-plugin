@@ -11,20 +11,20 @@ Inklings are player-initiated threads for tracking character development, plot r
 **`+inkling/list <character>`**
 View all inklings for a specific character. Shows status, linked jobs, and message counts.
 
-**`+inkling/hint <character>=<text>`**
+**`+inkling/hint <character>=<title>/<text>`**
 Send a hint to a character (typically guidance or a nudge in a direction).
 
-**`+inkling/vision <character>=<text>`**
+**`+inkling/vision <character>=<title>/<text>`**
 Send a vision or supernatural experience to a character.
 
-**`+inkling/nudge <character>=<text>`**
+**`+inkling/nudge <character>=<title>/<text>`**
 Send a gentle nudge to encourage RP in a certain direction.
 
-**`+inkling/hook <character>=<text>`**
+**`+inkling/hook <character>=<title>/<text>`**
 Send a plot hook or opportunity to a character.
 
-**`+inkling/secret <character>=<text>`**
-Share an IC secret with a character (staff creating a secret on a player's behalf).
+**`+inkling/secret <character>=<title>/<text>`**
+Share an IC secret with a character (staff creating a secret on a player's behalf). A title is required.
 
 **`+inkling/new <kind>=<title>/<text>`**
 Create a new titled inkling for yourself. Staff can still use the targeted kind commands above when opening a thread for another character.
@@ -47,11 +47,14 @@ Add a staff-only reference note. GM notes are never shown to players.
 **`+inkling/roll <id>=<roll command>`**
 Attach a roll to the inkling thread. Example: `+inkling/roll 14=Bob/Firearms+Reflexes`
 
+**`+inkling/submit <id>`**
+Players use this to lock a thread and send its full contents to a single staff job - see "Submission Workflow" below. Staff can also run it (e.g. on a player's behalf), though staff replies reach the player immediately regardless of submission state.
+
 **`+inkling/close <id>`**
 Close an inkling thread and its linked job (if any).
 
 **`+inkling/delete <id>`**
-Delete an inkling thread. Players may delete their own threads; staff may delete any thread.
+Staff: deletes an inkling thread immediately and permanently. Players: no longer deletes directly - instead closes the thread and files a job asking staff to review and approve a permanent deletion. Approving the job means a staff member then runs `+inkling/delete` themselves to actually carry it out.
 
 **`+inkling/reset`**
 Permanently deletes every inkling thread, message, and roll for every character. Restricted to the `manage_game` permission (Coders/Admins only), not general Inklings staff. Must be entered twice within 60 seconds to confirm - the first entry just arms it and shows a warning.
@@ -66,11 +69,16 @@ Every message and roll in a thread is assigned a permanent reference number in t
 
 The thread view shows a "Shared With" section listing which non-staff characters and groups currently have access to the thread (via `+inkling/share` or `+inkling/group`). Staff are never listed here, since they always have access regardless of sharing.
 
-### Automatic Job Creation
-When a player creates or advances an inkling, a job is automatically created in the **INKLINGS** job category. This notifies staff through the normal job system. If staff respond via the inkling, that response mirrors back to the job.
+### Submission Workflow
+Players can freely build up a thread (updates, private notes, rolls) without notifying staff or creating a job - nothing reaches staff until the player runs `+inkling/submit <id>`. That locks the thread (blocking further player replies/rolls) and sends its *entire* current contents to a single job in the **INKLINGS** category, titled `[ACTION] <Player> submitted a <Kind> inkling for review.` If the thread already has an open linked job (a second round of submission after staff replied and the player added more), the updated full thread is added as a new comment on that same job rather than creating a second one - a fresh job is only created if there wasn't one yet, or the previous one was closed.
+
+A staff reply via `+inkling/advance` or `+inkling/private` automatically unlocks the thread (that's the whole point - the player is free to keep working once you've responded). Replying through the linked job itself instead of in-game also unlocks it, once that reply is pulled into the thread (which happens automatically whenever the thread is next viewed or listed). `+inkling/gm` notes do **not** unlock a thread, since they're internal and never reach the player.
+
+### Deletion Requests
+Players can no longer delete their own inkling outright. `+inkling/delete` on a player's own thread now closes it and files a job titled `<Player> is requesting to delete inkling #<id>.` A staff member who approves the request carries out the actual permanent deletion themselves via `+inkling/delete`.
 
 ### Private Rolls
-Players and staff can add rolls (FS3 or custom) to roll-type inklings. Rolls can be marked private to hide them from other participants.
+Players and staff can add rolls (FS3 or custom) to roll-type inklings. Rolls can be marked private to hide them from other participants. Staff can also attach NPC rolls with a custom free-text NPC name (no character record required) from the web portal.
 
 ### Luck Rerolls
 Players can spend luck points to reroll their rolls directly from the inkling thread on the web portal.
@@ -84,15 +92,19 @@ Staff can manage inklings from the character profile **Inklings** tab on the web
 
 ## Configuration
 
-**Job Category:** Inklings are automatically placed in the `INKLINGS` job category. Create this category in-game with: `job/category create INKLINGS`
+**Job Category:** Inklings are automatically placed in the `INKLINGS` job category. Create this category in-game with: `job/createcategory INKLINGS`
+
+**Types:** Inkling types (hint, vision, goal, secret, etc.) are defined in `game/config/inklings.yml` under `types`, not hardcoded - add, remove, rename, or redescribe them there without touching code. Run `+inkling/types` in-game to see the current live listing pulled straight from that config.
+
+**Bonus XP:** Optionally, a weekly (configurable) Cron job can award bonus XP to characters who've submitted a configured inkling type. Requires the FS3Skills plugin. Configure `inkling_type_xp`, `xp_amount`, and `award_cron` in `game/config/inklings.yml` - see the comments there and the README's "Bonus XP" section for details, including an important note about the setting's default value.
 
 **Permissions:** By default, staff are determined by the `Jobs.can_manage_jobs?` check. Customize this in `plugin/inklings.rb` in the `can_manage_inklings?` method. The destructive `+inkling/reset` command uses a separate, narrower check (`can_reset_system?`) tied to the `manage_game` permission.
 
 ## Tips for Staff
 
-- **Respond promptly:** Players use inklings to share ideas and requests—quick responses encourage engagement
+- **Respond promptly:** Once a player submits, quick responses encourage engagement - and unlock the thread so they can keep working
 - **Use the right kind:** Hints, nudges, and hooks are different ways to communicate
-- **Link to jobs:** The automatic job creation keeps everything in one place
+- **Nothing arrives until they submit:** Players can work on a thread indefinitely without it showing up as a job - don't expect to see something just because a player mentions "working on an inkling"
 - **Monitor privately:** Private rolls let players and staff discuss outcomes without spoiling others
 - **Close resolved threads:** Keep the list clean by closing threads once plots are complete
 - **Reset with care:** `+inkling/reset` wipes every thread for every character game-wide. There is no undo.
