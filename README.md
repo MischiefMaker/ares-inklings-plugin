@@ -121,8 +121,8 @@ If you want players to create required Inklings during character generation, mer
 
 **Web Portal Form Fields (Optional, only if you want chargen fields on the web portal):**
 
-1. Open `webportal/snippets/chargen-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/templates/components/chargen-custom-tabs.hbs` at the location marked in the snippet
-2. Open `webportal/snippets/chargen-custom.snippet.hbs` and paste into `ares-webportal/app/templates/components/chargen-custom.hbs` at the marked location
+1. Open `webportal/snippets/chargen-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom-tabs.hbs` at the location marked in the snippet
+2. Open `webportal/snippets/chargen-custom.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom.hbs` at the marked location
 3. Open `webportal/snippets/chargen-custom.snippet.js` and paste into `ares-webportal/app/components/chargen-custom.js` at the marked location
 4. Restart your web portal
 
@@ -143,7 +143,7 @@ Confirm that your Coder role has the `manage_game` permission (used by the `+ink
 
 **Add Inklings tab to character profiles (Optional):**
 
-If you want the Inklings tab visible on the character profile page, add this line to `ares-webportal/app/templates/components/profile-custom.hbs` at the appropriate location:
+If you want the Inklings tab visible on the character profile page, add this line to `ares-webportal/app/components/profile-custom.hbs` at the appropriate location:
 
 ```hbs
 {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
