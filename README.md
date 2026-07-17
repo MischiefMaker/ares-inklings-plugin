@@ -78,13 +78,12 @@ This installs the plugin code to `plugins/inklings/` and merges the configuratio
 
 ### Step 2: Install Web Portal Components
 
-The web portal files must be copied manually into your `ares-webportal` checkout.
+Most web portal files must be copied manually into your `ares-webportal` checkout (the component JS is automatically copied by `plugin/install`, but the template and helpers are not).
 
 **Copy these files, preserving the paths in your `ares-webportal` directory:**
 
 | From this plugin | To your ares-webportal |
 |---|---|
-| `webportal/app/components/inklings-tab.js` | `app/components/inklings-tab.js` |
 | `webportal/app/templates/components/inklings-tab.hbs` | `app/templates/components/inklings-tab.hbs` |
 | `webportal/app/helpers/eq.js` | `app/helpers/eq.js` |
 | `webportal/app/helpers/and.js` | `app/helpers/and.js` |
