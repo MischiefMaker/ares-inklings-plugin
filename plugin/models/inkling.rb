@@ -27,13 +27,25 @@ module AresMUSH
     # on this thread.
     attribute :player_unread
     # "true"/"false" - whether the thread is locked pending a staff
-    # response. Set by +inkling/submit (see Inklings.submit_inkling),
-    # cleared automatically the moment staff reply (in-game via
-    # +inkling/advance or +inkling/private, or via the linked job
-    # itself - see Inklings.sync_job_replies). While locked, non-staff
-    # cannot add replies, private replies, or rolls - see
-    # check_not_locked in the relevant commands.
+    # response. Set by +inkling/submit (see Inklings.submit_inkling)
+    # and by +inkling/approve; cleared by +inkling/needschanges (see
+    # Inklings.request_changes). Ordinary staff replies
+    # (+inkling/advance, +inkling/private, or a reply pulled in from
+    # the linked job) do NOT change this - only the explicit review
+    # actions below do, since a reply is not the same thing as a
+    # decision. While locked, non-staff cannot add replies, private
+    # replies, or rolls - see check_not_locked in the relevant
+    # commands.
     attribute :locked
+    # The review lifecycle for staff approval: "draft" (default -
+    # player is still working on it, nothing sent to staff yet),
+    # "submitted" (+inkling/submit was run - locked, awaiting a staff
+    # decision), "needs_changes" (staff sent it back via
+    # +inkling/needschanges - unlocked, player can revise and
+    # resubmit), or "approved" (staff approved it via
+    # +inkling/approve - locked, this review cycle is done). See
+    # Inklings.submit_inkling / approve_inkling / request_changes.
+    attribute :approval_state
 
     # The player this thread concerns. Always a player character,
     # regardless of who started the thread or which direction it runs.

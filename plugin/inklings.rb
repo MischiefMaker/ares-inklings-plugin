@@ -378,10 +378,13 @@ module AresMUSH
       end
 
       if new_messages
-        # A staff response arrived (via the linked job rather than an
-        # in-game +inkling command) - unlock the thread the same way a
-        # direct +inkling/advance or +inkling/private staff reply does.
-        inkling.update(player_unread: "true", locked: "false")
+        # A staff response arrived via the linked job rather than an
+        # in-game +inkling command. This does NOT unlock the thread -
+        # a reply (through any channel) is not the same thing as a
+        # review decision. Only +inkling/approve or
+        # +inkling/needschanges change the lock/approval state - see
+        # the comment on Inkling#approval_state.
+        inkling.update(player_unread: "true")
         # NOTE: t() is a CommandHandler helper and isn't available here,
         # since this runs from a plain module method, not a command
         # instance. Using a plain string instead - swap in your game's
@@ -439,7 +442,117 @@ module AresMUSH
       body = compile_thread_text(inkling)
 
       ensure_job(inkling, title, body, submitter)
-      inkling.update(locked: "true")
+      inkling.update(locked: "true", approval_state: "submitted")
+    end
+
+    # +inkling/approve - the single source of truth for approval.
+    # Staff approve the INKLING (not the job); this closes the linked
+    # job as a consequence via the same Jobs.close_job API +inkling/
+    # close already uses, so there is exactly one place a thread gets
+    # marked approved, never two separate approvals to keep in sync.
+    # There's no confirmed AresMUSH event fired when a Job's status
+    # changes, so the reverse direction (approving via the job itself
+    # auto-approving the inkling) isn't implemented - see the README's
+    # Verification Notes.
+    def self.approve_inkling(inkling, staff, message = nil)
+      note = message.to_s.strip
+
+      if !note.blank?
+        InklingMessage.create(
+          inkling: inkling,
+          author: staff,
+          text: note,
+          created_at: Time.now,
+          seq: next_event_seq(inkling),
+          is_staff: "true",
+          is_private: "false",
+          is_gm_note: "false")
+      end
+
+      close_message = note.blank? ? "Inkling approved." : note
+      Jobs.close_job(staff, inkling.job, close_message) if inkling.job
+
+      inkling.update(locked: "true", approval_state: "approved")
+      notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been approved.")
+    end
+
+    # +inkling/needschanges - adds staff feedback to the thread (both
+    # as a visible message and as a job comment), then unlocks the
+    # thread so the player can revise and resubmit. Deliberately a
+    # distinct, explicit action from an ordinary staff reply - see the
+    # comment on Inkling#approval_state for why ordinary replies don't
+    # do this.
+    def self.request_changes(inkling, staff, feedback)
+      InklingMessage.create(
+        inkling: inkling,
+        author: staff,
+        text: feedback,
+        created_at: Time.now,
+        seq: next_event_seq(inkling),
+        is_staff: "true",
+        is_private: "false",
+        is_gm_note: "false")
+
+      mirror_to_job(inkling, feedback, staff) if inkling.job
+
+      inkling.update(player_unread: "true", locked: "false", approval_state: "needs_changes")
+      notify_player(inkling.character, "<inklings> Staff have requested changes on your inkling ##{inkling.id}. Use +inkling #{inkling.id} to view their feedback.")
+    end
+
+    # +inkling/reward - records a reward in the generic InklingReward
+    # ledger (see plugin/models/inkling_reward.rb) and, for reward
+    # types this plugin can actually apply through a confirmed
+    # AresMUSH API, applies it:
+    #   - "xp" is applied via FS3Skills.modify_xp(char, amount) - the
+    #     same helper this plugin's bonus-XP cron job already uses.
+    #   - "fs3_skill" is recorded but NOT auto-applied. There's no
+    #     confirmed FS3Skills API for directly changing a skill rating
+    #     (only modify_xp was confirmed against real FS3 source) - see
+    #     the README's Verification Notes. Staff need to apply the
+    #     actual skill change themselves through FS3's normal process;
+    #     this just keeps a record and notifies the player.
+    #   - Any other reward_type (a future SOUL/Boons/Banes system,
+    #     etc.) is recorded the same way, unapplied, by design - this
+    #     method doesn't need to know about those systems for them to
+    #     start using this ledger.
+    # visibility is "private" (default - only the recipient sees the
+    # history entry) or "all" (every participant can see it).
+    def self.grant_reward(inkling, character, granted_by, reward_type, reward_key, amount, reason: nil, visibility: "private")
+      InklingReward.create(
+        inkling: inkling,
+        character: character,
+        granted_by: granted_by,
+        reward_type: reward_type,
+        reward_key: reward_key,
+        amount: amount.to_s,
+        reason: reason,
+        visibility: visibility,
+        created_at: Time.now)
+
+      applied_note = nil
+      if reward_type == "xp" && defined?(FS3Skills)
+        FS3Skills.modify_xp(character, amount.to_i)
+        applied_note = nil
+      elsif reward_type == "fs3_skill"
+        applied_note = " (staff: apply this #{reward_key} change through FS3's normal process - it is not applied automatically)"
+      end
+
+      summary = reward_key.to_s.blank? ? "#{amount} #{reward_type}" : "#{amount} #{reward_type} (#{reward_key})"
+      history_text = "Reward granted: #{summary}.#{applied_note}"
+      history_text << " Reason: #{reason}" if !reason.to_s.blank?
+
+      InklingMessage.create(
+        inkling: inkling,
+        author: granted_by,
+        text: history_text,
+        created_at: Time.now,
+        seq: next_event_seq(inkling),
+        is_staff: "true",
+        is_private: visibility == "all" ? "false" : "true",
+        is_gm_note: "false",
+        private_recipient_ids: visibility == "all" ? "" : character.id)
+
+      notify_player(character, "<inklings> You have received a reward on inkling ##{inkling.id}: #{summary}.")
     end
 
     def self.notify_player(char, message)
@@ -522,6 +635,12 @@ module AresMUSH
           return InklingNewCmd
         elsif cmd.switch_is?("submit")
           return InklingSubmitCmd
+        elsif cmd.switch_is?("approve")
+          return InklingApproveCmd
+        elsif cmd.switch_is?("needschanges")
+          return InklingNeedsChangesCmd
+        elsif cmd.switch_is?("reward")
+          return InklingRewardCmd
         elsif cmd.switch_is?("close")
           return InklingCloseCmd
         elsif all_kinds.any? { |k| cmd.switch_is?(k) }
@@ -552,6 +671,12 @@ module AresMUSH
           return InklingNewCmd
         elsif cmd.switch_is?("submit")
           return InklingSubmitCmd
+        elsif cmd.switch_is?("approve")
+          return InklingApproveCmd
+        elsif cmd.switch_is?("needschanges")
+          return InklingNeedsChangesCmd
+        elsif cmd.switch_is?("reward")
+          return InklingRewardCmd
         elsif cmd.switch_is?("close")
           return InklingCloseCmd
         elsif all_kinds.any? { |k| cmd.switch_is?(k) }
@@ -574,6 +699,42 @@ module AresMUSH
       case event_name
       when "CronEvent"
         return InklingXpCronHandler
+      end
+      nil
+    end
+
+    # Per https://www.aresmush.com/tutorials/code/plugins.html and
+    # https://www.aresmush.com/tutorials/code/web-debug.html - web
+    # portal requests are dispatched by cmd name to a handler class
+    # with a handle(request) method (request.cmd / request.args), the
+    # same pattern as get_cmd_handler/get_event_handler above. See
+    # plugin/web/*.rb for the handler classes themselves; all of them
+    # are thin adapters delegating into InklingApi/RollsApi
+    # (plugin/public/), which hold the actual logic.
+    def self.get_web_request_handler(cmd_name)
+      case cmd_name
+      when "inklings_get_inklings"
+        return InklingsGetInklingsWebHandler
+      when "inklings_get_inkling"
+        return InklingsGetInklingWebHandler
+      when "inklings_create_inkling"
+        return InklingsCreateInklingWebHandler
+      when "inklings_reply_to_inkling"
+        return InklingsReplyToInklingWebHandler
+      when "inklings_close_inkling"
+        return InklingsCloseInklingWebHandler
+      when "inklings_delete_inkling"
+        return InklingsDeleteInklingWebHandler
+      when "inklings_share_inkling"
+        return InklingsShareInklingWebHandler
+      when "inklings_submit_inkling"
+        return InklingsSubmitInklingWebHandler
+      when "inklings_get_types"
+        return InklingsGetTypesWebHandler
+      when "inklings_add_roll"
+        return InklingsAddRollWebHandler
+      when "inklings_reroll_with_luck"
+        return InklingsRerollWithLuckWebHandler
       end
       nil
     end

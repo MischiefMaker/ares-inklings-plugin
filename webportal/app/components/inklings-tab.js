@@ -1,5 +1,5 @@
 // Native AresMUSH web portal component for browsing and managing
-// inklings, replacing the earlier React reference implementation.
+// inklings.
 //
 // Written as a classic Ember Component (not an Octane/Glimmer
 // component) to match the syntax conventions shown throughout
@@ -8,25 +8,28 @@
 // this.set()/this.get() property access) - see:
 //   https://www.aresmush.com/tutorials/code/add-web
 //
-// This component is self-contained: it talks directly to this
-// plugin's own REST API (plugin/public/inklings_api.rb and
-// rolls_api.rb) via fetch(), the same way the original React version
-// called `api.get/post/put/delete`. Because it saves its own changes
-// immediately (reply, roll, share, close, delete all fire their own
-// request), it does NOT need to hook into the Profile Edit save flow
-// - it only needs to be *displayed* somewhere, which is why the
-// integration snippets in this folder wire it into the Profile
-// Display tab (profile-custom.hbs) rather than the Edit tab.
+// SERVER CONTRACT: AresMUSH web requests are dispatched by a `cmd`
+// name to a handler class with a handle(request) method
+// (request.cmd / request.args), registered via
+// Inklings.get_web_request_handler - see plugin/web/*.rb and
+// https://www.aresmush.com/tutorials/code/plugins.html /
+// https://www.aresmush.com/tutorials/code/web-debug.html. That
+// server-side half is verified against AresMUSH's own docs.
+//
+// What is NOT independently verified: the exact transport your
+// game's ares-webportal actually uses to issue a cmd-based request
+// from Ember (a dedicated injected service, a specific endpoint URL,
+// a particular request/response envelope shape). callServer() below
+// posts { cmd, args } as JSON to a single `/api/web` endpoint as a
+// reasonable default - before relying on this, check your own
+// ares-webportal app for how an existing feature issues a request
+// (e.g. grep for "get_web_request_handler" usage on the server, or
+// use the browser Network tab per the web-debug tutorial above) and
+// adjust callServer() to match if it differs.
 //
 // Usage once installed (see README.md "Chargen & Profile Web
 // Integration"):
 //   {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
-//
-// NOTE: this component calls the game's API directly with fetch().
-// If your game's Ember app already has its own AJAX/API service
-// (many classic Ember apps use one, e.g. via the ember-ajax addon),
-// swap the `ajaxRequest()` method below to use it instead - the rest
-// of the component doesn't need to change.
 
 import Component from '@ember/component';
 import { A } from '@ember/array';
@@ -69,9 +72,6 @@ export default Component.extend({
     this.set('replyTextById', {});
     this.set('privateReplyById', {});
     this.set('shareTargetById', {});
-    // Static fallback labels in case a kind isn't found in the list
-    // fetched from the server (see loadTypes below) - kept minimal
-    // since +inkling/types / the types API is the source of truth.
     this.set('typeInfo', {});
   },
 
@@ -81,26 +81,26 @@ export default Component.extend({
     this.loadTypes();
   },
 
-  // --- HTTP helper -------------------------------------------------
-  // Centralized here so it's the one place to swap in a different
-  // AJAX mechanism if your game's Ember app has its own service.
-  ajaxRequest(url, method = 'GET', body = null) {
-    let options = {
-      method,
-      headers: { 'Content-Type': 'application/json' }
-    };
-    if (body) {
-      options.body = JSON.stringify(body);
-    }
-    return fetch(url, options).then((response) => response.json());
+  // --- Server call helper -------------------------------------------
+  // See the SERVER CONTRACT note at the top of this file - verify
+  // this matches your game's actual request transport.
+  callServer(cmd, args = {}) {
+    return fetch('/api/web', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cmd, args })
+    }).then((response) => response.json());
   },
 
   // --- Data loading --------------------------------------------------
 
   loadInklings() {
     this.set('loading', true);
-    let url = `/api/characters/${this.characterId}/inklings?viewer_id=${this.viewerId}&status=${this.statusFilter}`;
-    return this.ajaxRequest(url)
+    return this.callServer('inklings_get_inklings', {
+      char_id: this.characterId,
+      viewer_id: this.viewerId,
+      status: this.statusFilter
+    })
       .then((data) => {
         this.set('inklings', A(data.inklings || []));
         this.set('error', null);
@@ -118,8 +118,7 @@ export default Component.extend({
   // InklingApi.get_types - so the web portal never carries its own
   // hardcoded, driftable copy of the type list.
   loadTypes() {
-    let url = `/api/inklings/types`;
-    this.ajaxRequest(url)
+    this.callServer('inklings_get_types', {})
       .then((data) => {
         if (data && data.types) {
           this.set('typeInfo', data.types);
@@ -137,6 +136,19 @@ export default Component.extend({
     if (idx > -1) {
       list.replace(idx, 1, [updated]);
     }
+  },
+
+  reloadInklingDetail(id) {
+    return this.callServer('inklings_get_inkling', {
+      char_id: this.characterId,
+      inkling_id: id,
+      viewer_id: this.viewerId
+    }).then((detail) => {
+      if (!detail.error) {
+        this.replaceInkling(detail.inkling);
+      }
+      return detail;
+    });
   },
 
   expandedInkling: computed('inklings.[]', 'expandedId', function () {
@@ -203,12 +215,12 @@ export default Component.extend({
         return;
       }
 
-      let url = `/api/characters/${this.characterId}/inklings`;
-      this.ajaxRequest(url, 'POST', {
+      this.callServer('inklings_create_inkling', {
+        char_id: this.characterId,
+        viewer_id: this.viewerId,
         kind: this.newKind,
         title: this.newTitle,
-        text: this.newText,
-        viewer_id: this.viewerId
+        text: this.newText
       }).then((data) => {
         if (data.error) {
           this.set('error', data.error);
@@ -216,6 +228,7 @@ export default Component.extend({
         }
         this.inklings.unshiftObject(data.inkling);
         this.setProperties({
+          newKind: '',
           newTitle: '',
           newText: '',
           showNewForm: false,
@@ -230,13 +243,11 @@ export default Component.extend({
         return;
       }
 
-      let url = `/api/characters/${this.characterId}/inklings/${id}?viewer_id=${this.viewerId}`;
-      this.ajaxRequest(url).then((data) => {
+      this.reloadInklingDetail(id).then((data) => {
         if (data.error) {
           this.set('error', data.error);
           return;
         }
-        this.replaceInkling(data.inkling);
         this.set('expandedId', id);
       });
     },
@@ -261,19 +272,18 @@ export default Component.extend({
       }
       let isPrivate = !!(this.privateReplyById || {})[id];
 
-      let url = `/api/characters/${this.characterId}/inklings/${id}/reply`;
-      this.ajaxRequest(url, 'POST', {
+      this.callServer('inklings_reply_to_inkling', {
+        char_id: this.characterId,
+        inkling_id: id,
+        viewer_id: this.viewerId,
         text,
-        is_private: isPrivate,
-        viewer_id: this.viewerId
+        is_private: isPrivate
       }).then((data) => {
         if (data.error) {
           this.set('error', data.error);
           return;
         }
-        let detailUrl = `/api/characters/${this.characterId}/inklings/${id}?viewer_id=${this.viewerId}`;
-        this.ajaxRequest(detailUrl).then((detail) => {
-          this.replaceInkling(detail.inkling);
+        this.reloadInklingDetail(id).then(() => {
           let hash = Object.assign({}, this.replyTextById);
           hash[id] = '';
           this.set('replyTextById', hash);
@@ -300,36 +310,34 @@ export default Component.extend({
         return;
       }
 
-      let payload = {
+      let args = {
+        inkling_id: id,
+        viewer_id: this.viewerId,
         roll_type: this.rollType,
         roll_spec: this.rollSpec,
-        is_private: this.rollIsPrivate,
-        viewer_id: this.viewerId
+        is_private: this.rollIsPrivate
       };
 
       if (this.rollType === 'player') {
         // Player rolls are resolved server-side against the
         // character's own sheet; result/result_value are computed by
         // the game, not entered here.
-        payload.result = '';
-        payload.result_value = 0;
+        args.result = '';
+        args.result_value = 0;
       } else {
-        payload.result = this.rollResult;
-        payload.result_value = parseInt(this.rollResult, 10) || 0;
+        args.result = this.rollResult;
+        args.result_value = parseInt(this.rollResult, 10) || 0;
         if (this.rollType === 'npc') {
-          payload.npc_name = this.npcName || null;
+          args.npc_name = this.npcName || null;
         }
       }
 
-      let url = `/api/characters/${this.characterId}/inklings/${id}/roll`;
-      this.ajaxRequest(url, 'POST', payload).then((data) => {
+      this.callServer('inklings_add_roll', args).then((data) => {
         if (data.error) {
           this.set('error', data.error);
           return;
         }
-        let detailUrl = `/api/characters/${this.characterId}/inklings/${id}?viewer_id=${this.viewerId}`;
-        this.ajaxRequest(detailUrl).then((detail) => {
-          this.replaceInkling(detail.inkling);
+        this.reloadInklingDetail(id).then(() => {
           this.setProperties({
             rollSpec: '',
             npcName: '',
@@ -343,16 +351,37 @@ export default Component.extend({
     },
 
     rerollWithLuck(inklingId, rollId) {
-      let url = `/api/characters/${this.characterId}/inklings/${inklingId}/rolls/${rollId}/reroll`;
-      this.ajaxRequest(url, 'POST', { viewer_id: this.viewerId }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
+      // Rerolling spends a character's luck against their own sheet,
+      // which is FS3Skills' functionality, not this plugin's - we
+      // don't own an endpoint that computes the actual reroll result.
+      // "inklings_character_luck_reroll" below is a GUESS at what
+      // FS3Skills' own web handler cmd is named; it was never
+      // independently verified (unlike the inklings_* cmds in this
+      // file, which are). Check FS3Skills' plugin/web/ handlers on
+      // your install and correct this cmd name if it differs.
+      this.callServer('character_luck_reroll', {
+        char_id: this.characterId,
+        viewer_id: this.viewerId
+      }).then((rollData) => {
+        if (rollData.error) {
+          this.set('error', rollData.error);
           return;
         }
-        let detailUrl = `/api/characters/${this.characterId}/inklings/${inklingId}?viewer_id=${this.viewerId}`;
-        this.ajaxRequest(detailUrl).then((detail) => {
-          this.replaceInkling(detail.inkling);
-          this.set('error', null);
+        this.callServer('inklings_reroll_with_luck', {
+          inkling_id: inklingId,
+          roll_id: rollId,
+          viewer_id: this.viewerId,
+          new_result: rollData.result,
+          new_result_value: rollData.result_value,
+          luck_cost: rollData.luck_cost || 1
+        }).then((data) => {
+          if (data.error) {
+            this.set('error', data.error);
+            return;
+          }
+          this.reloadInklingDetail(inklingId).then(() => {
+            this.set('error', null);
+          });
         });
       });
     },
@@ -361,8 +390,11 @@ export default Component.extend({
       if (!window.confirm('Close this inkling? This cannot be undone.')) {
         return;
       }
-      let url = `/api/characters/${this.characterId}/inklings/${id}/close`;
-      this.ajaxRequest(url, 'PUT', { viewer_id: this.viewerId }).then((data) => {
+      this.callServer('inklings_close_inkling', {
+        char_id: this.characterId,
+        inkling_id: id,
+        viewer_id: this.viewerId
+      }).then((data) => {
         if (data.error) {
           this.set('error', data.error);
           return;
@@ -380,8 +412,11 @@ export default Component.extend({
       if (!window.confirm(confirmMsg)) {
         return;
       }
-      let url = `/api/characters/${this.characterId}/inklings/${id}?viewer_id=${this.viewerId}`;
-      this.ajaxRequest(url, 'DELETE').then((data) => {
+      this.callServer('inklings_delete_inkling', {
+        char_id: this.characterId,
+        inkling_id: id,
+        viewer_id: this.viewerId
+      }).then((data) => {
         if (data.error) {
           this.set('error', data.error);
           return;
@@ -408,10 +443,11 @@ export default Component.extend({
         this.set('error', 'Please enter a character name to share with');
         return;
       }
-      let url = `/api/characters/${this.characterId}/inklings/${id}/share`;
-      this.ajaxRequest(url, 'POST', {
-        target_name: target,
-        viewer_id: this.viewerId
+      this.callServer('inklings_share_inkling', {
+        char_id: this.characterId,
+        inkling_id: id,
+        viewer_id: this.viewerId,
+        target_name: target
       }).then((data) => {
         if (data.error) {
           this.set('error', data.error);
@@ -420,17 +456,18 @@ export default Component.extend({
         let hash = Object.assign({}, this.shareTargetById);
         hash[id] = '';
         this.set('shareTargetById', hash);
-        let detailUrl = `/api/characters/${this.characterId}/inklings/${id}?viewer_id=${this.viewerId}`;
-        this.ajaxRequest(detailUrl).then((detail) => {
-          this.replaceInkling(detail.inkling);
+        this.reloadInklingDetail(id).then(() => {
           this.set('error', null);
         });
       });
     },
 
     submitInkling(id) {
-      let url = `/api/characters/${this.characterId}/inklings/${id}/submit`;
-      this.ajaxRequest(url, 'POST', { viewer_id: this.viewerId }).then((data) => {
+      this.callServer('inklings_submit_inkling', {
+        char_id: this.characterId,
+        inkling_id: id,
+        viewer_id: this.viewerId
+      }).then((data) => {
         if (data.error) {
           this.set('error', data.error);
           return;
