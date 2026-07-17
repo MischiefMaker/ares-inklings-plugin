@@ -23,16 +23,34 @@ Inklings is a plugin for [AresMUSH](https://aresmush.com) that gives players and
 
 ## Installation
 
+**Quick Install (Recommended):**
+
+From the MUSH, use the built-in plugin installer:
+
+```
+plugin/install https://github.com/MischiefMaker/ares-inklings-plugin
+```
+
+This automatically copies the plugin code, configuration, and web portal components. Then skip to **Post-Installation Setup** below.
+
+**Manual Install (if plugin/install is unavailable):**
+
 1. Copy the `plugin/` folder into your game's `plugins/inklings/` directory.
-2. See **"Chargen & Profile Web Integration"** below for the web portal side - it's a native Ember component plus a couple of small merge-in snippets, none of which are a simple drop-in-and-restart step.
-3. Copy `game/config/inklings.yml` into your game's `game/config/` directory, or merge its contents into an existing config if you already have one.
+2. Copy `game/config/inklings.yml` into your game's `game/config/` directory, or merge its contents if you already have one.
+3. Copy web portal components from `webportal/app/` into your `ares-webportal` app (see **Web Portal Installation** below).
 4. Restart your game.
-5. In-game, create the job category Inklings expects:
+
+**Post-Installation Setup:**
+
+After installation (via plugin/install or manual copy):
+
+1. In-game, create the job category Inklings expects:
    ```
    job/createcategory INKLINGS
    job/categoryroles INKLINGS=<roles that should see inkling-related jobs>
    ```
-6. Confirm the `manage_game` permission exists and is assigned to your Coder role, since `+inkling/reset` depends on it. See [Using Permissions in Code](https://aresmush.com/tutorials/manage/roles.html#using-permissions-in-code) if you need to add it.
+2. Confirm the `manage_game` permission exists and is assigned to your Coder role, since `+inkling/reset` depends on it. See [Using Permissions in Code](https://aresmush.com/tutorials/manage/roles.html#using-permissions-in-code) if you need to add it.
+3. *(Optional)* If you want the Inklings tab on the character profile page, merge the snippet files (see **Chargen & Profile Web Integration** below).
 
 ## Chargen & Profile Web Integration
 
@@ -51,7 +69,9 @@ This plugin registers 11 handler classes in `plugin/web/`, wired up via `Inkling
 
 ### Installing the `inklings-tab` component
 
-Copy into your `ares-webportal` checkout, preserving the paths:
+**If using `plugin/install`:** These files are automatically installed.
+
+**If installing manually:** Copy into your `ares-webportal` checkout, preserving the paths:
 
 | From this plugin | To your `ares-webportal` |
 |---|---|
@@ -62,7 +82,7 @@ Copy into your `ares-webportal` checkout, preserving the paths:
 
 The 7 helper files (`eq`, `and`, `or`, `not`, `format-date`, `join-list`, `join-list-upper`) exist because those aren't built into core Ember (only `{{get}}`, `{{if}}`, `{{each}}`, `{{with}}`, `{{action}}`, `{{input}}`, `{{textarea}}` are) - they're shipped rather than assuming an addon like `ember-truth-helpers` is already installed on your game.
 
-Then invoke it from wherever you want it to appear - see `webportal/snippets/profile-custom-tabs.snippet.hbs` and `profile-custom.snippet.hbs` for the two small merge-in fragments that add it as its own tab on the character Profile page:
+**To display the Inklings tab:** Use the snippet files to add it to your character profile page
 
 ```hbs
 {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
@@ -72,7 +92,11 @@ Everything in `webportal/snippets/` is a **fragment to merge into an existing sh
 
 ### Installing the chargen secret/goal fields
 
-`chargen_hook.rb` requires a secret and goal inkling before chargen can complete, but only the actual Custom Character Fields hook can put those fields into the chargen web flow itself. Merge these snippets into your game's existing shared hook files:
+`chargen_hook.rb` requires configured inkling types before chargen can complete. The web portal integration requires manual merging of snippets into your game's existing shared hook files.
+
+**Why manual?** These files are shared with other plugins. The installer cannot automatically merge content without potentially breaking other plugin integrations.
+
+**Snippets to merge:**
 
 | Snippet | Merges into |
 |---|---|
@@ -80,6 +104,8 @@ Everything in `webportal/snippets/` is a **fragment to merge into an existing sh
 | `webportal/snippets/chargen-custom.snippet.hbs` | `ares-webportal/app/templates/components/chargen-custom.hbs` |
 | `webportal/snippets/chargen-custom.snippet.js` | `ares-webportal/app/components/chargen-custom.js` |
 | `webportal/snippets/custom_char_fields.snippet.rb` | `plugins/profile/custom_char_fields.rb` |
+
+**How to merge:** Copy the snippet file content and paste it into the corresponding game file at the appropriate location. Each snippet includes comments indicating where to place the code.
 
 Since secret/goal both require a title (matching `+inkling/secret <title>/<text>` and `+inkling/goal <title>/<text>` in-game), the chargen form collects four fields (title + text for each) rather than the tutorial's single "goals" box. The Ruby snippet's `save_inkling_field` helper calls into `InklingApi.create_inkling`/`reply_to_inkling` rather than writing to the `Inkling` model directly, so chargen submissions still go through this plugin's normal validation and title requirements.
 

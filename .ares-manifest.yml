@@ -1,0 +1,80 @@
+name: Inklings
+description: Threaded character development system for tracking goals, secrets, plot hooks, and character progression
+author: MischiefMaker
+contact: https://github.com/MischiefMaker/ares-inklings-plugin
+version: 1.0.0
+
+# Plugin folder goes to plugins/inklings/
+paths:
+  plugin: plugin/
+
+# Configuration is merged, not replaced
+# Game owners' customizations are preserved
+config:
+  merge: true
+  files:
+    - game/config/inklings.yml
+
+# Web portal components for the Ember/native implementation
+# Note: Do NOT install the React components (webportal/components/)
+# Those are legacy reference versions included for historical reasons
+webportal:
+  components:
+    - path: webportal/app/components/inklings-tab.js
+      dest: app/components/inklings-tab.js
+    - path: webportal/app/templates/components/inklings-tab.hbs
+      dest: app/templates/components/inklings-tab.hbs
+
+  helpers:
+    - path: webportal/app/helpers/eq.js
+      dest: app/helpers/eq.js
+    - path: webportal/app/helpers/and.js
+      dest: app/helpers/and.js
+    - path: webportal/app/helpers/or.js
+      dest: app/helpers/or.js
+    - path: webportal/app/helpers/not.js
+      dest: app/helpers/not.js
+    - path: webportal/app/helpers/format-date.js
+      dest: app/helpers/format-date.js
+    - path: webportal/app/helpers/join-list.js
+      dest: app/helpers/join-list.js
+    - path: webportal/app/helpers/join-list-upper.js
+      dest: app/helpers/join-list-upper.js
+
+  styles:
+    - path: webportal/app/styles/inklings-tab.css
+      dest: app/styles/components/inklings-tab.css
+      action: append-to-app-styles
+
+# Snippets require manual merge into existing game files
+# These cannot be automated without potentially breaking other plugins
+manual:
+  - name: Character Generation Hook
+    file: webportal/snippets/chargen-custom-tabs.snippet.hbs
+    mergeTo: app/templates/components/chargen-custom-tabs.hbs
+    description: Adds inkling fields to character generation process
+
+  - name: Character Generation Component
+    file: webportal/snippets/chargen-custom.snippet.hbs
+    mergeTo: app/templates/components/chargen-custom.hbs
+    description: Character generation template customization
+
+  - name: Character Generation Script
+    file: webportal/snippets/chargen-custom.snippet.js
+    mergeTo: app/components/chargen-custom.js
+    description: Character generation component logic
+
+  - name: Custom Character Fields Hook
+    file: webportal/snippets/custom_char_fields.snippet.rb
+    mergeTo: plugins/profile/custom_char_fields.rb
+    description: Backend integration for character field persistence
+
+  - name: Profile Tab Integration (Tabs)
+    file: webportal/snippets/profile-custom-tabs.snippet.hbs
+    mergeTo: app/templates/components/profile-custom-tabs.hbs
+    description: Adds Inklings tab to character profile page
+
+  - name: Profile Tab Integration (Content)
+    file: webportal/snippets/profile-custom.snippet.hbs
+    mergeTo: app/templates/components/profile-custom.hbs
+    description: Profile page tab content and styling
