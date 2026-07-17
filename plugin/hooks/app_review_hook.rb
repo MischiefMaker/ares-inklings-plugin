@@ -1,31 +1,29 @@
 module AresMUSH
   module Inklings
-    # App review hook that validates players have created a secret and
-    # goal inkling as part of character approval.
+    # App review hook that validates players have created required
+    # inklings as part of character approval.
     class AppReviewHook
-      # Called during app review. Checks that the character has both a
-      # secret and a goal inkling with non-empty text.
+      # Called during app review. Checks that the character has created
+      # all required inkling types (configured via chargen_required_types
+      # in game/config/inklings.yml) with non-empty text.
       # Returns an array of issues found, or empty array if all is well.
       def self.app_review_issues(char)
         issues = []
+        required_types = Inklings.chargen_required_types
+        return issues if required_types.empty?
 
-        secret = Inkling.find(character_id: char.id, kind: "secret").first
-        unless secret
-          issues << "Secret inkling is missing."
-        end
+        required_types.each do |kind|
+          inkling = Inkling.find(character_id: char.id, kind: kind).first
+          label = Inklings.kind_label(kind)
 
-        goal = Inkling.find(character_id: char.id, kind: "goal").first
-        unless goal
-          issues << "Goal inkling is missing."
-        end
+          unless inkling
+            issues << "#{label} inkling is missing."
+            next
+          end
 
-        # Check that both inklings have actual messages (not empty threads)
-        if secret && secret.messages.empty?
-          issues << "Secret inkling has no text."
-        end
-
-        if goal && goal.messages.empty?
-          issues << "Goal inkling has no text."
+          if inkling.messages.empty?
+            issues << "#{label} inkling has no text."
+          end
         end
 
         return issues
