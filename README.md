@@ -9,11 +9,13 @@ Inklings is a plugin for [AresMUSH](https://aresmush.com) that gives players and
 - Messages can be public, private (to specific participants + staff), or GM-only notes
 - Threads can be shared with individual characters or with everyone matching a demographics group
 - Dice rolls (FS3, custom/static, or NPC rolls with a free-text NPC name) can be attached to any thread, with optional luck-point rerolls from the web portal
-- Players build up a thread freely - staff see nothing until the player explicitly runs `+inkling/submit`, which locks the thread and sends its full contents to a single staff job. The lock clears automatically the moment staff reply.
+- Players build up a thread freely - staff see nothing until the player explicitly runs `+inkling/submit`, which locks the thread and sends its full contents to a single staff job. The thread remains locked while staff review it - only `+inkling/approve` (to approve) or `+inkling/needschanges` (to request revisions) change its status.
 - Players can no longer delete their own thread outright - `+inkling/delete` closes it and files a job requesting staff approval for the permanent deletion
 - Every message and roll gets a permanent reference number in the form `<inkling id>.<sequence>` (e.g. `14.3`) for pointing back at a specific entry later
 - The thread view shows a "Shared With" section listing which non-staff characters and groups have access
 - Names, titles, and inkling types are ansi-colored in in-game output (see [Using Formatting Codes](https://aresmush.com/tutorials/code/formatting.html))
+- A structured approval workflow for submitted inklings: draft → submitted → approval (via staff decision) - staff can request changes to send back to player, or approve to end the review cycle
+- Staff can grant rewards (XP, FS3 skills, or custom reward types) to characters in connection with their inklings, with configurable visibility (private to recipient, or visible to all thread participants)
 - Optional periodic bonus XP (via a Cron job) for characters who've submitted a configured inkling type - requires FS3Skills
 - A native Ember web portal component (`inklings-tab`) for browsing/managing inklings - see "Chargen & Profile Web Integration" for installation
 - Chargen and app-review hooks that require a secret and a goal inkling before a character can be approved
@@ -104,12 +106,31 @@ Quick reference:
 | `+inkling/gm <id>=<text>` | Staff | Add a staff-only note |
 | `+inkling/roll <id>=<roll>` | Participants + staff | Attach a roll |
 | `+inkling/submit <id>` | Owner + staff | Lock the thread and send it to staff as a single job - nothing reaches staff before this |
+| `+inkling/approve <id>[=<msg>]` | Staff | Approve a submitted inkling, close the linked job, and lock it |
+| `+inkling/needschanges <id>=<feedback>` | Staff | Send a submitted inkling back to the player for revisions, unlock it, and close the job |
+| `+inkling/reward <id>=<type>:<amount>` | Staff | Grant a reward (e.g. `xp:5` or `fs3_skill:Skill:1`) to the inkling's subject character; use `/all` flag to make it visible to all participants |
 | `+inkling/share <id>=<char>,<char>` | Owner + staff | Grant access to specific characters |
 | `+inkling/group <id>=<group>,<group>` | Owner + staff | Grant access to a demographics group |
 | `+inkling/close <id>` | Owner + staff | Close a thread |
 | `+inkling/delete <id>` | Owner + staff | Staff: delete immediately. Players: close + request staff approval |
 | `+inkling/list <char>` | Staff | List all of a character's threads |
 | `+inkling/reset` | `manage_game` permission only | Wipe the entire system (type twice to confirm) |
+
+## Approval Workflow
+
+Inklings follow a structured review process once submitted to staff:
+
+1. **Draft** (initial state) - Player builds the thread freely. Staff can't see it. Player can edit/add to it anytime.
+2. **Submitted** - Player runs `+inkling/submit <id>`, which locks the thread and sends its full contents to staff as a single job.
+3. While submitted:
+   - **Staff can reply** via `+inkling/advance` or `+inkling/private` for discussion - these replies are visible to the player but do NOT unlock the thread or change its approval status.
+   - **Player can view** the thread and staff replies, but cannot add new updates.
+   - **Staff can approve** via `+inkling/approve <id>` to end the review (closes the linked job, marks as approved).
+   - **Staff can request changes** via `+inkling/needschanges <id>=<feedback>` to unlock the thread for player revisions.
+4. **If sent back for changes** - Thread unlocks, player can edit/revise and resubmit, repeating the process.
+5. **If approved** - Thread remains locked (review complete), linked job closes.
+
+Staff can also grant rewards during or after review via `+inkling/reward <id>=<type>:<amount>`, which records the reward in the thread history and applies it if applicable (e.g., XP via FS3Skills).
 
 ## Configuration
 
@@ -195,6 +216,8 @@ Not independently confirmed, called out explicitly where they matter most:
 
 - **The lock only blocks replies, private replies, and rolls** (`+inkling/advance`, `+inkling/private`, `+inkling/roll` and their web equivalents) for non-staff. `+inkling/share`, `+inkling/group`, `+inkling/close`, and `+inkling/delete` all still work on a locked thread, since none of those are "building up content for staff to review" - a player can still close or request deletion of a thread that's awaiting a response, for example. Adjust the relevant commands' `check_not_locked` if you want a stricter scope.
 - **Resubmitting sends the whole thread again, not just what's new.** `+inkling/submit` always compiles and sends/mirrors the *entire* current thread, every time - so a second submission after a back-and-forth will repeat earlier messages in the job's comment history rather than showing only the delta. This was a deliberate simplicity choice (see `Inklings.compile_thread_text`/`submit_inkling`) rather than tracking exactly which messages were already sent in a prior submission.
+- **Approval decisions (approve/needschanges) can only be made on submitted inklings.** Only `+inkling/approve` and `+inkling/needschanges` change the approval state. Ordinary staff replies via `+inkling/advance` or `+inkling/private` add discussion but do not unlock the thread or change approval status - they're meant for back-and-forth discussion, not decisions.
+- **Reward types are generic.** The reward system records `reward_type` as a free-form string (e.g. "xp", "fs3_skill"), not an enum. This plugin automatically applies "xp" rewards via FS3Skills if installed, records "fs3_skill" rewards for staff to apply manually, and records any other custom `reward_type` for future plugins (e.g. SOUL, Boons, Banes) to pick up - no schema changes needed if you add a new reward system later.
 - **Bonus XP eligibility is based on when an inkling was created, not on `+inkling/submit`.** See the note in "Bonus XP" above - a character can create a qualifying inkling, never submit it, and still earn the bonus under the current implementation.
 
 - **The `inklings-tab` Ember component's client-side request transport is a best-effort default, not fully verified** - see "Web Request Handlers" above. The server-side handler classes and `get_web_request_handler` registration *are* verified against AresMUSH's own docs; the exact way your `ares-webportal` issues a cmd-based request from the client is the one piece to double-check.

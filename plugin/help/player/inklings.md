@@ -8,7 +8,7 @@ Inklings are a system for tracking character development, plot threads, and impo
 
 > **Note:** Most inkling commands require an approved character. During chargen, the same exception applies to goal and secret inklings.
 
-> **Staff won't see your inkling until you submit it.** You can freely add updates, private notes, and rolls to build up a thread on your own time - none of that reaches staff by itself. When you're ready for staff input, run `+inkling/submit <id>`. That locks the thread and sends everything in it to staff as a single request. The thread stays locked (you can't add more) until a staff member responds - once they do, it unlocks automatically and you're free to add more before submitting again.
+> **Staff won't see your inkling until you submit it.** You can freely add updates, private notes, and rolls to build up a thread on your own time - none of that reaches staff by itself. When you're ready for staff input, run `+inkling/submit <id>`. That locks the thread and sends everything in it to staff as a single request. The thread stays locked (you can't add more) until a staff member makes a decision: they can approve it (ending the review), or send it back with feedback for you to revise and resubmit.
 
 ## Types of Inklings
 
@@ -55,7 +55,7 @@ Attach a roll to the inkling thread. Example: `+inkling/roll 14=Firearms+Reflexe
 Add a private entry to any inkling thread. Private entries are visible only to you and staff — other participants in the thread cannot see them. Like `+inkling/advance`, this doesn't notify staff by itself.
 
 **`+inkling/submit <id>`**
-Lock the thread and send everything in it to staff as a single request. This is the only thing that actually gets a thread in front of staff - do this whenever you want a response. The thread stays locked until staff reply, then unlocks automatically so you can add more and submit again later.
+Lock the thread and send everything in it to staff as a single request. This is the only thing that actually gets a thread in front of staff - do this whenever you want a response. The thread stays locked until a staff member makes a decision via `+inkling/approve` (approved) or `+inkling/needschanges` (sent back for revisions). While locked, you can view it and read staff replies, but can't add new updates unless staff sends it back for changes.
 
 **`+inkling/close <id>`**
 Close an inkling thread (you can do this for your own threads).

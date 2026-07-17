@@ -48,7 +48,16 @@ Add a staff-only reference note. GM notes are never shown to players.
 Attach a roll to the inkling thread. Example: `+inkling/roll 14=Bob/Firearms+Reflexes`
 
 **`+inkling/submit <id>`**
-Players use this to lock a thread and send its full contents to a single staff job - see "Submission Workflow" below. Staff can also run it (e.g. on a player's behalf), though staff replies reach the player immediately regardless of submission state.
+Players use this to lock a thread and send its full contents to a single staff job - see "Submission & Approval Workflow" below. Staff can also run it (e.g. on a player's behalf).
+
+**`+inkling/approve <id>[=<message>]`**
+Approve a submitted inkling. Sets it to approved status, closes the linked job, and notifies the player. Optional message is added to thread history.
+
+**`+inkling/needschanges <id>=<feedback>`**
+Send an inkling back to the player for revisions. Feedback is added to thread history as a visible message, the inkling is unlocked for editing, and the player is notified.
+
+**`+inkling/reward <id>=<reward_type>:<amount>`**
+Grant a reward to the inkling's subject character. Examples: `+inkling/reward 14=xp:5` or `+inkling/reward 14=fs3_skill:Medicine:1`. Use `/all` flag to make the reward visible to all participants: `+inkling/reward 14/all=xp:5`. Rewards default to private (visible only to recipient + staff).
 
 **`+inkling/close <id>`**
 Close an inkling thread and its linked job (if any).
@@ -69,10 +78,15 @@ Every message and roll in a thread is assigned a permanent reference number in t
 
 The thread view shows a "Shared With" section listing which non-staff characters and groups currently have access to the thread (via `+inkling/share` or `+inkling/group`). Staff are never listed here, since they always have access regardless of sharing.
 
-### Submission Workflow
-Players can freely build up a thread (updates, private notes, rolls) without notifying staff or creating a job - nothing reaches staff until the player runs `+inkling/submit <id>`. That locks the thread (blocking further player replies/rolls) and sends its *entire* current contents to a single job in the **INKLINGS** category, titled `[ACTION] <Player> submitted a <Kind> inkling for review.` If the thread already has an open linked job (a second round of submission after staff replied and the player added more), the updated full thread is added as a new comment on that same job rather than creating a second one - a fresh job is only created if there wasn't one yet, or the previous one was closed.
+### Submission & Approval Workflow
+Players can freely build up a thread (updates, private notes, rolls) without notifying staff or creating a job - nothing reaches staff until the player runs `+inkling/submit <id>`. That locks the thread (blocking further player replies/rolls) and sends its *entire* current contents to a single job in the **INKLINGS** category, titled `[ACTION] <Player> submitted a <Kind> inkling for review.`
 
-A staff reply via `+inkling/advance` or `+inkling/private` automatically unlocks the thread (that's the whole point - the player is free to keep working once you've responded). Replying through the linked job itself instead of in-game also unlocks it, once that reply is pulled into the thread (which happens automatically whenever the thread is next viewed or listed). `+inkling/gm` notes do **not** unlock a thread, since they're internal and never reach the player.
+Once submitted and locked, staff can:
+- **Reply via `+inkling/advance` or `+inkling/private`** for discussion without making a decision - these replies do NOT unlock the thread or change its approval status. The player sees the reply but can't edit until a staff decision is made.
+- **`+inkling/approve <id>`** to approve the inkling and close the review cycle. Closes the linked job and notifies the player.
+- **`+inkling/needschanges <id>=<feedback>`** to send it back for revisions. Unlocks the thread so the player can edit, adds feedback as a visible message, and notifies the player. The player can then resubmit when ready.
+
+Replying through the linked job instead of in-game (via `+inkling/advance`/`+inkling/private`) has the same effect as the in-game commands - it gets mirrored into the thread but does not unlock it or approve it. `+inkling/gm` notes are never visible to players and do not affect the lock or approval status.
 
 ### Deletion Requests
 Players can no longer delete their own inkling outright. `+inkling/delete` on a player's own thread now closes it and files a job titled `<Player> is requesting to delete inkling #<id>.` A staff member who approves the request carries out the actual permanent deletion themselves via `+inkling/delete`.
