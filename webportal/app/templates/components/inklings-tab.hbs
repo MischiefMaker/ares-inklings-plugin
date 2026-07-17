@@ -280,6 +280,23 @@
                   {{/if}}
                 {{/if}}
 
+                {{#if this.isStaff}}
+                  <div class="staff-actions">
+                    <div class="staff-action-row">
+                      <button type="button" class="btn btn-secondary" {{action "addGmNote" detail.id}}>+ GM Note</button>
+                    </div>
+                    {{#if (eq detail.approval_state "submitted")}}
+                      <div class="staff-action-row">
+                        <button type="button" class="btn btn-success" {{action "approveInkling" detail.id}}>Approve</button>
+                        <button type="button" class="btn btn-warning" {{action "requestChanges" detail.id}}>Request Changes</button>
+                      </div>
+                    {{/if}}
+                    <div class="staff-action-row">
+                      <button type="button" class="btn btn-info" {{action "grantReward" detail.id}}>Grant Reward</button>
+                    </div>
+                  </div>
+                {{/if}}
+
                 {{#if (and (eq detail.status "open") (or this.isStaff (eq detail.character_id this.viewerId)))}}
                   <div class="inkling-actions">
                     <div class="share-form">

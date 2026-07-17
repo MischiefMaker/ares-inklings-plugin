@@ -383,6 +383,106 @@ export default Component.extend({
       });
     },
 
+    addGmNote(id) {
+      let text = prompt('Enter GM note:');
+      if (!text || !text.trim()) {
+        return;
+      }
+
+      this.callServer('inklings_add_gm_note', {
+        char_id: this.characterId,
+        inkling_id: id,
+        viewer_id: this.viewerId,
+        text: text.trim()
+      }).then((data) => {
+        if (data.error) {
+          this.set('error', data.error);
+          return;
+        }
+        this.reloadInklingDetail(id).then(() => {
+          this.set('error', null);
+        });
+      });
+    },
+
+    approveInkling(id) {
+      let confirmed = confirm('Approve this inkling?');
+      if (!confirmed) {
+        return;
+      }
+
+      this.callServer('inklings_approve_inkling', {
+        inkling_id: id,
+        viewer_id: this.viewerId,
+        message: null
+      }).then((data) => {
+        if (data.error) {
+          this.set('error', data.error);
+          return;
+        }
+        this.reloadInklingDetail(id).then(() => {
+          this.set('error', null);
+        });
+      });
+    },
+
+    requestChanges(id) {
+      let feedback = prompt('Enter feedback for revision:');
+      if (!feedback || !feedback.trim()) {
+        return;
+      }
+
+      this.callServer('inklings_request_changes', {
+        inkling_id: id,
+        viewer_id: this.viewerId,
+        feedback: feedback.trim()
+      }).then((data) => {
+        if (data.error) {
+          this.set('error', data.error);
+          return;
+        }
+        this.reloadInklingDetail(id).then(() => {
+          this.set('error', null);
+        });
+      });
+    },
+
+    grantReward(id) {
+      let rewardType = prompt('Enter reward type (xp, fs3_skill, etc):');
+      if (!rewardType) {
+        return;
+      }
+
+      let rewardKey = '';
+      if (rewardType.toLowerCase() === 'fs3_skill') {
+        rewardKey = prompt('Enter skill name:');
+        if (!rewardKey) {
+          return;
+        }
+      }
+
+      let amount = prompt('Enter amount:');
+      if (!amount) {
+        return;
+      }
+
+      this.callServer('inklings_grant_reward', {
+        inkling_id: id,
+        viewer_id: this.viewerId,
+        reward_type: rewardType.trim(),
+        reward_key: rewardKey.trim(),
+        amount: amount.trim()
+      }).then((data) => {
+        if (data.error) {
+          this.set('error', data.error);
+          return;
+        }
+        this.reloadInklingDetail(id).then(() => {
+          this.set('error', null);
+        });
+      });
+    },
+
     toggleRollForm() {
       this.toggleProperty('showRollForm');
     },

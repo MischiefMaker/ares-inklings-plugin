@@ -465,6 +465,87 @@ module AresMUSH
 
         { inkling: format_inkling_detail(inkling, viewer) }
       end
+
+      # POST - Add a GM note to an inkling (staff only)
+      def self.add_gm_note(char_id, inkling_id, viewer_id, text)
+        char = Character[char_id]
+        return { error: "Character not found" } if !char
+
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        viewer = Character[viewer_id]
+        return { error: "Viewer not found" } if !viewer
+
+        return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
+        return { error: "Text cannot be empty" } if text.to_s.blank?
+
+        InklingMessage.create(
+          inkling: inkling,
+          author: viewer,
+          text: text,
+          created_at: Time.now,
+          seq: Inklings.next_event_seq(inkling),
+          is_staff: "true",
+          is_private: "false",
+          is_gm_note: "true",
+          is_personal: "false",
+          private_recipient_ids: "")
+
+        Inklings.mirror_to_job(inkling, "[GM] #{text}", viewer, true)
+
+        { inkling: format_inkling_detail(inkling, viewer) }
+      end
+
+      # POST - Approve a submitted inkling (staff only)
+      def self.approve_inkling(inkling_id, viewer_id, message = nil)
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        viewer = Character[viewer_id]
+        return { error: "Viewer not found" } if !viewer
+
+        return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
+        return { error: "Inkling not submitted for review" } if inkling.approval_state != "submitted"
+
+        Inklings.approve_inkling(inkling, viewer, message)
+
+        { inkling: format_inkling_detail(inkling, viewer) }
+      end
+
+      # POST - Request changes to a submitted inkling (staff only)
+      def self.request_changes_inkling(inkling_id, viewer_id, feedback)
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        viewer = Character[viewer_id]
+        return { error: "Viewer not found" } if !viewer
+
+        return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
+        return { error: "Inkling not submitted for review" } if inkling.approval_state != "submitted"
+        return { error: "Feedback cannot be empty" } if feedback.to_s.blank?
+
+        Inklings.request_changes(inkling, viewer, feedback)
+
+        { inkling: format_inkling_detail(inkling, viewer) }
+      end
+
+      # POST - Grant a reward to an inkling character (staff only)
+      def self.grant_inkling_reward(inkling_id, viewer_id, reward_type, reward_key, amount)
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        viewer = Character[viewer_id]
+        return { error: "Viewer not found" } if !viewer
+
+        return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
+        return { error: "Reward type cannot be empty" } if reward_type.to_s.blank?
+        return { error: "Amount cannot be empty" } if amount.to_s.blank?
+
+        Inklings.grant_reward(inkling, inkling.character, viewer, reward_type, reward_key, amount)
+
+        { inkling: format_inkling_detail(inkling, viewer) }
+      end
     end
   end
 end

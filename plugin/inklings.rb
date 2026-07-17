@@ -746,6 +746,14 @@ module AresMUSH
         return InklingsAddTagWebHandler
       when "inklings_remove_tag"
         return InklingsRemoveTagWebHandler
+      when "inklings_add_gm_note"
+        return InklingsAddGmNoteWebHandler
+      when "inklings_approve_inkling"
+        return InklingsApproveInklingWebHandler
+      when "inklings_request_changes"
+        return InklingsRequestChangesWebHandler
+      when "inklings_grant_reward"
+        return InklingsGrantRewardWebHandler
       end
       nil
     end
