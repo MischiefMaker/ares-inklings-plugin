@@ -1,25 +1,40 @@
 {{!
   CHARGEN CUSTOM CONTENT SNIPPET
 
+  Adds the Secret and Goal form fields to the chargen process.
+
   FILE: ares-webportal/app/templates/components/chargen-custom.hbs
-  LOCATION: Inside the tab-content <div>, after any existing <div class="tab-pane"> entries
 
-  INSTRUCTIONS:
+  STEP 1: Locate the file
   1. Open your game's ares-webportal/app/templates/components/chargen-custom.hbs
-  2. Find the container <div> with class="tab-content"
-  3. Copy the entire <div class="tab-pane fade"> block below (lines 22-37)
-  4. Paste it inside the tab-content div, at the end of any existing tab-pane divs
-  5. Save the file
-  6. DO NOT change the id="chargen-inklings-pane" - it matches the tab link
 
-  ABOUT THE FORM:
-  Secret and Goal both require titles (matching +inkling/secret <title>/<text> syntax).
-  This snippet collects 4 fields: secret title, secret text, goal title, goal text.
+  STEP 2: Find the insertion point
+  2. Find the <div class="tab-content"> element
+  3. Look for the closing </div> tag for that tab-content div
+  4. The new tab-pane should go INSIDE the tab-content, right before the </div>
 
-  If your game already has a markdown editor component, you can swap the <textarea>
-  elements below for it (example: {{markdown-editor text=this.char.custom.inkling_secret_text}})
+  STEP 3: Copy and paste
+  5. Copy the entire <div class="tab-pane"> block below (between the markers)
+  6. Paste it inside the tab-content div at the end (before </div>)
+  7. Save the file
+
+  IMPORTANT DETAILS:
+
+  ID MATCHING:
+  - The id="chargen-inklings-pane" below MUST match the href in chargen-custom-tabs.snippet.hbs
+  - Do NOT change this value
+
+  FORM FIELDS:
+  - This creates 4 fields: secret title, secret text, goal title, goal text
+  - These correspond to the field names in chargen-custom.snippet.js
+  - If you prefer rich text editing, swap the <textarea> elements for a markdown editor
+
+  FIELD NAMES:
+  - inkling_secret_title, inkling_secret_text, inkling_goal_title, inkling_goal_text
+  - These names MUST match exactly what chargen-custom.snippet.js sends
 }}
 
+{{! ---START COPY HERE--- }}
 <div class="tab-pane fade" id="chargen-inklings-pane">
   <div class="form-group">
     <label for="chargen-secret-title">Secret - Title</label>
@@ -39,3 +54,4 @@
     {{textarea id="chargen-goal-text" value=this.char.custom.inkling_goal_text placeholder="Describe what your character is working toward..." rows=4}}
   </div>
 </div>
+{{! ---END COPY--- }}

@@ -1,22 +1,42 @@
 // APP.SCSS IMPORT SNIPPET
 //
-// FILE: ares-webportal/app/styles/app.scss (or app.less, depending on your project)
-// LOCATION: At the top of the file, with other @use/@import statements
+// Imports the Inklings component styles into your main stylesheet.
 //
-// INSTRUCTIONS:
+// FILE: ares-webportal/app/styles/app.scss
+//
+// STEP 1: Locate the file
 // 1. Open your game's ares-webportal/app/styles/app.scss
-// 2. Find the section at the top where @use or @import statements are (usually the first 10-20 lines)
-// 3. Copy the import line below
-// 4. Paste it at the END of your existing @use/@import statements
-// 5. Save the file
 //
-// WHAT THIS DOES:
-// This imports all the CSS styles for the Inklings tab component.
-// The file must be copied to webportal/app/styles/ as instructed in the main README.
+// STEP 2: Find the import section
+// 2. Find the section at the top where other @use or @import statements are
+//    (Usually the first 10-20 lines of the file)
+// 3. Look for where the imports end
 //
-// NOTE: If your project uses @import instead of @use, use this format:
-//       @import "inklings-tab";
+// STEP 3: Copy and paste
+// 4. Copy the import line below (between the markers)
+// 5. Paste it at the END of all your existing @use/@import statements
+// 6. Save the file
 //
-// The Sass compiler will find the file automatically as long as it's in the app/styles/ folder.
+// IMPORTANT:
+// - Paste this AFTER all other imports
+// - The inklings-tab.scss file MUST be in your app/styles/ folder
+//   (as instructed in the main README, Step 2)
+// - If your project uses @import instead of @use, use @import "inklings-tab"; instead
+//
+// EXAMPLE:
+// If your app.scss looks like:
+//
+//   @use "bootstrap";
+//   @use "my-variables";
+//   @use "my-theme";
+//
+// Then add this line at the end:
+//
+//   @use "inklings-tab";
 
+// ---START COPY HERE---
 @use "inklings-tab";
+// ---END COPY---
+
+// For legacy projects using @import instead of @use:
+// @import "inklings-tab";

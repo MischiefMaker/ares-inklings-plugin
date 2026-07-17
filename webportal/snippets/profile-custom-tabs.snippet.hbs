@@ -1,30 +1,29 @@
 {{!
   PROFILE CUSTOM TABS SNIPPET
 
-  This adds the "Inklings" tab to the character profile page tab list.
+  Adds the "Inklings" tab to the character profile page tab list.
 
   FILE: ares-webportal/app/templates/components/profile-custom-tabs.hbs
-  LOCATION: Inside the <ul> element
 
   STEP 1: Locate the file
   1. Open your game's ares-webportal/app/templates/components/profile-custom-tabs.hbs
-  2. Find the <ul> element that contains the profile tab links (usually near the top)
 
   STEP 2: Find the insertion point
-  3. Find the end of the <ul> (look for </ul>)
-  4. Look for any existing <li> elements - you'll paste AFTER the last one
+  2. Find the <ul> element that contains the profile tab links
+  3. Look for the closing </ul> tag
+  4. The new <li> should go INSIDE the <ul>, right before the </ul>
 
   STEP 3: Copy and paste
   5. Copy the <li> block below (between the markers)
-  6. Paste it inside the <ul>, right before the </ul> closing tag
+  6. Paste it inside the <ul> at the end (before </ul>)
   7. Save the file
 
   IMPORTANT: DO NOT change the href="#inklings-tab-pane"
   It must match the id="inklings-tab-pane" in profile-custom.snippet.hbs
 }}
 
-  {{! ---START COPY HERE--- }}
-  <li class="nav-item">
-    <a class="nav-link" data-toggle="tab" href="#inklings-tab-pane">Inklings</a>
-  </li>
-  {{! ---END COPY--- }}
+{{! ---START COPY HERE--- }}
+<li class="nav-item">
+  <a class="nav-link" data-toggle="tab" href="#inklings-tab-pane">Inklings</a>
+</li>
+{{! ---END COPY--- }}
