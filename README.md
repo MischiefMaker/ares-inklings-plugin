@@ -143,7 +143,7 @@ inklings:
   types:
     hint: { category: staff, name: Hint, description: "..." }
     # ...one entry per type...
-  inkling_type_xp: update
+  inkling_type_xp: progress
   xp_amount: 1
   award_cron:
     day_of_week: [Sat]
