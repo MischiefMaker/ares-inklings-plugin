@@ -88,7 +88,9 @@ module AresMUSH
           creator: viewer,
           created_at: Time.now,
           player_unread: viewer.id == char.id ? "false" : "true",
-          locked: "false")
+          locked: "false",
+          approval_state: "draft",
+          tags: "")
 
         InklingMessage.create(
           inkling: inkling,
@@ -99,6 +101,7 @@ module AresMUSH
           is_staff: Inklings.can_manage_inklings?(viewer) ? "true" : "false",
           is_private: "false",
           is_gm_note: "false",
+          is_personal: "false",
           private_recipient_ids: "")
 
         if viewer.id != char.id
@@ -129,7 +132,7 @@ module AresMUSH
       end
 
       # POST /api/characters/:char_id/inklings/:inkling_id/reply
-      def self.reply_to_inkling(char_id, inkling_id, viewer_id, text, is_private: false)
+      def self.reply_to_inkling(char_id, inkling_id, viewer_id, text, is_private: false, is_personal: false)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
@@ -143,12 +146,12 @@ module AresMUSH
         return { error: "Not authorized" } if !can_view_inkling?(inkling, viewer)
         return { error: "Your character must be approved to reply to inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
         return { error: "This inkling is closed" } if inkling.status == "closed"
-        return { error: "This inkling has been submitted and is locked until staff respond." } if inkling.locked == "true" && !Inklings.can_manage_inklings?(viewer)
+        return { error: "This inkling has been submitted and is locked until staff respond." } if inkling.locked == "true" && !Inklings.can_manage_inklings?(viewer) && !is_personal
         return { error: "Reply text cannot be empty" } if text.to_s.blank?
 
         is_staff = Inklings.can_manage_inklings?(viewer)
 
-        if is_staff && !is_private
+        if is_staff && !is_private && !is_personal
           last_msg = inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }.last
           is_private = true if last_msg && last_msg.is_private.to_s == "true"
         end
@@ -167,12 +170,13 @@ module AresMUSH
           created_at: Time.now,
           seq: Inklings.next_event_seq(inkling),
           is_staff: is_staff ? "true" : "false",
-          is_private: is_private ? "true" : "false",
+          is_private: is_personal ? "false" : (is_private ? "true" : "false"),
           is_gm_note: "false",
+          is_personal: is_personal ? "true" : "false",
           private_recipient_ids: recipient_ids)
 
         job_text = is_private ? "[Private] #{text}" : text
-        if is_staff
+        if is_staff && !is_personal
           # A staff reply is what unlocks a submitted thread.
           inkling.update(player_unread: "true", locked: "false")
           Inklings.mirror_to_job(inkling, job_text, viewer)
@@ -351,6 +355,8 @@ module AresMUSH
         visible_messages ||= viewer ? visible_messages_for(inkling, viewer) : inkling.messages.to_a
         visible_rolls ||= viewer ? visible_rolls_for(inkling, viewer) : inkling.rolls.to_a
 
+        tags = inkling.tags.to_s.split(",").map(&:strip).reject(&:empty?)
+
         {
           id: inkling.id,
           kind: inkling.kind,
@@ -363,6 +369,7 @@ module AresMUSH
           roll_count: visible_rolls.size,
           player_unread: viewer && inkling.character != viewer ? false : inkling.player_unread == "true",
           locked: inkling.locked == "true",
+          tags: tags,
           linked_job: inkling.job ? { id: inkling.job.id, status: inkling.job.status } : nil
         }
       end
@@ -396,6 +403,7 @@ module AresMUSH
           is_staff: message.is_staff == "true",
           is_private: message.is_private == "true",
           is_gm_note: message.is_gm_note == "true",
+          is_personal: message.is_personal == "true",
           private_recipient_ids: message.is_private == "true" ? message.private_recipient_ids.to_s.split(",").map(&:strip).reject(&:empty?) : [],
           private_recipient_names: message.is_private == "true" ? Inklings.private_recipient_names(message) : []
         }
@@ -403,6 +411,59 @@ module AresMUSH
 
       def self.format_roll(roll)
         Inklings.format_roll_json(roll)
+      end
+
+      # POST - Add a tag to an inkling
+      def self.add_tag(char_id, inkling_id, viewer_id, tag)
+        char = Character[char_id]
+        return { error: "Character not found" } if !char
+
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        viewer = Character[viewer_id]
+        return { error: "Viewer not found" } if !viewer
+
+        return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
+        return { error: "Not authorized" } if !can_view_inkling?(inkling, viewer)
+        return { error: "Not authorized to manage tags" } if inkling.character != viewer && !Inklings.can_manage_inklings?(viewer)
+
+        tag = tag.to_s.strip.downcase
+        return { error: "Invalid tag" } if tag.blank?
+        return { error: "Tag too long" } if tag.length > 30
+
+        existing_tags = Inklings.get_tags(inkling)
+        return { error: "Tag already exists" } if existing_tags.include?(tag)
+
+        Inklings.add_tag(inkling, tag)
+
+        { inkling: format_inkling_detail(inkling, viewer) }
+      end
+
+      # POST - Remove a tag from an inkling
+      def self.remove_tag(char_id, inkling_id, viewer_id, tag)
+        char = Character[char_id]
+        return { error: "Character not found" } if !char
+
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        viewer = Character[viewer_id]
+        return { error: "Viewer not found" } if !viewer
+
+        return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
+        return { error: "Not authorized" } if !can_view_inkling?(inkling, viewer)
+        return { error: "Not authorized to manage tags" } if inkling.character != viewer && !Inklings.can_manage_inklings?(viewer)
+
+        tag = tag.to_s.strip.downcase
+        return { error: "Invalid tag" } if tag.blank?
+
+        existing_tags = Inklings.get_tags(inkling)
+        return { error: "Tag not found" } unless existing_tags.include?(tag)
+
+        Inklings.remove_tag(inkling, tag)
+
+        { inkling: format_inkling_detail(inkling, viewer) }
       end
     end
   end

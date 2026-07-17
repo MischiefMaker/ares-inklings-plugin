@@ -99,7 +99,9 @@ module AresMUSH
           creator: creator,
           created_at: Time.now,
           player_unread: staff_started ? "true" : "false",
-          locked: "false")
+          locked: "false",
+          approval_state: "draft",
+          tags: "")
 
         InklingMessage.create(
           inkling: inkling,
@@ -109,7 +111,9 @@ module AresMUSH
           seq: Inklings.next_event_seq(inkling),
           is_staff: Inklings.can_manage_inklings?(creator) ? "true" : "false",
           is_private: "false",
-          is_gm_note: "false")
+          is_gm_note: "false",
+          is_personal: "false",
+          private_recipient_ids: "")
 
         notice = t('inklings.thread_started', :id => inkling.id)
         notice << " #{t('inklings.not_yet_submitted_notice', :id => inkling.id)}" unless staff_started

@@ -77,6 +77,9 @@
               {{#if inkling.linked_job}}
                 <span class="linked-job">Job #{{inkling.linked_job.id}} ({{inkling.linked_job.status}})</span>
               {{/if}}
+              {{#if inkling.tags.length}}
+                <span class="inkling-tags">{{join-list inkling.tags}}</span>
+              {{/if}}
             </div>
             <span class="expand-icon {{if (eq this.expandedId inkling.id) "open"}}">&#9660;</span>
           </div>
@@ -142,6 +145,7 @@
                         <strong>{{msg.author}}</strong>
                         {{#if msg.is_staff}}<span class="staff-badge">STAFF</span>{{/if}}
                         {{#if msg.is_gm_note}}<span class="staff-badge">GM</span>{{/if}}
+                        {{#if msg.is_personal}}<span class="personal-badge">PERSONAL</span>{{/if}}
                         {{#if msg.is_private}}
                           <span class="private-badge">
                             {{#if msg.private_recipient_names.length}}
@@ -232,6 +236,37 @@
                         <button type="button" class="btn btn-success" {{action "submitReply" detail.id}}>Add Reply</button>
                       </div>
                     </div>
+
+                    <div class="personal-entry-section">
+                      <textarea oninput={{action "updateReplyText" detail.id value="target.value"}} placeholder="Add a personal entry (private note)..." rows="3">{{get this.replyTextById detail.id}}</textarea>
+                      <div class="personal-actions">
+                        <button type="button" class="btn btn-success" {{action "submitPersonalReply" detail.id}}>Add Personal Entry</button>
+                      </div>
+                    </div>
+
+                    {{#if (or detail.tags.length (or this.isStaff (eq detail.character_id this.viewerId)))}}
+                      <div class="tags-section">
+                        {{#if detail.tags.length}}
+                          <div class="tags-list">
+                            <strong>Tags:</strong>
+                            {{#each detail.tags as |tag|}}
+                              <span class="tag">
+                                {{tag}}
+                                {{#if (or this.isStaff (eq detail.character_id this.viewerId))}}
+                                  <button type="button" class="tag-remove" {{action "removeTag" detail.id tag}}>×</button>
+                                {{/if}}
+                              </span>
+                            {{/each}}
+                          </div>
+                        {{/if}}
+                        {{#if (or this.isStaff (eq detail.character_id this.viewerId))}}
+                          <div class="tag-input-section">
+                            <input type="text" value={{get this.tagInputById detail.id}} oninput={{action "updateTagInput" detail.id value="target.value"}} placeholder="Add a tag..." />
+                            <button type="button" class="btn btn-secondary" {{action "addTag" detail.id}}>Add Tag</button>
+                          </div>
+                        {{/if}}
+                      </div>
+                    {{/if}}
 
                     {{#if (and (not this.isStaff) (eq detail.character_id this.viewerId) (not detail.locked))}}
                       <div class="submit-section">

@@ -8,7 +8,8 @@ module AresMUSH
           request.args["inkling_id"],
           request.args["viewer_id"],
           request.args["text"],
-          is_private: request.args["is_private"] ? true : false)
+          is_private: request.args["is_private"] ? true : false,
+          is_personal: request.args["is_personal"] ? true : false)
       end
     end
   end

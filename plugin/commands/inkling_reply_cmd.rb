@@ -89,6 +89,7 @@ module AresMUSH
           is_staff: is_staff ? "true" : "false",
           is_private: auto_private ? "true" : "false",
           is_gm_note: "false",
+          is_personal: "false",
           private_recipient_ids: auto_recipients)
 
         if is_staff

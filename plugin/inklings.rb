@@ -593,6 +593,7 @@ module AresMUSH
     # listed in private_recipient_ids.
     def self.can_see_message?(message, viewer)
       return Inklings.can_manage_inklings?(viewer) if message.is_gm_note.to_s == "true"
+      return message.author && message.author.id == viewer.id if message.is_personal.to_s == "true"
       return true if message.is_private.to_s != "true"
       return true if Inklings.can_manage_inklings?(viewer)
       return true if message.author && message.author.id == viewer.id
@@ -643,6 +644,12 @@ module AresMUSH
           return InklingRewardCmd
         elsif cmd.switch_is?("close")
           return InklingCloseCmd
+        elsif cmd.switch_is?("personal")
+          return InklingPersonalCmd
+        elsif cmd.switch_is?("tag")
+          return InklingTagCmd
+        elsif cmd.switch_is?("untag")
+          return InklingUntagCmd
         elsif all_kinds.any? { |k| cmd.switch_is?(k) }
           return InklingStartCmd
         else
@@ -735,6 +742,10 @@ module AresMUSH
         return InklingsAddRollWebHandler
       when "inklings_reroll_with_luck"
         return InklingsRerollWithLuckWebHandler
+      when "inklings_add_tag"
+        return InklingsAddTagWebHandler
+      when "inklings_remove_tag"
+        return InklingsRemoveTagWebHandler
       end
       nil
     end
@@ -810,6 +821,30 @@ module AresMUSH
       end
 
       state.update(last_period_end: now.to_s)
+    end
+
+    # --- Tag management -----
+
+    def self.add_tag(inkling, tag)
+      return unless tag
+      tag = tag.to_s.strip.downcase
+      return if tag.empty?
+      tags = inkling.tags.to_s.split(",").map(&:strip).reject(&:empty?)
+      return if tags.include?(tag)
+      tags << tag
+      inkling.update(tags: tags.join(","))
+    end
+
+    def self.remove_tag(inkling, tag)
+      return unless tag
+      tag = tag.to_s.strip.downcase
+      tags = inkling.tags.to_s.split(",").map(&:strip).reject(&:empty?)
+      tags.delete(tag)
+      inkling.update(tags: tags.empty? ? "" : tags.join(","))
+    end
+
+    def self.get_tags(inkling)
+      inkling.tags.to_s.split(",").map(&:strip).reject(&:empty?)
     end
   end
 end

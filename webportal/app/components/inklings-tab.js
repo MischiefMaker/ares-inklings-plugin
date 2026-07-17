@@ -55,7 +55,9 @@ export default Component.extend({
 
   replyTextById: null,
   privateReplyById: null,
+  personalReplyById: null,
   shareTargetById: null,
+  tagInputById: null,
 
   showRollForm: false,
   rollType: 'player',
@@ -71,7 +73,9 @@ export default Component.extend({
     this.set('inklings', A());
     this.set('replyTextById', {});
     this.set('privateReplyById', {});
+    this.set('personalReplyById', {});
     this.set('shareTargetById', {});
+    this.set('tagInputById', {});
     this.set('typeInfo', {});
   },
 
@@ -287,6 +291,88 @@ export default Component.extend({
           let hash = Object.assign({}, this.replyTextById);
           hash[id] = '';
           this.set('replyTextById', hash);
+          this.set('error', null);
+        });
+      });
+    },
+
+    togglePersonalReply(id) {
+      let hash = Object.assign({}, this.personalReplyById);
+      hash[id] = !hash[id];
+      this.set('personalReplyById', hash);
+    },
+
+    submitPersonalReply(id) {
+      let text = (this.replyTextById || {})[id];
+      if (!text || !text.trim()) {
+        this.set('error', 'Please enter personal entry text');
+        return;
+      }
+
+      this.callServer('inklings_reply_to_inkling', {
+        char_id: this.characterId,
+        inkling_id: id,
+        viewer_id: this.viewerId,
+        text,
+        is_personal: true
+      }).then((data) => {
+        if (data.error) {
+          this.set('error', data.error);
+          return;
+        }
+        this.reloadInklingDetail(id).then(() => {
+          let hash = Object.assign({}, this.replyTextById);
+          hash[id] = '';
+          this.set('replyTextById', hash);
+          this.set('error', null);
+        });
+      });
+    },
+
+    updateTagInput(id, value) {
+      let hash = Object.assign({}, this.tagInputById);
+      hash[id] = value;
+      this.set('tagInputById', hash);
+    },
+
+    addTag(id) {
+      let tag = (this.tagInputById || {})[id];
+      if (!tag || !tag.trim()) {
+        this.set('error', 'Please enter a tag');
+        return;
+      }
+
+      this.callServer('inklings_add_tag', {
+        char_id: this.characterId,
+        inkling_id: id,
+        viewer_id: this.viewerId,
+        tag: tag.trim()
+      }).then((data) => {
+        if (data.error) {
+          this.set('error', data.error);
+          return;
+        }
+        this.reloadInklingDetail(id).then(() => {
+          let hash = Object.assign({}, this.tagInputById);
+          hash[id] = '';
+          this.set('tagInputById', hash);
+          this.set('error', null);
+        });
+      });
+    },
+
+    removeTag(id, tag) {
+      this.callServer('inklings_remove_tag', {
+        char_id: this.characterId,
+        inkling_id: id,
+        viewer_id: this.viewerId,
+        tag
+      }).then((data) => {
+        if (data.error) {
+          this.set('error', data.error);
+          return;
+        }
+        this.reloadInklingDetail(id).then(() => {
           this.set('error', null);
         });
       });

@@ -52,6 +52,7 @@ module AresMUSH
           is_staff: "true",
           is_private: "false",
           is_gm_note: "true",
+          is_personal: "false",
           private_recipient_ids: "")
 
         Inklings.mirror_to_job(inkling, "[GM] #{self.text}", enactor, true)

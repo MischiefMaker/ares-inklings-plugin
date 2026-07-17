@@ -22,6 +22,9 @@ module AresMUSH
     # Any character whose group membership matches a spec has access, even
     # if they were approved after the share was set.
     attribute :shared_groups
+    # Comma-separated tags for organization (e.g. "family,plot-hook").
+    # Tags are optional and used for categorizing inklings.
+    attribute :tags
     attribute :created_at
     # "true"/"false" - whether the player has unread staff messages
     # on this thread.
@@ -87,6 +90,10 @@ module AresMUSH
     attribute :is_private
     # "true"/"false" - visible only to staff via can_manage_inklings?.
     attribute :is_gm_note
+    # "true"/"false" - visible only to the author. Personal entries are
+    # intended for the author's private notes and are hidden from
+    # everyone including staff during normal viewing.
+    attribute :is_personal
     # Comma-separated character IDs of non-staff players who can see
     # this private message. For player private entries this is empty
     # (only the author + staff). For staff private entries this defaults
