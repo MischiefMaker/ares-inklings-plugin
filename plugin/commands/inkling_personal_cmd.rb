@@ -45,13 +45,6 @@ module AresMUSH
         return nil
       end
 
-      def check_not_locked
-        return nil if !inkling
-        return nil if Inklings.can_manage_inklings?(enactor)
-        return t('inklings.thread_is_locked') if inkling.locked == "true"
-        nil
-      end
-
       def handle
         is_staff = Inklings.can_manage_inklings?(enactor)
 
