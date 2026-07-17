@@ -4,6 +4,14 @@
 # NOTE: This is a SHARED HOOK FILE used by multiple plugins.
 #       You will ADD CODE to existing methods, not replace the whole file.
 #
+# IMPORTANT CONFIGURATION NOTE:
+# This snippet saves Secret and Goal inklings (as defined in game/config/inklings.yml
+# chargen_required_types). If you change chargen_required_types to use different
+# inkling types, you MUST also update:
+# - chargen-custom.snippet.hbs (the form fields)
+# - chargen-custom.snippet.js (the field names sent to server)
+# to match the configured types. This snippet will automatically handle any types.
+#
 # This snippet has 6 steps. Follow them in order. Each step is a separate copy-paste.
 
 # ============================================================================
@@ -75,12 +83,18 @@ require_relative '../../inklings/public/inklings_api'
 #    - It should look like: def self.save_fields_from_profile_edit2(char, viewer, args)
 #    - NOT: def self.save_fields_from_profile_edit(char, char_data) (that's deprecated)
 # 2. Find the line just before the "end" of that method
-# 3. Copy and paste these 2 lines BEFORE the "end":
+# 3. Copy and paste these lines BEFORE the "end":
 #
 # ---START COPY HERE---
-      save_inkling_from_args(char, viewer, "secret", args[:inkling_secret_title], args[:inkling_secret_text])
-      save_inkling_from_args(char, viewer, "goal", args[:inkling_goal_title], args[:inkling_goal_text])
+      Inklings.chargen_required_types.each do |kind|
+        title_key = "inkling_#{kind}_title".to_sym
+        text_key = "inkling_#{kind}_text".to_sym
+        save_inkling_from_args(char, viewer, kind, args[title_key], args[text_key])
+      end
 # ---END COPY---
+#
+# This loops through whatever inkling types are configured as chargen_required_types
+# in game/config/inklings.yml and saves them all dynamically.
 
 # ============================================================================
 # STEP 5: Add code to save chargen data
@@ -91,12 +105,18 @@ require_relative '../../inklings/public/inklings_api'
 #
 # 1. Find the method "def self.save_fields_from_chargen(char, args)"
 # 2. Find the line just before the "end" of that method
-# 3. Copy and paste these 2 lines BEFORE the "end":
+# 3. Copy and paste these lines BEFORE the "end":
 #
 # ---START COPY HERE---
-      save_inkling_from_args(char, char, "secret", args[:inkling_secret_title], args[:inkling_secret_text])
-      save_inkling_from_args(char, char, "goal", args[:inkling_goal_title], args[:inkling_goal_text])
+      Inklings.chargen_required_types.each do |kind|
+        title_key = "inkling_#{kind}_title".to_sym
+        text_key = "inkling_#{kind}_text".to_sym
+        save_inkling_from_args(char, char, kind, args[title_key], args[text_key])
+      end
 # ---END COPY---
+#
+# This loops through whatever inkling types are configured as chargen_required_types
+# in game/config/inklings.yml and saves them all dynamically.
 
 # ============================================================================
 # STEP 6: Add the helper method
