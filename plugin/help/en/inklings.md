@@ -19,6 +19,7 @@ Inklings are a system for tracking character development, plot threads, and impo
 - **Pitch** - A pitch for a scene, plot arc, or event you'd like to happen
 - **Goal** - A long-term goal your character is working toward
 - **Secret** - An IC secret your character holds (shareable with other players)
+- **Progress** - A personal record of your character's development, important events, growth, discoveries, relationships, and ongoing history
 
 **From staff:**
 - **Hint** - A hint or guidance from staff about something

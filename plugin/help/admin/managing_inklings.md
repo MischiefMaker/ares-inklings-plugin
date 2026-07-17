@@ -108,7 +108,7 @@ Staff can manage inklings from the character profile **Inklings** tab on the web
 
 **Job Category:** Inklings are automatically placed in the `INKLINGS` job category. Create this category in-game with: `job/createcategory INKLINGS`
 
-**Types:** Inkling types (hint, vision, goal, secret, etc.) are defined in `game/config/inklings.yml` under `types`, not hardcoded - add, remove, rename, or redescribe them there without touching code. Run `+inkling/types` in-game to see the current live listing pulled straight from that config.
+**Types:** Inkling types (hint, vision, goal, secret, progress, etc.) are defined in `game/config/inklings.yml` under `types`, not hardcoded - add, remove, rename, or redescribe them there without touching code. Run `+inkling/types` in-game to see the current live listing pulled straight from that config.
 
 **Bonus XP:** Optionally, a weekly (configurable) Cron job can award bonus XP to characters who've submitted a configured inkling type. Requires the FS3Skills plugin. Configure `inkling_type_xp`, `xp_amount`, and `award_cron` in `game/config/inklings.yml` - see the comments there and the README's "Bonus XP" section for details, including an important note about the setting's default value.
 

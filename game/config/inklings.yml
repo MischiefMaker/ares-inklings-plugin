@@ -71,6 +71,10 @@ inklings:
       name: Secret
       description: An IC secret your character holds, shareable with other players.
       chargen: true
+    progress:
+      category: player
+      name: Progress
+      description: A personal record of your character's development, important events, growth, discoveries, relationships, and ongoing history. Use this to maintain a chronicle of significant moments and changes.
 
   # Bonus XP awarded periodically to characters who have submitted an
   # inkling of the configured type since the last award cycle ran. See
@@ -101,7 +105,7 @@ inklings:
   #     Default below runs weekly, Saturday at 9pm. Set to {} to
   #     disable the award cycle entirely without removing the other
   #     settings.
-  inkling_type_xp: update
+  inkling_type_xp: progress
   xp_amount: 1
   award_cron:
     day_of_week:

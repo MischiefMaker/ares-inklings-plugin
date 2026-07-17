@@ -4,7 +4,7 @@ Inklings is a plugin for [AresMUSH](https://aresmush.com) that gives players and
 
 ## Features
 
-- **Configurable types:** inkling types (hint, vision, goal, secret, etc.) are defined in `game/config/inklings.yml`, not hardcoded - add, remove, rename, or redescribe them there. Run `+inkling/types` in-game for the current live listing.
+- **Configurable types:** inkling types (hint, vision, goal, secret, progress, etc.) are defined in `game/config/inklings.yml`, not hardcoded - add, remove, rename, or redescribe them there. Run `+inkling/types` in-game for the current live listing.
 - Every thread requires a title, whether started by a player or staff (matching `+inkling/new`'s `<title>/<text>` syntax)
 - Messages can be public, private (to specific participants + staff), or GM-only notes
 - Threads can be shared with individual characters or with everyone matching a demographics group
@@ -16,7 +16,7 @@ Inklings is a plugin for [AresMUSH](https://aresmush.com) that gives players and
 - Names, titles, and inkling types are ansi-colored in in-game output (see [Using Formatting Codes](https://aresmush.com/tutorials/code/formatting.html))
 - A structured approval workflow for submitted inklings: draft → submitted → approval (via staff decision) - staff can request changes to send back to player, or approve to end the review cycle
 - Staff can grant rewards (XP, FS3 skills, or custom reward types) to characters in connection with their inklings, with configurable visibility (private to recipient, or visible to all thread participants)
-- Optional periodic bonus XP (via a Cron job) for characters who've submitted a configured inkling type - requires FS3Skills
+- Optional periodic bonus XP (via a Cron job) for characters who've created a configured inkling type (Progress by default) - requires FS3Skills
 - A native Ember web portal component (`inklings-tab`) for browsing/managing inklings - see "Chargen & Profile Web Integration" for installation
 - Chargen and app-review hooks that require a secret and a goal inkling before a character can be approved
 - A coder-only, double-confirmation `+inkling/reset` command for wiping the system during development/testing
@@ -174,7 +174,7 @@ An optional feature that periodically awards bonus XP to characters who've submi
 
 **Config** (`game/config/inklings.yml`):
 
-- `inkling_type_xp` - the inkling type that qualifies for the bonus. **Defaults to `"update"`, which is not a creatable type in this plugin** (see the "Inkling Types" note above / the comment in the config file) - left at that literal default, the reward can only ever match legacy data, never a newly-created inkling. Point it at a real type (e.g. `"goal"`) to actually use the feature, or add an `update` entry back into `types` if you want a dedicated type just for this reward.
+- `inkling_type_xp` - the inkling type that qualifies for the bonus. **Defaults to `"progress"`**, a player-created inkling type for personal character development records. Characters who create progress entries earn the bonus XP, with no need to submit them to staff.
 - `xp_amount` - bonus XP per qualifying character per award period. Default `1`.
 - `award_cron` - standard Ares cron config controlling how often the cycle runs. Default is weekly, Saturday 9pm. Set to `{}` to disable without removing the other settings.
 
