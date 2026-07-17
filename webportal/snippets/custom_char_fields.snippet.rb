@@ -66,10 +66,14 @@ require_relative '../../inklings/public/inklings_api'
 # ============================================================================
 #
 # FILE: plugins/profile/custom_char_fields.rb
-# METHOD: def self.save_fields_from_profile_edit (or save_fields_from_profile_edit2)
+# METHOD: def self.save_fields_from_profile_edit2(char, viewer, args)
 #
-# 1. Find the method "def self.save_fields_from_profile_edit"
-#    (Note: Some versions may be called save_fields_from_profile_edit2)
+# IMPORTANT: Use save_fields_from_profile_edit2, NOT save_fields_from_profile_edit
+#            (save_fields_from_profile_edit is deprecated)
+#
+# 1. Find the method "def self.save_fields_from_profile_edit2(char, viewer, args)"
+#    - It should look like: def self.save_fields_from_profile_edit2(char, viewer, args)
+#    - NOT: def self.save_fields_from_profile_edit(char, char_data) (that's deprecated)
 # 2. Find the line just before the "end" of that method
 # 3. Copy and paste these 2 lines BEFORE the "end":
 #
