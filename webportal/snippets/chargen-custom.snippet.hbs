@@ -1,21 +1,25 @@
 {{!
-  MERGE-IN SNIPPET - not a complete file.
+  CHARGEN CUSTOM CONTENT SNIPPET
 
-  Add this <div> inside the existing tab-content container in your
-  game's ares-webportal/app/templates/components/chargen-custom.hbs,
-  alongside any other plugins' custom chargen steps already there.
-  Pair with chargen-custom.snippet.js (same directory) for the
-  backing actions/data.
+  FILE: ares-webportal/app/templates/components/chargen-custom.hbs
+  LOCATION: Inside the tab-content <div>, after any existing <div class="tab-pane"> entries
 
-  Secret and goal both require a title now (matching the in-game
-  +inkling/secret <title>/<text> and +inkling/goal <title>/<text>
-  syntax - see Inklings.chargen_kinds in plugin/inklings.rb), so this
-  collects four fields rather than the tutorial's single "goals" text
-  box. If your game has a markdown-editor-style component already
-  (the official tutorial's own worked example uses one -
-  {{markdown-editor text=this.char.custom.goals}}), swap the plain
-  textareas below for it if you'd like richer formatting.
+  INSTRUCTIONS:
+  1. Open your game's ares-webportal/app/templates/components/chargen-custom.hbs
+  2. Find the container <div> with class="tab-content"
+  3. Copy the entire <div class="tab-pane fade"> block below (lines 22-37)
+  4. Paste it inside the tab-content div, at the end of any existing tab-pane divs
+  5. Save the file
+  6. DO NOT change the id="chargen-inklings-pane" - it matches the tab link
+
+  ABOUT THE FORM:
+  Secret and Goal both require titles (matching +inkling/secret <title>/<text> syntax).
+  This snippet collects 4 fields: secret title, secret text, goal title, goal text.
+
+  If your game already has a markdown editor component, you can swap the <textarea>
+  elements below for it (example: {{markdown-editor text=this.char.custom.inkling_secret_text}})
 }}
+
 <div class="tab-pane fade" id="chargen-inklings-pane">
   <div class="form-group">
     <label for="chargen-secret-title">Secret - Title</label>
