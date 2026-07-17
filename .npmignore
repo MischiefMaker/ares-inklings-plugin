@@ -1,0 +1,20 @@
+# Documentation and reference files
+webportal/snippets/
+
+# Development and testing
+.git/
+.gitignore
+.github/
+node_modules/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+CLAUDE.md
