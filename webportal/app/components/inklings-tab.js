@@ -309,6 +309,11 @@ export default Component.extend({
         return;
       }
 
+      let confirmed = confirm('Personal entries are intended as private notes, but may become visible under game policies (character transfers, roster changes, or administration). Proceed?');
+      if (!confirmed) {
+        return;
+      }
+
       this.callServer('inklings_reply_to_inkling', {
         char_id: this.characterId,
         inkling_id: id,

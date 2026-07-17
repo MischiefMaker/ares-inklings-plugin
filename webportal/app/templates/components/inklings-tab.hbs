@@ -238,6 +238,9 @@
                     </div>
 
                     <div class="personal-entry-section">
+                      <p class="personal-warning">
+                        <strong>Personal Entry:</strong> Private notes visible only to you. These may become visible under game policies (transfers, roster changes, administration). Do not record sensitive out-of-game information.
+                      </p>
                       <textarea oninput={{action "updateReplyText" detail.id value="target.value"}} placeholder="Add a personal entry (private note)..." rows="3">{{get this.replyTextById detail.id}}</textarea>
                       <div class="personal-actions">
                         <button type="button" class="btn btn-success" {{action "submitPersonalReply" detail.id}}>Add Personal Entry</button>

@@ -21,6 +21,7 @@ en:
     private_reply_added: "Private reply added."
     gm_note_added: "GM note added."
     personal_entry_added: "Personal entry added."
+    personal_entry_warning: "%xrWarning:%xn Personal entries are intended as private notes, but may become visible under game policies (character transfers, roster changes, or administration). Do not record sensitive out-of-game information."
     roll_added: "Roll added."
     rolls_not_available: "The FS3 roll system is not available."
     invalid_roll_command: "That isn't a valid roll command."
