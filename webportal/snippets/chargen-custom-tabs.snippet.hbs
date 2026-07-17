@@ -5,25 +5,42 @@
 
   FILE: ares-webportal/app/components/chargen-custom-tabs.hbs
 
-  STEP 1: Locate the file
+  IMPORTANT: This file might be empty or minimal if you don't have other custom chargen tabs.
+
+  STEP 1: Check the file contents
   1. Open your game's ares-webportal/app/components/chargen-custom-tabs.hbs
+  2. Look at what's in the file:
+     - If it's EMPTY or has only comments, use "OPTION A" below
+     - If it has existing <ul> with <li> entries, use "OPTION B" below
 
-  STEP 2: Find the insertion point
-  2. Find the <ul> element that contains the chargen step tabs
-  3. Look for the closing </ul> tag
-  4. The new <li> should go INSIDE the <ul>, right before the </ul>
+  OPTION A: FILE IS EMPTY (no existing tabs)
+  ==========================================
+  If the file is empty or nearly empty, copy the ENTIRE code block below:
 
-  STEP 3: Copy and paste
-  5. Copy the <li> block below (between the markers)
-  6. Paste it inside the <ul> at the end (before </ul>)
-  7. Save the file
+  ---START COPY HERE---
+  <ul class="nav nav-tabs" role="tablist">
+    <li class="nav-item">
+      <a class="nav-link" data-toggle="tab" href="#chargen-inklings-pane">Secret &amp; Goal</a>
+    </li>
+  </ul>
+  ---END COPY---
+
+  OPTION B: FILE ALREADY HAS TABS (existing custom chargen tabs)
+  ============================================================
+  If the file already has a <ul> with other <li> entries:
+
+  1. Find the <ul> element that contains chargen step tabs
+  2. Look for the closing </ul> tag
+  3. Copy just the <li> block below (between the markers)
+  4. Paste it inside the <ul>, right before the </ul> closing tag
+  5. Save the file
+
+  ---START COPY HERE---
+  <li class="nav-item">
+    <a class="nav-link" data-toggle="tab" href="#chargen-inklings-pane">Secret &amp; Goal</a>
+  </li>
+  ---END COPY---
 
   IMPORTANT: DO NOT change the href="#chargen-inklings-pane"
   It must match the id="chargen-inklings-pane" in chargen-custom.snippet.hbs
 }}
-
-{{! ---START COPY HERE--- }}
-<li class="nav-item">
-  <a class="nav-link" data-toggle="tab" href="#chargen-inklings-pane">Secret &amp; Goal</a>
-</li>
-{{! ---END COPY--- }}
