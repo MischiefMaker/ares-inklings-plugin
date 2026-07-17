@@ -5,18 +5,41 @@
 
   FILE: ares-webportal/app/components/profile-custom.hbs
 
-  STEP 1: Locate the file
+  IMPORTANT: This file might be empty or minimal if you don't have other custom profile content.
+
+  STEP 1: Check the file contents
   1. Open your game's ares-webportal/app/components/profile-custom.hbs
+  2. Look at what's in the file:
+     - If it's EMPTY or has only comments, use "OPTION A" below
+     - If it has existing <div class="tab-content"> with other <div class="tab-pane">, use "OPTION B" below
 
-  STEP 2: Find the insertion point
-  2. Find the <div class="tab-content"> element
-  3. Look for the closing </div> tag for that tab-content div
-  4. The new tab-pane should go INSIDE the tab-content, right before the </div>
+  OPTION A: FILE IS EMPTY (no existing custom content)
+  =================================================
+  If the file is empty or nearly empty, copy the ENTIRE code block below:
 
-  STEP 3: Copy and paste
-  5. Copy the entire <div class="tab-pane"> block below (between the markers)
-  6. Paste it inside the tab-content div at the end (before </div>)
-  7. Save the file
+  ---START COPY HERE---
+  <div class="tab-content">
+    <div class="tab-pane fade" id="inklings-tab-pane">
+      {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
+    </div>
+  </div>
+  ---END COPY---
+
+  OPTION B: FILE ALREADY HAS CONTENT (existing custom profile tabs)
+  ============================================================
+  If the file already has a <div class="tab-content"> with other <div class="tab-pane"> entries:
+
+  1. Find the container <div> with class="tab-content"
+  2. Look for the closing </div> tag for that tab-content div
+  3. Copy just the <div class="tab-pane"> block below (between the markers)
+  4. Paste it inside the tab-content div at the end (before </div>)
+  5. Save the file
+
+  ---START COPY HERE---
+  <div class="tab-pane fade" id="inklings-tab-pane">
+    {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
+  </div>
+  ---END COPY---
 
   IMPORTANT DETAILS:
 
@@ -25,23 +48,18 @@
   - Do NOT change this value
 
   PROPERTY NAMES:
-  - This snippet uses: this.char.id, this.viewer.id, this.viewer.isStaff
-  - These MUST match the property names your profile-custom.hbs actually uses
-  - Common variations: character vs char, user vs viewer
-  - If your template uses different names, update all three above
+  - The component uses: characterId, viewerId, and isStaff
+  - These are passed from: this.char.id, this.viewer.id, and this.viewer.isStaff
+  - If your profile-custom.hbs uses different property names, update them here
+  - Common alternatives: character instead of char, user instead of viewer, etc.
+  - Check the rest of your profile-custom.hbs to see what names are used
 
   ABOUT THE COMPONENT:
-  The {{inklings-tab}} component displays all Inklings for a character:
+  The {{inklings-tab}} component is self-contained - it handles all Inkling operations:
   - View existing Inklings
   - Create new ones
   - Add messages and rolls
   - Submit for staff review
   - Share with other characters/groups
-  - Changes save immediately (not part of profile save flow)
+  - All changes save immediately (doesn't use the profile page's save flow)
 }}
-
-{{! ---START COPY HERE--- }}
-<div class="tab-pane fade" id="inklings-tab-pane">
-  {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
-</div>
-{{! ---END COPY--- }}
