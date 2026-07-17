@@ -196,6 +196,38 @@ Per [Using Formatting Codes](https://aresmush.com/tutorials/code/formatting.html
 
 These are implemented as `Inklings.color_name`, `Inklings.color_title`, and `Inklings.color_type` in `plugin/inklings.rb`. They're deliberately only applied to text emitted directly to a client (`client.emit_success`, `notify_player`, etc.) - never to persisted data like `Inkling#title` or Job titles, since those get read back by other systems (the Jobs web view, this plugin's own web portal JSON API) that shouldn't have to deal with raw ansi escape codes.
 
+## Lifecycle Hooks
+
+Other plugins can listen for inkling lifecycle events via AresMUSH's `Global.dispatcher` mechanism. This plugin fires the following events:
+
+- **`inkling:created`** - when a new inkling is created. Passed: the `Inkling` object.
+- **`inkling:submitted`** - when a player submits an inkling for staff review. Passed: the `Inkling` object.
+- **`inkling:approved`** - when staff approves an inkling. Passed: the `Inkling` object, the staff `Character` who approved it.
+- **`inkling:needs_changes`** - when staff sends an inkling back for revisions. Passed: the `Inkling` object, the staff `Character` who requested changes.
+- **`inkling:shared`** - when an inkling is shared with a character. Passed: the `Inkling` object, the `Character` it was shared with.
+- **`inkling:rewarded`** - when a reward is granted to an inkling. Passed: the `Inkling` object, the `InklingReward` object.
+
+A listening plugin can register handlers like this:
+
+```ruby
+def self.on_inkling_approved(inkling, staff)
+  # Handle inkling approval
+end
+
+Global.dispatcher.add_event_handler("inkling:approved", method(:on_inkling_approved))
+```
+
+These hooks are **dispatch-only** - they do not alter inkling behavior, and the listening plugin cannot prevent the event or modify the inkling.
+
+## Auditing & Timestamps
+
+Inkling records include the following timestamps for auditing:
+
+- `Inkling#created_at` - when the inkling was first created.
+- `Inkling#updated_at` - when the inkling's metadata last changed (status, approval state, locks, shared access, tags). Updated whenever the inkling record is modified.
+
+Message, roll, reward, and participant records have immutable semantics - they record `created_at` but not `updated_at`, since they're never modified after creation.
+
 ## Verification Notes
 
 This plugin's core APIs (`Jobs`, `FS3Skills`, `Character`, `CommandHandler`, `Ohm`/`ObjectModel`, `get_cmd_handler`/`get_event_handler`/`get_web_request_handler`, the `plugin/web/` handler pattern) were checked against AresMUSH's own documentation and the real `FS3Skills` source rather than assumed. Specifically confirmed:
@@ -226,7 +258,7 @@ Not independently confirmed, called out explicitly where they matter most:
 - **FS3 integration is optional.** `+inkling/roll` requires `FS3Skills.parse_and_roll` to exist; if your game doesn't use FS3, that command will report the roll system as unavailable, but the rest of the plugin works fine without it.
 - **Luck rerolls assume a `luck` attribute** (`char.luck`) on your character model, used by the web portal's reroll button. If your game doesn't track luck points, that feature is a no-op/error from the API side - the rest of the roll system doesn't depend on it.
 - **`seq` (the `14.3`-style reference number) is not backfilled** for inklings created before this plugin adopted it. If you're upgrading an existing install with pre-existing data, write a one-off migration that walks every `Inkling`, sorts its `messages` and `rolls` by `created_at`, and assigns `seq` in order before relying on references being complete for old threads.
-- **`+inkling/reset` is irreversible** and deletes every inkling thread, message, roll, and participant record for every character on the game. It does not touch linked jobs. Confirmation is a simple "type the command again within 60 seconds," held in memory only (a server restart clears any pending confirmation).
+- **`+inkling/reset` is irreversible** and deletes every inkling thread, message, roll, and participant record for every character on the game. It does not touch linked jobs. Confirmation uses a one-time token: running the command displays a token to copy, and re-running it with that token performs the reset. The token expires after 5 minutes and is held in memory only (a server restart clears any pending confirmations).
 - **A character's inklings are looked up via an explicit `Inkling.find(character_id: ...)` query, not `char.inklings`.** An earlier version of this plugin used a `collection :inklings` reverse-reference macro on `Character`, which was found to sometimes return the wrong character's threads (e.g. staff seeing their own list instead of the target's when running `+inkling/list`). If you're extending this plugin, keep using the explicit query rather than reintroducing that macro.
 - **NPC rolls accept a free-text name** (`npc_name` on `InklingRoll`) that isn't tied to any `Character` record, for NPCs without a character sheet. The web portal's NPC roll form uses this by default; `npc_char_id` is still available for API callers who want to link an actual `Character`.
 - **Bonus XP requires FS3Skills.** `Inklings.run_xp_award_cycle` checks `defined?(FS3Skills)` and does nothing at all if that plugin isn't loaded - it never falls back to any other XP system.

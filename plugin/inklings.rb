@@ -12,10 +12,14 @@ module AresMUSH
 
     # Whether this character can manage inklings as staff (send hints,
     # visions, nudges, hooks; audit/delete other people's threads).
-    # Reuse the Jobs plugin's existing staff permission gate so anyone who
-    # manages jobs can also manage staff-side inklings.
+    # Permission is configurable via the "manage_permission" setting in
+    # game/config/inklings.yml. Defaults to "manage_jobs" so anyone who
+    # manages jobs can also manage inklings. Override in config if your
+    # game's staff structure differs.
     def self.can_manage_inklings?(enactor)
-      Jobs.can_manage_jobs?(enactor)
+      return false if !enactor
+      permission = Global.read_config("inklings", "manage_permission") || "manage_jobs"
+      enactor.has_permission?(permission)
     end
 
     # Whether this character can run the destructive +inkling/reset
@@ -112,6 +116,13 @@ module AresMUSH
     # chargen). All other player commands require an approved character.
     def self.chargen_kinds
       type_config.select { |_k, v| v["chargen"] }.keys
+    end
+
+    # Inkling types required during character generation, configured in
+    # game/config/inklings.yml under chargen_required_types. If none are
+    # configured, returns an empty array (chargen has no inkling requirements).
+    def self.chargen_required_types
+      Global.read_config("inklings", "chargen_required_types") || []
     end
 
     def self.valid_kind?(kind)
@@ -442,7 +453,9 @@ module AresMUSH
       body = compile_thread_text(inkling)
 
       ensure_job(inkling, title, body, submitter)
-      inkling.update(locked: "true", approval_state: "submitted")
+      update_inkling(inkling, locked: "true", approval_state: "submitted")
+
+      dispatch_inkling_submitted(inkling)
     end
 
     # +inkling/approve - the single source of truth for approval.
@@ -472,8 +485,10 @@ module AresMUSH
       close_message = note.blank? ? "Inkling approved." : note
       Jobs.close_job(staff, inkling.job, close_message) if inkling.job
 
-      inkling.update(locked: "true", approval_state: "approved")
+      update_inkling(inkling, locked: "true", approval_state: "approved")
       notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been approved.")
+
+      dispatch_inkling_approved(inkling, staff)
     end
 
     # +inkling/needschanges - adds staff feedback to the thread (both
@@ -495,8 +510,10 @@ module AresMUSH
 
       mirror_to_job(inkling, feedback, staff) if inkling.job
 
-      inkling.update(player_unread: "true", locked: "false", approval_state: "needs_changes")
+      update_inkling(inkling, player_unread: "true", locked: "false", approval_state: "needs_changes")
       notify_player(inkling.character, "<inklings> Staff have requested changes on your inkling ##{inkling.id}. Use +inkling #{inkling.id} to view their feedback.")
+
+      dispatch_inkling_needs_changes(inkling, staff)
     end
 
     # +inkling/reward - records a reward in the generic InklingReward
@@ -553,6 +570,9 @@ module AresMUSH
         private_recipient_ids: visibility == "all" ? "" : character.id)
 
       notify_player(character, "<inklings> You have received a reward on inkling ##{inkling.id}: #{summary}.")
+
+      reward = InklingReward.find(inkling_id: inkling.id).last
+      dispatch_inkling_rewarded(inkling, reward) if reward
     end
 
     def self.notify_player(char, message)
@@ -831,6 +851,13 @@ module AresMUSH
       state.update(last_period_end: now.to_s)
     end
 
+    # --- Inkling updates with timestamp tracking -----
+    # Helper method that updates an inkling and sets updated_at to the
+    # current time. Use this instead of calling inkling.update directly.
+    def self.update_inkling(inkling, attrs)
+      inkling.update(attrs.merge(updated_at: Time.now))
+    end
+
     # --- Tag management -----
 
     def self.add_tag(inkling, tag)
@@ -840,7 +867,7 @@ module AresMUSH
       tags = inkling.tags.to_s.split(",").map(&:strip).reject(&:empty?)
       return if tags.include?(tag)
       tags << tag
-      inkling.update(tags: tags.join(","))
+      update_inkling(inkling, tags: tags.join(","))
     end
 
     def self.remove_tag(inkling, tag)
@@ -848,11 +875,44 @@ module AresMUSH
       tag = tag.to_s.strip.downcase
       tags = inkling.tags.to_s.split(",").map(&:strip).reject(&:empty?)
       tags.delete(tag)
-      inkling.update(tags: tags.empty? ? "" : tags.join(","))
+      update_inkling(inkling, tags: tags.empty? ? "" : tags.join(","))
     end
 
     def self.get_tags(inkling)
       inkling.tags.to_s.split(",").map(&:strip).reject(&:empty?)
+    end
+
+    # --- Lifecycle event dispatch ---
+    # These methods dispatch lightweight lifecycle events that other plugins
+    # can listen to via the Global.dispatcher mechanism. They do not alter
+    # behavior - they are pure notification hooks.
+    #
+    # Other plugins listen via:
+    #   def on_inkling_created(event_obj); /* ... */; end
+    #   Global.dispatcher.add_event_handler("inkling:created", method(:on_inkling_created))
+
+    def self.dispatch_inkling_created(inkling)
+      Global.dispatcher.dispatch("inkling:created", inkling)
+    end
+
+    def self.dispatch_inkling_submitted(inkling)
+      Global.dispatcher.dispatch("inkling:submitted", inkling)
+    end
+
+    def self.dispatch_inkling_approved(inkling, staff)
+      Global.dispatcher.dispatch("inkling:approved", inkling, staff)
+    end
+
+    def self.dispatch_inkling_needs_changes(inkling, staff)
+      Global.dispatcher.dispatch("inkling:needs_changes", inkling, staff)
+    end
+
+    def self.dispatch_inkling_shared(inkling, shared_with)
+      Global.dispatcher.dispatch("inkling:shared", inkling, shared_with)
+    end
+
+    def self.dispatch_inkling_rewarded(inkling, reward)
+      Global.dispatcher.dispatch("inkling:rewarded", inkling, reward)
     end
   end
 end

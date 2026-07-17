@@ -82,7 +82,7 @@ module AresMUSH
         client.emit template.render
 
         if inkling.character == enactor
-          inkling.update(player_unread: "false")
+          Inklings.update_inkling(inkling, player_unread: "false")
         end
       end
 

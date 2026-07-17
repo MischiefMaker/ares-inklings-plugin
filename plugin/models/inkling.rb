@@ -26,6 +26,7 @@ module AresMUSH
     # Tags are optional and used for categorizing inklings.
     attribute :tags
     attribute :created_at
+    attribute :updated_at
     # "true"/"false" - whether the player has unread staff messages
     # on this thread.
     attribute :player_unread

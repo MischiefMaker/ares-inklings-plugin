@@ -4,24 +4,31 @@ module AresMUSH
     # inklings at the final step of character creation.
     class ChargenHook
       # Called during the chargen process. Prompts the player to create
-      # a secret and a goal inkling if they haven't already.
+      # the configured required inkling types if they haven't already.
+      # Configured via chargen_required_types in game/config/inklings.yml.
       def self.chargen_finalize(char)
-        secret = Inkling.find(character_id: char.id, kind: "secret").first
-        goal = Inkling.find(character_id: char.id, kind: "goal").first
+        required_types = Inklings.chargen_required_types
+        return true if required_types.empty?
 
-        unless secret && goal
-          if !secret
-            Login.emit_ooc_if_logged_in(char, "<inklings> %xh%crCharGen:%xn Please create a secret inkling describing an IC secret your character holds. Use: +inkling/secret <title>/<text>")
+        missing_types = []
+        required_types.each do |kind|
+          existing = Inkling.find(character_id: char.id, kind: kind).first
+          missing_types << kind if !existing
+        end
+
+        if missing_types.any?
+          missing_types.each do |kind|
+            label = Inklings.kind_label(kind)
+            description = Inklings.kind_description(kind)
+            prompt = "Please create a #{label.downcase} inkling"
+            prompt << " (#{description})" if description
+            prompt << ". Use: +inkling/#{kind} <title>/<text>"
+            Login.emit_ooc_if_logged_in(char, "<inklings> %xh%crCharGen:%xn #{prompt}")
           end
-
-          if !goal
-            Login.emit_ooc_if_logged_in(char, "<inklings> %xh%crCharGen:%xn Please create a goal inkling describing what your character is working toward. Use: +inkling/goal <title>/<text>")
-          end
-
           return false  # Return false to indicate chargen is not yet complete
         end
 
-        return true  # Both exist, chargen can proceed
+        return true  # All required types exist, chargen can proceed
       end
     end
   end

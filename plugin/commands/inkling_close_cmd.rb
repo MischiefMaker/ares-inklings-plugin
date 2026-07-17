@@ -43,7 +43,7 @@ module AresMUSH
       end
 
       def handle
-        inkling.update(status: "closed")
+        Inklings.update_inkling(inkling, status: "closed")
 
         if inkling.job
           Jobs.close_job(enactor, inkling.job, t('inklings.closed_via_inkling'))

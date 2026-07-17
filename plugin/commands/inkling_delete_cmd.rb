@@ -63,7 +63,7 @@ module AresMUSH
 
         # Player path: close the thread and request staff approval
         # rather than deleting outright.
-        inkling.update(status: "closed")
+        Inklings.update_inkling(inkling, status: "closed")
 
         transcript = inkling.messages.map { |m| "#{m.author ? m.author.name : "?"}: #{m.text}" }.join(" / ")
         Inklings.ensure_job(inkling,

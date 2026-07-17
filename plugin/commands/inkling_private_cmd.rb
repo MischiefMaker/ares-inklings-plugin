@@ -105,7 +105,7 @@ module AresMUSH
           # Ordinary staff replies do not change the lock state.
           # Only +inkling/approve (locks) and +inkling/needschanges (unlocks)
           # change it - a reply is not the same as a decision.
-          inkling.update(player_unread: "true")
+          Inklings.update_inkling(inkling, player_unread: "true")
           Inklings.mirror_to_job(inkling, "[Private] #{text}", enactor)
           Inklings.notify_player(target || inkling.character, t('inklings.new_message_notice'))
         end

@@ -8,24 +8,27 @@ module AresMUSH
     # irreversible - it is deliberately a higher bar than
     # can_manage_inklings?, which many ordinary staff have.
     #
-    # Requires the command to be entered twice within a short window as
-    # a safety check: the first entry arms it and warns what will
-    # happen, the second (typed again within CONFIRM_WINDOW_SECONDS)
-    # actually performs the wipe. Linked jobs are left alone - only the
-    # inkling side of things is deleted.
+    # Uses a one-time token confirmation: first run displays a token to
+    # copy, second run with that token performs the wipe. Linked jobs
+    # are left alone - only the inkling side of things is deleted.
     class InklingResetCmd
       include CommandHandler
 
-      CONFIRM_WINDOW_SECONDS = 60
+      CONFIRM_EXPIRY_SECONDS = 300
 
-      # Pending confirmations, keyed by character id, holding the time
-      # the first entry was made. Intentionally in-memory only - a
-      # server restart clears anything pending, which is the safer
-      # default for a destructive command.
+      # Pending confirmations: { char_id => { token: 'ABC123', time: Time.now } }
+      # Intentionally in-memory only - a server restart clears pending
+      # confirmations, which is the safer default for a destructive command.
       @pending_confirmations = {}
 
       class << self
         attr_accessor :pending_confirmations
+      end
+
+      attr_accessor :confirmation_token
+
+      def parse_args
+        self.confirmation_token = cmd.args.to_s.strip
       end
 
       def check_permission
@@ -34,15 +37,37 @@ module AresMUSH
       end
 
       def handle
-        pending_at = self.class.pending_confirmations[enactor.id]
+        pending = self.class.pending_confirmations[enactor.id]
 
-        if pending_at && (Time.now - pending_at) <= CONFIRM_WINDOW_SECONDS
+        if confirmation_token.present?
+          # User provided a token - validate it
+          unless pending
+            return client.emit_failure t('inklings.reset_no_pending_confirmation')
+          end
+
+          if Time.now - pending[:time] > CONFIRM_EXPIRY_SECONDS
+            self.class.pending_confirmations.delete(enactor.id)
+            return client.emit_failure t('inklings.reset_token_expired')
+          end
+
+          unless pending[:token] == confirmation_token
+            return client.emit_failure t('inklings.reset_invalid_token')
+          end
+
           self.class.pending_confirmations.delete(enactor.id)
           perform_reset
         else
-          self.class.pending_confirmations[enactor.id] = Time.now
-          client.emit_success t('inklings.reset_confirm_needed', :seconds => CONFIRM_WINDOW_SECONDS)
+          # No token provided - generate and display one
+          token = generate_token
+          self.class.pending_confirmations[enactor.id] = { token: token, time: Time.now }
+          client.emit_success t('inklings.reset_confirm_with_token', :token => token, :seconds => CONFIRM_EXPIRY_SECONDS)
         end
+      end
+
+      private
+
+      def generate_token
+        SecureRandom.alphanumeric(8).upcase
       end
 
       def perform_reset

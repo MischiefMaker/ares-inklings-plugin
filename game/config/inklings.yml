@@ -1,10 +1,26 @@
 inklings:
   shortcuts: {}
+  # Permission required to manage inklings (start staff threads, GM notes,
+  # view/approve/reward any thread). Defaults to reusing the Jobs plugin's
+  # "manage_jobs" permission so anyone who manages jobs can also manage
+  # inklings. Change this to a different permission name if your game's
+  # staff structure differs. The permission must exist in your game's role
+  # configuration.
+  manage_permission: manage_jobs
+
   # Job category used for jobs Inklings creates to notify staff of
   # player activity (new threads, replies, deletions). Create this
   # category in-game with: job/createcategory INKLINGS
   # and set access roles with: job/categoryroles INKLINGS=<roles>
   job_category: INKLINGS
+
+  # Inkling types required during character generation. Players must create
+  # at least one of each type listed here before chargen can be completed.
+  # If none are configured, chargen has no inkling requirements.
+  # Each type must exist in the "types" section above.
+  chargen_required_types:
+    - goal
+    - secret
 
   # Inkling types (kinds). Add, remove, or edit entries here to
   # customize the game's inkling types - no code changes needed. The

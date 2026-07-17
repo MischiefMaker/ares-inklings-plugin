@@ -61,7 +61,7 @@ module AresMUSH
           private_recipient_ids: "")
 
         unless is_staff
-          inkling.update(player_unread: "false")
+          Inklings.update_inkling(inkling, player_unread: "false")
         end
 
         notice = t('inklings.personal_entry_added')

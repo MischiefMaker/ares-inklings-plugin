@@ -76,7 +76,7 @@ module AresMUSH
         end
 
         combined = (existing_specs + new_specs).uniq.join(",")
-        inkling.update(shared_groups: combined)
+        Inklings.update_inkling(inkling, shared_groups: combined)
 
         # Notify currently-approved characters who match the new specs.
         # char_matches_group_spec? is checked before

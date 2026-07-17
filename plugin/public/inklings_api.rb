@@ -108,6 +108,8 @@ module AresMUSH
           Inklings.notify_player(char, "<inklings> You have a new inkling.")
         end
 
+        Inklings.dispatch_inkling_created(inkling)
+
         { inkling: format_inkling_detail(inkling, viewer) }
       end
 
@@ -126,7 +128,7 @@ module AresMUSH
         return { error: "Not authorized" } if !can_view_inkling?(inkling, viewer)
 
         Inklings.sync_job_replies(inkling)
-        inkling.update(player_unread: "false") if inkling.character == viewer
+        Inklings.update_inkling(inkling, player_unread: "false") if inkling.character == viewer
 
         { inkling: format_inkling_detail(inkling, viewer) }
       end
@@ -178,7 +180,7 @@ module AresMUSH
         job_text = is_private ? "[Private] #{text}" : text
         if is_staff && !is_personal
           # A staff reply is what unlocks a submitted thread.
-          inkling.update(player_unread: "true", locked: "false")
+          Inklings.update_inkling(inkling, player_unread: "true", locked: "false")
           Inklings.mirror_to_job(inkling, job_text, viewer)
           recipients = recipient_ids.to_s.split(",").map(&:strip).reject(&:empty?)
           notify_target = recipients.first ? Character[recipients.first] : inkling.character
@@ -203,7 +205,7 @@ module AresMUSH
         return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
         return { error: "Your character must be approved to close inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
 
-        inkling.update(status: "closed")
+        Inklings.update_inkling(inkling, status: "closed")
         Jobs.close_job(viewer, inkling.job, "Inkling closed from web portal") if inkling.job
 
         { inkling: format_inkling_summary(inkling, viewer) }
@@ -264,7 +266,7 @@ module AresMUSH
           return { success: true, deleted: true }
         end
 
-        inkling.update(status: "closed")
+        Inklings.update_inkling(inkling, status: "closed")
         transcript = inkling.messages.map { |m| "#{m.author ? m.author.name : "?"}: #{m.text}" }.join(" / ")
         Inklings.ensure_job(inkling,
           Inklings.deletion_request_title(viewer, inkling.id),
@@ -311,6 +313,8 @@ module AresMUSH
           Inklings.notify_player(target,
             "<inklings> #{viewer.name} has shared an inkling with you. Use +inkling #{inkling.id} to view it.")
           added << target.name
+
+          Inklings.dispatch_inkling_shared(inkling, target)
         end
 
         if added.empty?
