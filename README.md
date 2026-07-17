@@ -92,7 +92,19 @@ Most web portal files must be copied manually into your `ares-webportal` checkou
 | `webportal/app/helpers/format-date.js` | `app/helpers/format-date.js` |
 | `webportal/app/helpers/join-list.js` | `app/helpers/join-list.js` |
 | `webportal/app/helpers/join-list-upper.js` | `app/helpers/join-list-upper.js` |
-| `webportal/app/styles/inklings-tab.css` | Append contents into your main stylesheet (usually `app/styles/app.scss`) |
+| `webportal/app/styles/inklings-tab.scss` | `app/styles/inklings-tab.scss` |
+
+**Import the stylesheet:**
+
+Add an `@use` statement to your `app/styles/app.scss`:
+
+1. Open your game's `ares-webportal/app/styles/app.scss`
+2. Find the section at the top with other `@use` or `@import` statements
+3. Add this line at the end of those imports:
+   ```scss
+   @use "inklings-tab";
+   ```
+   (If your project uses `@import` instead of `@use`, use: `@import "inklings-tab";`)
 
 After copying, restart your web portal.
 
