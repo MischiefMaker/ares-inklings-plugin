@@ -85,12 +85,13 @@ Most web portal files must be copied manually into your `ares-webportal` checkou
 | From this plugin | To your ares-webportal |
 |---|---|
 | `webportal/app/templates/components/inklings-tab.hbs` | `app/templates/components/inklings-tab.hbs` |
-| `webportal/app/helpers/format-date.js` | `app/helpers/format-date.js` |
 | `webportal/app/helpers/join-list.js` | `app/helpers/join-list.js` |
 | `webportal/app/helpers/join-list-upper.js` | `app/helpers/join-list-upper.js` |
 | `webportal/app/styles/inklings-tab.scss` | `app/styles/inklings-tab.scss` |
 
-**Note:** The helpers `eq`, `and`, `or`, and `not` are provided by AresMUSH's built-in `ember-truth-helpers` addon and don't need to be copied.
+**Note:** The following helpers are provided by AresMUSH's built-in addons and don't need to be copied:
+- `eq`, `and`, `or`, `not` — provided by `ember-truth-helpers`
+- `local-date`, `local-time` — built-in AresMUSH date/time helpers
 
 **Import the stylesheet:**
 

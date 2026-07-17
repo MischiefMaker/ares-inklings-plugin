@@ -73,7 +73,7 @@
                 {{inkling.message_count}} message{{if (eq inkling.message_count 1) "" "s"}}
                 {{#if inkling.player_unread}}<span class="unread-asterisk">*</span>{{/if}}
               </span>
-              <span class="created-date">{{format-date inkling.created_at}}</span>
+              <span class="created-date">{{local-date inkling.created_at 'MMM D, YYYY h:mm A'}}</span>
               {{#if inkling.linked_job}}
                 <span class="linked-job">Job #{{inkling.linked_job.id}} ({{inkling.linked_job.status}})</span>
               {{/if}}
@@ -157,7 +157,7 @@
                             {{/if}}
                           </span>
                         {{/if}}
-                        <span class="message-time">{{format-date msg.created_at}}</span>
+                        <span class="message-time">{{local-date msg.created_at 'MMM D, YYYY h:mm A'}}</span>
                       </div>
                       <div class="message-text">{{msg.text}}</div>
                     </div>
