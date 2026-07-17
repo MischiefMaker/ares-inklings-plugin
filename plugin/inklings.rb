@@ -348,7 +348,7 @@ module AresMUSH
           return nil
         end
         job = result[:job]
-        inkling.update(job: job)
+        update_inkling(inkling, job: job)
         return job
       end
     end
@@ -395,7 +395,7 @@ module AresMUSH
         # review decision. Only +inkling/approve or
         # +inkling/needschanges change the lock/approval state - see
         # the comment on Inkling#approval_state.
-        inkling.update(player_unread: "true")
+        update_inkling(inkling, player_unread: "true")
         # NOTE: t() is a CommandHandler helper and isn't available here,
         # since this runs from a plain module method, not a command
         # instance. Using a plain string instead - swap in your game's

@@ -32,7 +32,7 @@ module AresMUSH
           seq: Inklings.next_event_seq(inkling),
           is_staff: "true")
 
-        inkling.update(player_unread: "true")
+        Inklings.update_inkling(inkling, player_unread: "true")
         Inklings.notify_player(inkling.character,
           "<inklings> You have a new inkling message. Use +inkling #{inkling.id} to view it.")
       end
