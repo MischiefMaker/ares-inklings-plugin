@@ -631,7 +631,8 @@ module AresMUSH
 
     def self.get_cmd_handler(client, cmd, enactor)
       case cmd.root
-      when "inkling"
+      when "inkling", "inklings"
+        # Shared switch handlers for both singular and plural
         if cmd.switch_is?("list")
           return InklingListCmd
         elsif cmd.switch_is?("types")
@@ -672,46 +673,12 @@ module AresMUSH
           return InklingUntagCmd
         elsif all_kinds.any? { |k| cmd.switch_is?(k) }
           return InklingStartCmd
-        else
-          return InklingViewCmd
-        end
-      when "inklings"
-        if cmd.switch_is?("delete")
-          return InklingDeleteCmd
-        elsif cmd.switch_is?("types")
-          return InklingTypesCmd
-        elsif cmd.switch_is?("reset")
-          return InklingResetCmd
-        elsif cmd.switch_is?("advance") || cmd.switch_is?("reply")
-          return InklingReplyCmd
-        elsif cmd.switch_is?("gm")
-          return InklingGmCmd
-        elsif cmd.switch_is?("private")
-          return InklingPrivateCmd
-        elsif cmd.switch_is?("share")
-          return InklingShareCmd
-        elsif cmd.switch_is?("group")
-          return InklingGroupCmd
-        elsif cmd.switch_is?("roll")
-          return InklingRollCmd
-        elsif cmd.switch_is?("new")
-          return InklingNewCmd
-        elsif cmd.switch_is?("submit")
-          return InklingSubmitCmd
-        elsif cmd.switch_is?("approve")
-          return InklingApproveCmd
-        elsif cmd.switch_is?("needschanges")
-          return InklingNeedsChangesCmd
-        elsif cmd.switch_is?("reward")
-          return InklingRewardCmd
-        elsif cmd.switch_is?("close")
-          return InklingCloseCmd
-        elsif all_kinds.any? { |k| cmd.switch_is?(k) }
-          return InklingStartCmd
         end
 
+        # No switch: check if there's an inkling ID argument
         stripped_raw = cmd.raw.to_s.strip.sub(/^[\/\+\=\@\&]/, "")
-        if stripped_raw =~ /^inklings\s+\S+/i
+        inkling_root = cmd.root.to_s
+        if stripped_raw =~ /^#{inkling_root}\s+\S+/i
           return InklingViewCmd
         end
         return InklingsCmd
