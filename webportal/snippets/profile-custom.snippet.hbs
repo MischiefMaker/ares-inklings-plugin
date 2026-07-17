@@ -1,32 +1,50 @@
 {{!
   PROFILE CUSTOM CONTENT SNIPPET
 
-  FILE: ares-webportal/app/templates/components/profile-custom.hbs
-  LOCATION: Inside the tab-content <div>, after any existing <div class="tab-pane"> entries
+  This adds the Inklings tab content to the character profile page.
 
-  INSTRUCTIONS:
+  FILE: ares-webportal/app/templates/components/profile-custom.hbs
+  LOCATION: Inside the tab-content <div>
+
+  STEP 1: Locate the file
   1. Open your game's ares-webportal/app/templates/components/profile-custom.hbs
-  2. Find the container <div> with class="tab-content"
-  3. Copy the entire <div class="tab-pane fade"> block below (lines 24-26)
-  4. Paste it inside the tab-content div, at the end of any existing tab-pane divs
-  5. Save the file
-  6. DO NOT change the id="inklings-tab-pane" - it matches the tab link from profile-custom-tabs.snippet.hbs
+  2. Find the <div> with class="tab-content" (usually after the profile tab list)
+
+  STEP 2: Find the insertion point
+  3. Inside that tab-content <div>, look for any existing <div class="tab-pane">
+  4. You'll paste your code AFTER the last tab-pane div (but still INSIDE the tab-content)
+
+  STEP 3: Copy and paste
+  5. Copy the <div> block below (between the markers)
+  6. Paste it inside the tab-content div, at the end (before the closing </div>)
+  7. Save the file
+
+  IMPORTANT DETAILS:
+
+  ID MATCHING:
+  - The id="inklings-tab-pane" below MUST match the href="#inklings-tab-pane"
+    in profile-custom-tabs.snippet.hbs
+  - Do NOT change this value
+
+  PROPERTY NAMES:
+  - The component uses: characterId, viewerId, and isStaff
+  - These are passed from: this.char.id, this.viewer.id, and this.viewer.isStaff
+  - If your profile-custom.hbs uses different property names, update them here
+  - Common alternatives: character instead of char, user instead of viewer, etc.
+  - Check the rest of your profile-custom.hbs to see what names are used
 
   ABOUT THE COMPONENT:
-  The inklings-tab component is self-contained and handles everything:
-  - Fetching Inklings
-  - Creating new ones
-  - Rolling dice
-  - Submitting for staff review
-  - Managing access (sharing, groups)
-
-  It does NOT participate in the profile page's overall save flow - it saves changes immediately.
-
-  IMPORTANT: The properties below (this.char, this.viewer, this.isStaff) must match
-  what your profile-custom.hbs actually uses. These are common names but verify
-  them against the rest of that template file.
+  The inklings-tab component is self-contained - it handles all Inkling operations:
+  - View existing Inklings
+  - Create new ones
+  - Add messages and rolls
+  - Submit for staff review
+  - Share with other characters/groups
+  - All changes save immediately (doesn't use the profile page's save flow)
 }}
 
-<div class="tab-pane fade" id="inklings-tab-pane">
-  {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
-</div>
+  {{! ---START COPY HERE--- }}
+  <div class="tab-pane fade" id="inklings-tab-pane">
+    {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
+  </div>
+  {{! ---END COPY--- }}
