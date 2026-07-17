@@ -92,8 +92,10 @@ module AresMUSH
           private_recipient_ids: auto_recipients)
 
         if is_staff
-          # A staff reply is what unlocks a submitted thread.
-          inkling.update(player_unread: "true", locked: "false")
+          # Ordinary staff replies do not change the lock state.
+          # Only +inkling/approve (locks) and +inkling/needschanges (unlocks)
+          # change it - a reply is not the same as a decision.
+          inkling.update(player_unread: "true")
           Inklings.mirror_to_job(inkling, job_text, enactor)
           Inklings.notify_player(inkling.character, t('inklings.new_message_notice'))
         end

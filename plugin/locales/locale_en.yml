@@ -47,3 +47,8 @@ en:
     types_section_staff: "From Staff"
     types_section_player: "Your Own"
     types_section_shared: "Shared"
+    approved_success: "Inkling approved."
+    needs_changes_success: "Inkling sent back to player for revisions."
+    not_submitted_for_review: "That inkling hasn't been submitted for review."
+    invalid_reward_spec: "Invalid reward spec. Use type:amount or type:key:amount"
+    reward_granted: "Reward granted: %{type} x%{amount}."
