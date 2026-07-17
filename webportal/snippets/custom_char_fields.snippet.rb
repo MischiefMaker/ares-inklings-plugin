@@ -4,26 +4,24 @@
 # NOTE: This is a SHARED HOOK FILE used by multiple plugins.
 #       You will ADD CODE to existing methods, not replace the whole file.
 #
-# This snippet has 5 steps. Follow them in order. Each step is a separate copy-paste.
+# This snippet has 6 steps. Follow them in order. Each step is a separate copy-paste.
 
 # ============================================================================
 # STEP 1: Import the Inklings API
 # ============================================================================
 #
 # FILE: plugins/profile/custom_char_fields.rb
-# LOCATION: At the top of the module, after "module AresMUSH"
+# LOCATION: At the very top of the file, before any class/module definitions
 #
 # 1. Open plugins/profile/custom_char_fields.rb
-# 2. Find the line "module AresMUSH"
-# 3. After that line, look for "module CustomCharFields"
-# 4. Copy and paste this line right after "module CustomCharFields" opening:
+# 2. Look at the first few lines (before any "module" or "class" keywords)
+# 3. Copy and paste this line at the very top:
 #
 # ---START COPY HERE---
-  module CustomCharFields
-    require_relative '../../inklings/public/inklings_api'
+require_relative '../../inklings/public/inklings_api'
 # ---END COPY---
 #
-# (Just add the require_relative line if the module already exists)
+# (It should be above the "module AresMUSH" or "class" line)
 
 # ============================================================================
 # STEP 2: Add fields to get_fields_for_viewing
@@ -70,7 +68,8 @@
 # FILE: plugins/profile/custom_char_fields.rb
 # METHOD: def self.save_fields_from_profile_edit (or save_fields_from_profile_edit2)
 #
-# 1. Find the method "def self.save_fields_from_profile_edit" or "save_fields_from_profile_edit2"
+# 1. Find the method "def self.save_fields_from_profile_edit"
+#    (Note: Some versions may be called save_fields_from_profile_edit2)
 # 2. Find the line just before the "end" of that method
 # 3. Copy and paste these 2 lines BEFORE the "end":
 #
@@ -100,10 +99,10 @@
 # ============================================================================
 #
 # FILE: plugins/profile/custom_char_fields.rb
-# LOCATION: At the end of the CustomCharFields module (before the final "end")
+# LOCATION: At the end of the CustomCharFields class (before the final "end")
 #
-# 1. Go to the end of the CustomCharFields module
-# 2. Find the final "end" that closes the module
+# 1. Go to the end of the CustomCharFields class/module definition
+# 2. Find the final "end" that closes it
 # 3. Copy and paste this entire method BEFORE that final "end":
 #
 # ---START COPY HERE---
