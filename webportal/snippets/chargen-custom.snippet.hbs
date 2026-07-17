@@ -87,4 +87,21 @@
   FIELD NAMES:
   - inkling_secret_title, inkling_secret_text, inkling_goal_title, inkling_goal_text
   - These names MUST match exactly what chargen-custom.snippet.js sends
+
+  IF YOU CUSTOMIZED chargen_required_types:
+  If your game uses different inkling types (e.g., chargen_required_types: [hooks]),
+  rename the fields accordingly. Example for single "hooks" type:
+
+  BEFORE (secret and goal):
+    {{input ... value=this.char.custom.inkling_secret_title ...}}
+    {{textarea ... value=this.char.custom.inkling_secret_text ...}}
+    {{input ... value=this.char.custom.inkling_goal_title ...}}
+    {{textarea ... value=this.char.custom.inkling_goal_text ...}}
+
+  AFTER (hooks only):
+    {{input ... value=this.char.custom.inkling_hooks_title ...}}
+    {{textarea ... value=this.char.custom.inkling_hooks_text ...}}
+
+  The pattern is: this.char.custom.inkling_{type}_title and inkling_{type}_text
+  Also update the labels and placeholders to match your custom types.
 }}

@@ -50,3 +50,12 @@
 // - These field names MUST match the field names in chargen-custom.snippet.hbs
 // - Do NOT change the "this.get('char.custom.inkling_*')" part
 // - Add a comma at the end of each line if other fields come after
+//
+// IF YOU CUSTOMIZED chargen_required_types:
+// If your game uses different inkling types (e.g., chargen_required_types: [hooks]),
+// rename these accordingly. Example for "hooks" instead of "secret" and "goal":
+//
+//   inkling_hooks_title: this.get('char.custom.inkling_hooks_title'),
+//   inkling_hooks_text: this.get('char.custom.inkling_hooks_text'),
+//
+// The pattern is: inkling_{type}_title and inkling_{type}_text
