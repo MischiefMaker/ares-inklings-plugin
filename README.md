@@ -128,7 +128,7 @@ This step makes the Inklings component visually styled and adds the Inklings tab
 - **profile-custom-tabs** — Adds the "Inklings" tab to the profile
 - **profile-custom** — Displays the full Inklings browser on the profile
 
-After completing these, restart your web portal.
+After completing these, restart your web portal using the MUSH command: `website/deploy`.
 
 ### Step 4: Configure Character Generation (Optional)
 
