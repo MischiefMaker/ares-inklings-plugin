@@ -108,7 +108,31 @@ Add an `@use` statement to your `app/styles/app.scss`:
 
 After copying, restart your web portal.
 
-### Step 3: Configure Character Generation (Optional)
+### Step 3: Add Styles and Profile Integration (Recommended)
+
+This step makes the Inklings component visually styled and adds the Inklings tab to the character profile page where players can see all their inklings.
+
+**Add the stylesheet import:**
+
+1. Open `webportal/snippets/app-styles-import.snippet.scss` in this plugin
+2. Open `ares-webportal/app/styles/app.scss` in your game
+3. Copy the `@use "inklings-tab";` line from the snippet
+4. Paste it at the end of your existing `@use` or `@import` statements
+5. Save the file
+
+**Add the Inklings tab to the profile page:**
+
+1. Open `webportal/snippets/profile-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/components/profile-custom-tabs.hbs` following the instructions in the snippet
+2. Open `webportal/snippets/profile-custom.snippet.hbs` and paste into `ares-webportal/app/components/profile-custom.hbs` following the instructions in the snippet
+
+**Why these are needed:**
+- **app-styles-import** — Styles the Inklings component (colors, buttons, layout)
+- **profile-custom-tabs** — Adds the "Inklings" tab to the profile
+- **profile-custom** — Displays the full Inklings browser on the profile
+
+After completing these, restart your web portal.
+
+### Step 4: Configure Character Generation (Optional)
 
 If you want players to create required Inklings during character generation, merge the chargen snippets:
 
@@ -128,7 +152,7 @@ If you want players to create required Inklings during character generation, mer
 
 **Important:** Each snippet file includes a comment showing exactly where to paste its code. Do not simply append to the end of files.
 
-### Step 4: Post-Installation Setup
+### Step 5: Post-Installation Setup
 
 **In-game:**
 
@@ -141,15 +165,7 @@ job/categoryroles INKLINGS=<staff roles that should see inkling jobs>
 
 Confirm that your Coder role has the `manage_game` permission (used by the `+inkling/reset` command). See [Using Permissions in Code](https://aresmush.com/tutorials/manage/roles.html#using-permissions-in-code) if you need to add it.
 
-**Add Inklings tab to character profiles (Optional):**
-
-If you want the Inklings tab visible on the character profile page, add this line to `ares-webportal/app/components/profile-custom.hbs` at the appropriate location:
-
-```hbs
-{{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
-```
-
-Refer to your web portal's existing custom profile markup for the exact location.
+(Note: The Inklings tab on the character profile was added in Step 3 above if you followed those instructions.)
 
 ## Configuration
 
