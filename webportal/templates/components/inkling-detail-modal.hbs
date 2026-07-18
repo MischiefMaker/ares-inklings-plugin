@@ -2,7 +2,7 @@
 {{! See inkling-detail-modal.js in the sibling app/components/ directory }}
 {{! for the component class this template is paired with. }}
 
-{{#bs-modal open=this.open onHide=(action "close") size="lg" as |modal|}}
+{{#bs-modal open=this.isOpen onHide=(action "close") size="lg" as |modal|}}
   {{#modal.header closeButton=true}}
     {{#if this.detail}}
       <h4 class="modal-title">

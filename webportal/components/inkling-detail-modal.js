@@ -18,7 +18,6 @@ export default Component.extend({
   flashMessages: service(),
 
   // --- Required arguments ---
-  open: false,
   inklingId: null,
   characterId: null,
   viewerId: null,
@@ -28,6 +27,10 @@ export default Component.extend({
   onDelete: null,
 
   // --- Internal state ---
+  // isOpen is deliberately internal rather than a passed-in attribute -
+  // see didReceiveAttrs/loadDetail below for why it only flips true once
+  // detail has actually loaded, instead of tracking inklingId directly.
+  isOpen: false,
   detail: null,
   loading: false,
 
@@ -45,7 +48,18 @@ export default Component.extend({
 
   didReceiveAttrs() {
     this._super(...arguments);
-    if (this.inklingId && this.inklingId !== this._loadedId) {
+
+    if (!this.inklingId) {
+      // Parent cleared selection (user closed, or the inkling was
+      // deleted) - close and reset so a later re-open starts fresh.
+      this._loadedId = null;
+      if (this.isOpen) {
+        this.set('isOpen', false);
+      }
+      return;
+    }
+
+    if (this.inklingId !== this._loadedId) {
       // Mark synchronously so a second didReceiveAttrs firing before the
       // deferred load below runs doesn't queue a duplicate fetch.
       this._loadedId = this.inklingId;
@@ -55,7 +69,10 @@ export default Component.extend({
       // that's still processing this didReceiveAttrs call - Ember then
       // flags the resulting this.set() as a "modified twice in a single
       // render" violation. Deferring the fetch (and its state updates) to
-      // the next run loop keeps it safely outside that transaction.
+      // the next run loop keeps it safely outside that transaction - and
+      // isOpen only flips true once the fetch actually resolves (see
+      // loadDetail below), so ember-bootstrap's own open-animation work
+      // never fires in the same tick as ours either.
       next(this, 'loadDetail');
     }
   },
@@ -87,7 +104,7 @@ export default Component.extend({
         this.flashMessages.danger(response.error);
         return;
       }
-      this.set('detail', response.inkling);
+      this.setProperties({ detail: response.inkling, isOpen: true });
       if (this.onUpdate) {
         this.onUpdate(response.inkling);
       }
@@ -98,7 +115,7 @@ export default Component.extend({
 
   actions: {
     close() {
-      this.set('detail', null);
+      this.setProperties({ isOpen: false, detail: null });
       this._loadedId = null;
       if (this.onClose) {
         this.onClose();

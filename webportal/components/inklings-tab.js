@@ -44,7 +44,6 @@ export default Component.extend({
   newText: '',
 
   selectedInklingId: null,
-  showDetailModal: false,
 
   init() {
     this._super(...arguments);
@@ -124,18 +123,16 @@ export default Component.extend({
       });
     },
 
+    // Only selectedInklingId is set here - inkling-detail-modal decides
+    // when to actually open (after it has fetched detail) via its own
+    // internal state, so the modal's opening animation never fires in the
+    // same tick as our own data fetch. See inkling-detail-modal.js.
     openDetail(id) {
-      this.setProperties({
-        selectedInklingId: id,
-        showDetailModal: true
-      });
+      this.set('selectedInklingId', id);
     },
 
     closeDetail() {
-      this.setProperties({
-        showDetailModal: false,
-        selectedInklingId: null
-      });
+      this.set('selectedInklingId', null);
     },
 
     // Called by inkling-detail-modal whenever it fetches or mutates the
