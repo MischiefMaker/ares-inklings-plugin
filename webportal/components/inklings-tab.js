@@ -1,7 +1,5 @@
-// This file is part of the Inklings plugin's web portal integration.
-// When you run plugin/install from the MUSH, this file is automatically
-// copied to your ares-webportal/app/components/ directory.
-// See README.md Step 1 for automatic installation details.
+// Inklings web portal component.
+// Automatically installed to ares-webportal/app/components/ via plugin/install.
 // The web portal integration is optional - MUSH-only games do not need it.
 //
 // Native AresMUSH web portal component for browsing and managing
