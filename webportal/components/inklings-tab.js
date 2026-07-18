@@ -173,8 +173,14 @@ export default Component.extend({
         return;
       }
 
-      this.reloadInklingDetail(id).then(() => {
+      this.reloadInklingDetail(id).then((inkling) => {
+        if (!inkling) {
+          this.flashMessages.danger('Failed to load inkling details');
+          return;
+        }
         this.set('expandedId', id);
+      }).catch((error) => {
+        this.flashMessages.danger('Failed to load inkling details: ' + (error.message || 'Unknown error'));
       });
     },
 
