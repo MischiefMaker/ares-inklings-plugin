@@ -109,7 +109,7 @@ This step makes the Inklings component visually styled and adds the Inklings tab
 
 **Add the stylesheet import:**
 
-1. Open `snippets/app-styles-import.snippet.scss` in this plugin
+1. Open `custom-install/app-styles-import.snippet.scss` in this plugin
 2. Open `ares-webportal/app/styles/app.scss` in your game
 3. Copy the `@use "inklings-tab";` line from the snippet
 4. Paste it at the end of your existing `@use` or `@import` statements
@@ -117,8 +117,8 @@ This step makes the Inklings component visually styled and adds the Inklings tab
 
 **Add the Inklings tab to the profile page:**
 
-1. Open `snippets/profile-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/components/profile-custom-tabs.hbs` following the instructions in the snippet
-2. Open `snippets/profile-custom.snippet.hbs` and paste into `ares-webportal/app/components/profile-custom.hbs` following the instructions in the snippet
+1. Open `custom-install/profile-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/components/profile-custom-tabs.hbs` following the instructions in the snippet
+2. Open `custom-install/profile-custom.snippet.hbs` and paste into `ares-webportal/app/components/profile-custom.hbs` following the instructions in the snippet
 
 **Why these are needed:**
 - **app-styles-import** — Styles the Inklings component (colors, buttons, layout)
@@ -133,16 +133,16 @@ If you want players to create required Inklings during character generation, mer
 
 **Backend Hook (Required if using chargen):**
 
-1. Open `snippets/custom_char_fields.snippet.rb` in this plugin
+1. Open `custom-install/custom_char_fields.snippet.rb` in this plugin
 2. Open `plugins/profile/custom_char_fields.rb` in your game
 3. Find the location comment in the snippet and paste the code at that location
 4. Save the file
 
 **Web Portal Form Fields (Optional, only if you want chargen fields on the web portal):**
 
-1. Open `snippets/chargen-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom-tabs.hbs` at the location marked in the snippet
-2. Open `snippets/chargen-custom.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom.hbs` at the marked location
-3. Open `snippets/chargen-custom.snippet.example` and paste into `ares-webportal/app/components/chargen-custom.js` at the marked location
+1. Open `custom-install/chargen-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom-tabs.hbs` at the location marked in the snippet
+2. Open `custom-install/chargen-custom.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom.hbs` at the marked location
+3. Open `custom-install/chargen-custom.snippet.example` and paste into `ares-webportal/app/components/chargen-custom.js` at the marked location
 4. Restart your web portal using the MUSH command: `website/deploy`.
 
 **Important:** Each snippet file includes a comment showing exactly where to paste its code. Do not simply append to the end of files.
