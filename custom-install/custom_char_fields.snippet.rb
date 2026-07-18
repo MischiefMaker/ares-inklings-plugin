@@ -43,7 +43,7 @@
 #
 # ---START COPY HERE---
         # Chargen-required inklings (displayed as custom fields)
-        *build_inkling_fields(char, char, for_editing: true)
+        **build_inkling_fields(char, char, for_editing: true)
 # ---END COPY---
 
 # ============================================================================
