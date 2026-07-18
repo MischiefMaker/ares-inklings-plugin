@@ -78,12 +78,13 @@ This installs the plugin code to `plugins/inklings/` and merges the configuratio
 
 ### Step 2: Install Web Portal Components
 
-Most web portal files must be copied manually into your `ares-webportal` checkout (the component JS is automatically copied by `plugin/install`, but the template and helpers are not).
+Web portal files must be copied manually into your `ares-webportal` checkout. This step is entirely optional — skip it if you're running a MUSH-only game without the web portal.
 
 **Copy these files, preserving the paths in your `ares-webportal` directory:**
 
 | From this plugin | To your ares-webportal |
 |---|---|
+| `custom-install/inklings-tab.js` | `app/components/inklings-tab.js` |
 | `webportal/app/templates/components/inklings-tab.hbs` | `app/templates/components/inklings-tab.hbs` |
 | `webportal/app/helpers/join-list.js` | `app/helpers/join-list.js` |
 | `webportal/app/helpers/join-list-upper.js` | `app/helpers/join-list-upper.js` |

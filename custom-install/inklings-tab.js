@@ -1,3 +1,9 @@
+// INSTALLATION: Copy this file to your ares-webportal as:
+//   custom-install/inklings-tab.js  →  app/components/inklings-tab.js
+//
+// This is part of Step 2 (Install Web Portal Components) in the README.
+// The web portal integration is optional - MUSH-only games do not need it.
+//
 // Native AresMUSH web portal component for browsing and managing
 // inklings.
 //
