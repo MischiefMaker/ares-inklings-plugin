@@ -25,30 +25,13 @@
 # - chargen-custom.snippet.js (the field names sent to server)
 # This snippet will automatically handle any configured types.
 #
-# This snippet has 7 steps. Follow them in order. Each step is a separate copy-paste.
+# This snippet has 6 steps. Follow them in order. Each step is a separate copy-paste.
 
 # ============================================================================
-# STEP 1: Import the Inklings API
+# STEP 1: Add fields to get_fields_for_chargen
 # ============================================================================
 #
 # FILE: ares/plugins/profile/custom_char_fields.rb
-# LOCATION: At the very top of the file, before any class/module definitions
-#
-# 1. Open plugins/profile/custom_char_fields.rb
-# 2. Look at the first few lines (before any "module" or "class" keywords)
-# 3. Copy and paste this line at the very top:
-#
-# ---START COPY HERE---
-require_relative '../../inklings/public/inklings_api'
-# ---END COPY---
-#
-# (It should be above the "module AresMUSH" or "class" line)
-
-# ============================================================================
-# STEP 2: Add fields to get_fields_for_chargen
-# ============================================================================
-#
-# FILE: plugins/profile/custom_char_fields.rb
 # METHOD: def self.get_fields_for_chargen(char)
 #
 # This displays the chargen-required inkling types as editable fields during chargen.
@@ -64,10 +47,10 @@ require_relative '../../inklings/public/inklings_api'
 # ---END COPY---
 
 # ============================================================================
-# STEP 3: Add fields to get_fields_for_viewing
+# STEP 2: Add fields to get_fields_for_viewing
 # ============================================================================
 #
-# FILE: plugins/profile/custom_char_fields.rb
+# FILE: ares/plugins/profile/custom_char_fields.rb
 # METHOD: def self.get_fields_for_viewing(char, viewer)
 #
 # This displays the chargen-required inkling types as read-only fields on the profile.
@@ -83,10 +66,10 @@ require_relative '../../inklings/public/inklings_api'
 # ---END COPY---
 
 # ============================================================================
-# STEP 4: Add fields to get_fields_for_editing
+# STEP 3: Add fields to get_fields_for_editing
 # ============================================================================
 #
-# FILE: plugins/profile/custom_char_fields.rb
+# FILE: ares/plugins/profile/custom_char_fields.rb
 # METHOD: def self.get_fields_for_editing(char, viewer)
 #
 # This displays the chargen-required inkling types as editable fields on the profile.
@@ -102,10 +85,10 @@ require_relative '../../inklings/public/inklings_api'
 # ---END COPY---
 
 # ============================================================================
-# STEP 5: Add code to save profile edits
+# STEP 4: Add code to save profile edits
 # ============================================================================
 #
-# FILE: plugins/profile/custom_char_fields.rb
+# FILE: ares/plugins/profile/custom_char_fields.rb
 # METHOD: def self.save_fields_from_profile_edit2(char, viewer, args)
 #
 # IMPORTANT: Use save_fields_from_profile_edit2, NOT save_fields_from_profile_edit
@@ -127,10 +110,10 @@ require_relative '../../inklings/public/inklings_api'
 # ---END COPY---
 
 # ============================================================================
-# STEP 6: Add code to save chargen data
+# STEP 5: Add code to save chargen data
 # ============================================================================
 #
-# FILE: plugins/profile/custom_char_fields.rb
+# FILE: ares/plugins/profile/custom_char_fields.rb
 # METHOD: def self.save_fields_from_chargen(char, args)
 #
 # 1. Find the method "def self.save_fields_from_chargen(char, args)"
@@ -147,10 +130,10 @@ require_relative '../../inklings/public/inklings_api'
 # ---END COPY---
 
 # ============================================================================
-# STEP 7: Add the helper methods
+# STEP 6: Add the helper methods
 # ============================================================================
 #
-# FILE: plugins/profile/custom_char_fields.rb
+# FILE: ares/plugins/profile/custom_char_fields.rb
 # LOCATION: At the end of the CustomCharFields class (before the final "end")
 #
 # 1. Go to the end of the CustomCharFields class/module definition
