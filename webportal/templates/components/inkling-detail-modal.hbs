@@ -1,7 +1,7 @@
 {{! Detail view for a single inkling, in an ember-bootstrap modal. }}
 {{! See inkling-detail-modal.js in the sibling app/components/ directory }}
 {{! for the component class this template is paired with. }}
-{{! TEMPORARY DEBUG - stripped down to just the title to isolate the bug. }}
+{{! TEMPORARY DEBUG - all display content, no interactive forms/buttons yet. }}
 
 {{#bs-modal open=this.isOpen onHide=(action "close") size="lg" as |modal|}}
   {{#modal.header closeButton=true}}
@@ -16,22 +16,99 @@
   {{/modal.header}}
 
   {{#modal.body}}
-    {{#if this.detail}}
+    {{#if this.loading}}
+      <p>Loading...</p>
+    {{else if this.detail}}
+      {{#with this.detail as |detail|}}
 
-      <div class="mb-3" style="max-height: 400px; overflow-y: auto;">
-        {{#each this.detail.messages as |msg|}}
-          <div class="border-bottom pb-2 mb-2">
-            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-              <span class="text-muted small font-monospace">#{{msg.ref}}</span>
-              <strong>{{msg.author}}</strong>
-              <span class="text-muted small ms-auto">{{local-date msg.created_at 'MMM D, YYYY h:mm A'}}</span>
-            </div>
-            <div style="white-space: pre-wrap; word-break: break-word;">{{msg.text}}</div>
+        {{#if (or detail.locked detail.tags.length)}}
+          <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+            {{#if detail.locked}}
+              {{#if (eq detail.approval_state "approved")}}
+                <span class="badge text-bg-secondary">LOCKED - Completed</span>
+              {{else if (eq detail.approval_state "submitted")}}
+                <span class="badge text-bg-secondary">LOCKED - Awaiting Staff Review</span>
+              {{else}}
+                <span class="badge text-bg-secondary">LOCKED</span>
+              {{/if}}
+            {{/if}}
+            {{#each detail.tags as |tag|}}
+              <span class="badge text-bg-secondary">{{tag}}</span>
+            {{/each}}
           </div>
-        {{/each}}
-      </div>
-    {{else}}
-      <p>No detail loaded.</p>
+        {{/if}}
+
+        {{#if detail.shared_with}}
+          {{#if (or detail.shared_with.players.length detail.shared_with.groups.length)}}
+            <div class="card card-body mb-3">
+              <h6 class="mb-2">Shared With</h6>
+              {{#if detail.shared_with.players.length}}
+                <div class="small"><strong>Players:</strong> {{detail.shared_with.players}}</div>
+              {{/if}}
+              {{#if detail.shared_with.groups.length}}
+                <div class="small"><strong>Groups:</strong> {{detail.shared_with.groups}}</div>
+              {{/if}}
+            </div>
+          {{/if}}
+        {{/if}}
+
+        {{#if detail.rolls.length}}
+          <h6>Rolls</h6>
+          {{#each detail.rolls as |roll|}}
+            <div class="border rounded p-2 mb-2 {{if roll.private "border-info border-2"}}">
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="text-muted small font-monospace">#{{roll.ref}}</span>
+                <span class="badge text-bg-info">ROLL</span>
+                <strong>{{roll.roll_spec}}</strong>
+                {{#if (and (not (eq roll.roll_type "player")) roll.target_character)}}
+                  <span class="text-muted small fst-italic">for {{roll.target_character}}</span>
+                {{/if}}
+                {{#if roll.private}}<span class="badge text-bg-info text-uppercase">PRIVATE</span>{{/if}}
+                <span class="fw-bold">{{roll.result}}</span>
+                <span class="text-muted small ms-auto">by {{roll.creator}}</span>
+              </div>
+              {{#if roll.reroll_count}}
+                <div class="text-muted small mt-1">
+                  Rerolled {{roll.reroll_count}} time{{if (eq roll.reroll_count 1) "" "s"}}
+                  {{#if roll.luck_cost}} (cost: {{roll.luck_cost}} luck){{/if}}
+                </div>
+              {{/if}}
+            </div>
+          {{/each}}
+        {{/if}}
+
+        <div class="mb-3" style="max-height: 400px; overflow-y: auto;">
+          {{#each detail.messages as |msg|}}
+            <div class="border-bottom pb-2 mb-2 {{if msg.is_staff "bg-light rounded p-2"}} {{if msg.is_private "border-start border-info border-3 ps-2"}}">
+              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                <span class="text-muted small font-monospace">#{{msg.ref}}</span>
+                <strong>{{msg.author}}</strong>
+                {{#if (eq msg.message_type "submitted")}}<span class="badge text-bg-info">SUBMITTED</span>{{/if}}
+                {{#if (eq msg.message_type "approved")}}<span class="badge text-bg-success">APPROVED</span>{{/if}}
+                {{#if (eq msg.message_type "needs_changes")}}<span class="badge text-bg-warning">NEEDS CHANGES</span>{{/if}}
+                {{#if (eq msg.message_type "reward")}}<span class="badge text-bg-info">REWARD</span>{{/if}}
+                {{#if (and msg.is_staff (not msg.message_type))}}<span class="badge text-bg-danger">STAFF</span>{{/if}}
+                {{#if msg.is_gm_note}}<span class="badge text-bg-danger">GM</span>{{/if}}
+                {{#if msg.is_personal}}<span class="badge text-bg-info">PRIVATE TO YOU</span>{{/if}}
+                {{#if msg.is_private}}
+                  <span class="badge text-bg-info text-uppercase">
+                    {{#if msg.private_recipient_label}}
+                      PRIVATE TO {{msg.private_recipient_label}}
+                    {{else if (not msg.is_staff)}}
+                      PRIVATE TO STAFF
+                    {{else}}
+                      PRIVATE
+                    {{/if}}
+                  </span>
+                {{/if}}
+                <span class="text-muted small ms-auto">{{local-date msg.created_at 'MMM D, YYYY h:mm A'}}</span>
+              </div>
+              <div style="white-space: pre-wrap; word-break: break-word;">{{msg.text}}</div>
+            </div>
+          {{/each}}
+        </div>
+
+      {{/with}}
     {{/if}}
   {{/modal.body}}
 
