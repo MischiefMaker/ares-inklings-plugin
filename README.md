@@ -94,14 +94,6 @@ To enable the Inklings web component styling, add this to your `ares-webportal/a
 @use "inklings-tab";
 ```
 
-(If your project uses `@import` instead of `@use`, use: `@import "inklings-tab";`)
-
-**Step 2c: Restart the web portal**
-
-```
-website/deploy
-```
-
 ### Step 3: Configure Character Generation (Optional)
 
 If you want players to create required Inklings during character generation, merge the chargen snippets:
@@ -118,7 +110,6 @@ If you want players to create required Inklings during character generation, mer
 1. Open `custom-install/chargen-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom-tabs.hbs` at the location marked in the snippet
 2. Open `custom-install/chargen-custom.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom.hbs` at the marked location
 3. Open `custom-install/chargen-custom.snippet.example` and paste into `ares-webportal/app/components/chargen-custom.js` at the marked location
-4. Restart your web portal using the MUSH command: `website/deploy`.
 
 **Important:** Each snippet file includes a comment showing exactly where to paste its code. Do not simply append to the end of files.
 
@@ -136,6 +127,14 @@ job/categoryroles INKLINGS=<staff roles that should see inkling jobs>
 Confirm that your Coder role has the `manage_game` permission (used by the `+inkling/reset` command). See [Using Permissions in Code](https://aresmush.com/tutorials/manage/roles.html#using-permissions-in-code) if you need to add it.
 
 (Note: The Inklings tab on the character profile was added in Step 3 above if you followed those instructions.)
+
+### Restart the Web Portal
+
+If you followed any of the optional manual Steps 2 or 3 above, restart the web portal once:
+
+```
+website/deploy
+```
 
 ## Configuration
 
