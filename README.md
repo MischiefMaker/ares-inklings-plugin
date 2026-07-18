@@ -222,7 +222,7 @@ Set `award_cron: {}` to disable this feature.
 | `+inkling/approve <id>` | Approve a submitted inkling and close the job |
 | `+inkling/needschanges <id>=<feedback>` | Send back for revisions |
 | `+inkling/unlock <id>` | Reopen a completed inkling for further editing |
-| `+inkling/reward <id>=<type>:<amount>` | Award XP, FS3 skills, or custom rewards (e.g., `xp:5` or `fs3_skill:Occult:1`) |
+| `+inkling/reward <id>=<type>:<amount>` | Award XP, FS3 skills, or custom rewards (e.g., `xp:5` or `fs3_skill:Occult:1`) — XP is applied automatically; FS3 skills must be applied manually |
 | `+inkling/list <char>` | List all of a character's threads |
 | `+inkling/reset` | Wipe the entire system (confirmation required; use only during testing/development) |
 
@@ -255,6 +255,8 @@ Staff can award rewards during or after review.
 - **NPC rolls don't need a character sheet** — You can attach rolls for NPCs without creating character records, using just a name.
 
 - **Bonus XP is "approved characters" only** — The optional XP award system doesn't exclude staff PCs, assuming staff characters deserve XP for roleplay too.
+
+- **FS3 skill rewards require manual application** — When granting FS3 skill rewards via `+inkling/reward`, the plugin records the reward but does not apply it automatically. Staff must apply it manually using `+skill/level` or your game's FS3 skill system. The amount specified (e.g., `fs3_skill:Occult:1`) is the number of dots to add, not the new total.
 
 - **Luck point rerolls require `char.luck`** — If your game doesn't track luck points on the Character model, the web portal's reroll button won't work (the rest of rolls work fine).
 
