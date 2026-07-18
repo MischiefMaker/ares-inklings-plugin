@@ -463,13 +463,14 @@ module AresMUSH
         body = compile_thread_text(inkling)
       end
 
-      ensure_job(inkling, title, body, submitter)
+      job = ensure_job(inkling, title, body, submitter)
 
-      # Add a submission note to the thread itself
+      # Add a submission note to the thread itself, including the job reference
+      job_ref = job ? " Linked Job ##{job.id}." : ""
       InklingMessage.create(
         inkling: inkling,
         author: submitter,
-        text: "[SUBMITTED TO STAFF]",
+        text: "Submitted for review.#{job_ref}",
         created_at: Time.now,
         seq: next_event_seq(inkling),
         is_staff: "false",
@@ -541,6 +542,47 @@ module AresMUSH
       notify_player(inkling.character, "<inklings> Staff have requested changes on your inkling ##{inkling.id}. Use +inkling #{inkling.id} to view their feedback.")
 
       dispatch_inkling_needs_changes(inkling, staff)
+    end
+
+    # +inkling/requestunlock - Player requests to reopen a completed inkling.
+    # Records the request and notifies staff via the linked job, but does not unlock it.
+    def self.request_unlock(inkling, player, reason)
+      InklingMessage.create(
+        inkling: inkling,
+        author: player,
+        text: "Requested unlock: #{reason}",
+        created_at: Time.now,
+        seq: next_event_seq(inkling),
+        is_staff: "false",
+        is_private: "false",
+        is_gm_note: "true",
+        is_personal: "false",
+        private_recipient_ids: "")
+
+      mirror_to_job(inkling, "[Unlock Request] #{player.name} requested to reopen this inkling: #{reason}", player) if inkling.job
+
+      notify_player(inkling.character, "<inklings> Your unlock request for inkling ##{inkling.id} has been sent to staff.")
+    end
+
+    # +inkling/unlock - Staff reopens a completed inkling for further editing.
+    # Sets approval_state back to "needs_changes" and unlocks the thread.
+    def self.unlock_inkling(inkling, staff)
+      InklingMessage.create(
+        inkling: inkling,
+        author: staff,
+        text: "Unlocked for further editing by staff.",
+        created_at: Time.now,
+        seq: next_event_seq(inkling),
+        is_staff: "true",
+        is_private: "false",
+        is_gm_note: "true",
+        is_personal: "false",
+        private_recipient_ids: "")
+
+      mirror_to_job(inkling, "Inkling unlocked. Player may now edit.", staff) if inkling.job
+
+      update_inkling(inkling, locked: "false", approval_state: "needs_changes", player_unread: "true")
+      notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been unlocked. You can now make edits and resubmit.")
     end
 
     # +inkling/reward - records a reward in the generic InklingReward
@@ -694,6 +736,10 @@ module AresMUSH
           return InklingCloseCmd
         elsif cmd.switch_is?("personal")
           return InklingPersonalCmd
+        elsif cmd.switch_is?("requestunlock")
+          return InklingRequestUnlockCmd
+        elsif cmd.switch_is?("unlock")
+          return InklingUnlockCmd
         elsif cmd.switch_is?("tag")
           return InklingTagCmd
         elsif cmd.switch_is?("untag")

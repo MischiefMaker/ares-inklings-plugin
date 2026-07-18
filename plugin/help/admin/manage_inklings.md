@@ -44,6 +44,9 @@ Approve a submitted inkling. Sets it to approved status, closes the linked job, 
 **`+inkling/needschanges <id>=<feedback>`**
 Send an inkling back to the player for revisions. Feedback is added to thread history as a visible message, the inkling is unlocked for editing, and the player is notified.
 
+**`+inkling/unlock <id>`**
+Reopen a completed inkling for further editing. Sets it back to needs_changes status and unlocks the thread. Use when a player requests to make changes to a completed inkling.
+
 **`+inkling/reward <id>=<reward_type>:<amount>`**
 Grant a reward to the inkling's subject character. Examples: `+inkling/reward 14=xp:5` or `+inkling/reward 14=fs3_skill:Medicine:1`. Use `/all` flag to make the reward visible to all participants: `+inkling/reward 14/all=xp:5`. Rewards default to private (visible only to recipient + staff).
 

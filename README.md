@@ -233,6 +233,7 @@ Set `award_cron: {}` to disable this feature.
 | `+inkling/group <id>=<group>` | Grant access to a demographics group |
 | `+inkling/close <id>` | Close the thread |
 | `+inkling/delete <id>` | Request staff approval to delete (closes thread and creates staff job) |
+| `+inkling/requestunlock <id>=<reason>` | Request staff to reopen a completed inkling |
 
 ### Staff Commands
 
@@ -245,6 +246,7 @@ Set `award_cron: {}` to disable this feature.
 | `+inkling/private <id>=<name>/<text>` | Add a private message to a specific participant |
 | `+inkling/approve <id>` | Approve a submitted inkling and close the job |
 | `+inkling/needschanges <id>=<feedback>` | Send back for revisions |
+| `+inkling/unlock <id>` | Reopen a completed inkling for further editing |
 | `+inkling/reward <id>=<type>:<amount>` | Award XP, FS3 skills, or custom rewards (e.g., `xp:5` or `fs3_skill:Occult:1`) |
 | `+inkling/list <char>` | List all of a character's threads |
 | `+inkling/reset` | Wipe the entire system (confirmation required; use only during testing/development) |

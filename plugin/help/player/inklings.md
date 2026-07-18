@@ -67,6 +67,9 @@ Close an inkling thread (you can do this for your own threads).
 **`+inkling/delete <id>`**
 Request that an inkling thread be permanently deleted. This closes the thread and sends staff a job to review and approve the deletion - it does not delete the thread immediately.
 
+**`+inkling/requestunlock <id>=<reason>`**
+Request that staff reopen a completed inkling so you can make further edits. This sends a notification to staff with your reason but does NOT unlock the inkling - staff must approve the unlock with `+inkling/unlock` before you can edit again.
+
 You can also manage your inklings through the character profile on the web portal. The **Inklings** tab lets you create titled inklings, expand threads to read the full conversation, share them with other characters, and add updates or rolls directly from the web.
 
 ## Tips

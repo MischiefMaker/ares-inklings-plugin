@@ -70,15 +70,33 @@ module AresMUSH
         shared_lines << t('inklings.shared_with_groups', :names => group_list.join(", ")) if group_list.any?
         shared_with_line = shared_lines.any? ? "\n\n[#{t('inklings.shared_with_title')}]\n#{shared_lines.join("\n")}" : ""
 
-        job_line = inkling.job ? "\n\n(Linked job ##{inkling.job.id}, status #{inkling.job.status})" : ""
         header_title = inkling.title.to_s.blank? ? Inklings.kind_label(inkling.kind) : inkling.title
-        lock_tag = inkling.locked == "true" ? " %xh%crLOCKED - awaiting staff%xn" : ""
+
+        # Lock tag based on approval state
+        lock_tag = ""
+        if inkling.locked == "true"
+          if inkling.approval_state == "approved"
+            lock_tag = " %xh%cgLOCKED - Completed%xn"
+          elsif inkling.approval_state == "submitted"
+            lock_tag = " %xh%crLOCKED - Awaiting Staff Review%xn"
+          else
+            lock_tag = " %xh%crLOCKED%xn"
+          end
+        end
         title = "##{inkling.id} [#{Inklings.color_type(inkling.kind.upcase)}] #{Inklings.color_title(header_title)} (#{inkling.status})#{lock_tag}"
+
+        # Build the display: shared_with first (after header), then messages, then job/reminder
+        shared_with_first = shared_with_line ? "#{shared_with_line}\n\n" : ""
+        job_line = inkling.job ? "\n\n(Linked job ##{inkling.job.id}, status #{inkling.job.status})" : ""
 
         submit_reminder = (!Inklings.can_manage_inklings?(enactor) && inkling.character == enactor && inkling.locked != "true" && inkling.status != "closed") ?
           "\n\n#{t('inklings.not_yet_submitted_notice', :id => inkling.id)}" : ""
 
-        template = BorderedDisplayTemplate.new body + shared_with_line + job_line + submit_reminder, title
+        # For completed inklings, show unlock request note
+        unlock_note = (inkling.locked == "true" && inkling.approval_state == "approved" && inkling.character == enactor) ?
+          "\n\n%xhNeed this reopened? Use +inkling/requestunlock #{inkling.id}=<reason> to contact staff.%xn" : ""
+
+        template = BorderedDisplayTemplate.new shared_with_first + body + job_line + submit_reminder + unlock_note, title
         client.emit template.render
 
         if inkling.character == enactor

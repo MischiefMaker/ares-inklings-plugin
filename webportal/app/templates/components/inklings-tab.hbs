@@ -59,7 +59,13 @@
               <span class="inkling-title">{{inkling.title}}</span>
               <span class="inkling-status {{inkling.status}}">{{inkling.status}}</span>
               {{#if inkling.locked}}
-                <span class="locked-badge">LOCKED</span>
+                {{#if (eq inkling.approval_state "approved")}}
+                  <span class="locked-badge">LOCKED - Completed</span>
+                {{else if (eq inkling.approval_state "submitted")}}
+                  <span class="locked-badge">LOCKED - Awaiting Staff Review</span>
+                {{else}}
+                  <span class="locked-badge">LOCKED</span>
+                {{/if}}
               {{/if}}
               {{#unless (eq inkling.character_id this.viewerId)}}
                 {{#if inkling.character_name}}
@@ -277,6 +283,12 @@
                         <button type="button" class="btn btn-primary" {{action "submitInkling" detail.id}}>Submit for Review</button>
                       </div>
                     {{/if}}
+                  {{/if}}
+
+                  {{#if (and detail.locked (eq detail.approval_state "approved") (eq detail.character_id this.viewerId) (not this.isStaff))}}
+                    <div class="unlock-request-note">
+                      <p>Need to make changes? Use <code>+inkling/requestunlock {{detail.id}}=&lt;reason&gt;</code> to request staff reopen this inkling.</p>
+                    </div>
                   {{/if}}
                 {{/if}}
 
