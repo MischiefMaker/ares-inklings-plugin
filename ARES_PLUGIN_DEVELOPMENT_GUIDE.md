@@ -686,6 +686,27 @@ Each of these happened on this project — concretely, not hypothetically.
    delete dead endpoints once nothing calls them, don't leave them as inert
    surface area.
 
+9. **`{{#with}}` on a property that gets set asynchronously.**
+   `{{#with someProperty as |alias|}}` reproducibly crashed this install's
+   web portal with `resolvedDefinition is null` (cascading into "Recursive
+   error condition - ignoring") whenever the wrapped property was set after
+   an async fetch resolved — e.g. `this.set('detail', response)` inside a
+   `gameApi` `.then()`. This wasn't a data-shape bug or a render-timing bug
+   in the surrounding code — timing fixes (deferring the fetch via `next()`,
+   decoupling a modal's `open` state from the fetch entirely) did not help,
+   and the same block helper independently broke two unrelated templates
+   months apart, isolated only by incrementally stripping a template to
+   nothing and re-adding pieces until it broke again. We don't have a
+   confirmed mechanism for *why* — only that referencing the property
+   directly (`this.detail.foo`) instead of aliasing it through `{{#with}}`
+   eliminated the crash every time, with no other change. *Avoid it*: don't
+   reach for `{{#with}}` to alias a property that's populated by an
+   async fetch inside an Ares web component; reference `this.property.foo`
+   directly instead. If you hit this exact cryptic error on a
+   fetch-then-render component, try removing any `{{#with}}` block before
+   chasing render-transaction/timing theories - it's the cheaper thing to
+   rule out first.
+
 ---
 
 ## 9. Plugin Review Checklist
