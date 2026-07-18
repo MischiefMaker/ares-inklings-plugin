@@ -6,20 +6,6 @@
 
 <div class="p-3">
 
-  {{! TEMPORARY DEBUG - remove this whole block once bs-modal is confirmed working. }}
-  <button type="button" class="btn btn-outline-danger mb-3" {{action "toggleTestModal"}}>Test Modal (debug)</button>
-  {{#bs-modal open=this.showTestModal onHide=(action "toggleTestModal") as |modal|}}
-    {{#modal.header closeButton=true}}
-      <h4 class="modal-title">Hello World</h4>
-    {{/modal.header}}
-    {{#modal.body}}
-      <p>If you can see this, bs-modal resolves and renders correctly.</p>
-    {{/modal.body}}
-    {{#modal.footer}}
-      <button type="button" class="btn btn-secondary" {{action "toggleTestModal"}}>Close</button>
-    {{/modal.footer}}
-  {{/bs-modal}}
-
   <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
     <h2 class="mb-0">Inklings</h2>
     <div class="btn-group" role="group">
