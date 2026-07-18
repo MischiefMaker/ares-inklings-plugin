@@ -53,7 +53,13 @@ The Inklings tab provides a modern web interface for:
 - **Submitting for review** — Submit your complete thread to staff with one action
 - **Staff reviews** — View submitted threads, approve/request changes, add GM notes, and grant rewards
 
-The web portal component requires manual installation into your `ares-webportal` checkout (see Installation below).
+The web portal integration is two components: `inklings-tab` (the list and
+"New Inkling" form) and `inkling-detail-modal` (the full thread view, opened
+by clicking a row). Both install automatically via `plugin/install` (see
+Installation below) and are styled entirely with Bootstrap 5 - no plugin
+stylesheet to import. The detail view uses `ember-bootstrap`'s `{{bs-modal}}`
+component, which ships with `ares-webportal` by default; if your checkout has
+removed that dependency, the modal won't render.
 
 ## Installation
 
@@ -68,7 +74,7 @@ plugin/install https://github.com/MischiefMaker/ares-inklings-plugin
 This automatically:
 - Installs plugin code to `plugins/inklings/`
 - Merges configuration into `game/config/inklings.yml`
-- Installs web portal components to `ares-webportal/app/` (component, helpers, templates, and styles)
+- Installs web portal components to `ares-webportal/app/` (components and templates - styled entirely with Bootstrap 5, already loaded by `ares-webportal`, so there's no plugin stylesheet to import)
 
 **Result:** MUSH commands and web portal components are ready. The Inklings tab will appear on character profiles once you complete the optional Step 2 below.
 
@@ -86,15 +92,7 @@ If you want players to see the Inklings tab on character profiles:
 2. Open `ares-webportal/app/components/profile-custom.hbs`
    - Paste the `<div class="tab-pane">` from `custom-install/profile-custom.snippet.hbs` into this file
 
-**Step 2b: Import the stylesheet (optional, for styling)**
-
-To enable the Inklings web component styling, add this to your `ares-webportal/app/styles/app.scss`:
-
-```scss
-@use "inklings-tab";
-```
-
-**Step 2c: Add the type-picker backend hook (Required)**
+**Step 2b: Add the type-picker backend hook (Required)**
 
 The Inklings tab's "New Inkling" type dropdown is populated from the character
 payload (`char.custom.inkling_types`), not fetched separately by the component -
@@ -118,7 +116,7 @@ If you want players to create required Inklings during character generation, mer
 1. Open `custom-install/custom_char_fields.snippet.rb` in this plugin
 2. Open `plugins/profile/custom_char_fields.rb` in your **aresmush** folder (not ares-webportal)
 3. Follow Steps 1, 3, 4, 5, and 6 in the snippet file and paste the code at the marked locations
-   (Step 2 is shared with the profile tab's type picker - see Step 2c above; if you
+   (Step 2 is shared with the profile tab's type picker - see Step 2b above; if you
    already did that, just add the chargen-required-fields line to the same hash)
 4. Save the file
 

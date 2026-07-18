@@ -41,20 +41,20 @@
   - See custom-install/custom_char_fields.snippet.rb, Step 2.
 
   ABOUT THE COMPONENT:
-  The {{inklings-tab}} component handles all Inkling operations:
-  - View existing Inklings
-  - Create new ones
-  - Add messages and rolls
-  - Submit for staff review
-  - Share with other characters/groups
-  - All changes save immediately (doesn't use the profile page's save flow)
+  {{inklings-tab}} renders the list and the "New Inkling" form. Clicking a
+  row opens inkling-detail-modal (a second component it invokes internally,
+  installed alongside it by plugin/install) - that's where messages, rolls,
+  sharing, submission, and all staff actions live, in an ember-bootstrap
+  modal. You only ever need to reference {{inklings-tab}} here; it wires up
+  the detail modal itself.
   Its only dependency on the rest of the profile page is typeInfo (see above) -
   everything else it loads or sends itself via the gameApi service.
 
   IMPORTANT: Before using this snippet, you must complete Step 2 of the README
-  (Install Web Portal Components), which includes copying inklings-tab.js to your
-  webportal, AND install custom_char_fields.snippet.rb (Step 2 there) so
-  char.custom.inkling_types is populated. The web portal integration is entirely
-  optional - if you're running a MUSH-only game, you do not need this snippet or
-  the component at all.
+  (Install Web Portal Components), which includes copying inklings-tab.js and
+  inkling-detail-modal.js to your webportal, AND install
+  custom_char_fields.snippet.rb (Step 2 there) so char.custom.inkling_types is
+  populated. The web portal integration is entirely optional - if you're
+  running a MUSH-only game, you do not need this snippet or the components at
+  all.
 }}

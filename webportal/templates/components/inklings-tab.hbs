@@ -1,15 +1,17 @@
 {{! Native AresMUSH web portal template for the Inklings tab. }}
 {{! See inklings-tab.js in the sibling app/components/ directory for }}
-{{! the component class this template is paired with. }}
+{{! the component class this template is paired with. Detail view lives }}
+{{! in inkling-detail-modal.js / .hbs - this template only renders the }}
+{{! list and the "New Inkling" form. }}
 
-<div class="inklings-tab">
+<div class="p-3">
 
-  <div class="inklings-header">
-    <h2>Inklings</h2>
-    <div class="inklings-filters">
-      <button type="button" class="btn btn-filter {{if (eq this.statusFilter "open") "active"}}" {{action "setStatusFilter" "open"}}>Open</button>
-      <button type="button" class="btn btn-filter {{if (eq this.statusFilter "closed") "active"}}" {{action "setStatusFilter" "closed"}}>Closed</button>
-      <button type="button" class="btn btn-filter {{if (eq this.statusFilter "all") "active"}}" {{action "setStatusFilter" "all"}}>All</button>
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h2 class="mb-0">Inklings</h2>
+    <div class="btn-group" role="group">
+      <button type="button" class="btn btn-outline-secondary {{if (eq this.statusFilter "open") "active"}}" {{action "setStatusFilter" "open"}}>Open</button>
+      <button type="button" class="btn btn-outline-secondary {{if (eq this.statusFilter "closed") "active"}}" {{action "setStatusFilter" "closed"}}>Closed</button>
+      <button type="button" class="btn btn-outline-secondary {{if (eq this.statusFilter "all") "active"}}" {{action "setStatusFilter" "all"}}>All</button>
     </div>
     <button type="button" class="btn btn-primary" {{action "toggleNewForm"}}>
       {{if this.showNewForm "Cancel" "+ New Inkling"}}
@@ -17,323 +19,87 @@
   </div>
 
   {{#if this.showNewForm}}
-    <div class="new-inkling-form">
-      <div class="form-group">
-        <label for="inklings-new-kind">Type</label>
-        <select id="inklings-new-kind" onchange={{action "setNewKind" value="target.value"}}>
-          <option value="">-- Select a type --</option>
-          {{#each this.typeInfo as |t|}}
-            <option value={{t.kind}}>{{t.name}}</option>
-          {{/each}}
-        </select>
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="inklings-new-kind" class="form-label">Type</label>
+          <select id="inklings-new-kind" class="form-select" onchange={{action "setNewKind" value="target.value"}}>
+            <option value="">-- Select a type --</option>
+            {{#each this.typeInfo as |t|}}
+              <option value={{t.kind}}>{{t.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="inklings-new-title" class="form-label">Title</label>
+          {{input id="inklings-new-title" class="form-control" type="text" value=this.newTitle placeholder="Enter a short title"}}
+        </div>
+        <div class="mb-3">
+          <label for="inklings-new-text" class="form-label">Text</label>
+          {{textarea id="inklings-new-text" class="form-control" value=this.newText placeholder="Enter your inkling..." rows=4}}
+        </div>
+        <button type="button" class="btn btn-success" {{action "createInkling"}}>Create Inkling</button>
       </div>
-      <div class="form-group">
-        <label for="inklings-new-title">Title</label>
-        {{input id="inklings-new-title" type="text" value=this.newTitle placeholder="Enter a short title"}}
-      </div>
-      <div class="form-group">
-        <label for="inklings-new-text">Text</label>
-        {{textarea id="inklings-new-text" value=this.newText placeholder="Enter your inkling..." rows=4}}
-      </div>
-      <button type="button" class="btn btn-success" {{action "createInkling"}}>Create Inkling</button>
     </div>
   {{/if}}
 
   {{#if this.loading}}
     <p>Loading inklings...</p>
   {{else if (eq this.inklings.length 0)}}
-    <div class="no-inklings">
-      <p>No inklings yet.</p>
+    <div class="text-center text-muted py-5">
+      <p class="mb-0">No inklings yet.</p>
     </div>
   {{else}}
-    <div class="inklings-list">
+    <div class="list-group">
       {{#each this.inklings as |inkling|}}
-        <div class="inkling-item">
-          <div class="inkling-header {{if (eq this.expandedId inkling.id) "expanded"}}" {{action "expandInkling" inkling.id}}>
-            <div class="inkling-summary">
-              <span class="badge text-bg-{{inkling.kind_color}}">{{inkling.kind_label}}</span>
-              <span class="inkling-title">{{inkling.title}}</span>
-              <span class="badge {{if (eq inkling.status "open") "text-bg-success" "text-bg-danger"}}">{{inkling.status}}</span>
-              {{#if inkling.locked}}
-                {{#if (eq inkling.approval_state "approved")}}
-                  <span class="badge text-bg-secondary">LOCKED - Completed</span>
-                {{else if (eq inkling.approval_state "submitted")}}
-                  <span class="badge text-bg-secondary">LOCKED - Awaiting Staff Review</span>
-                {{else}}
-                  <span class="badge text-bg-secondary">LOCKED</span>
-                {{/if}}
+        <button type="button" class="list-group-item list-group-item-action text-start" {{action "openDetail" inkling.id}}>
+          <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="badge text-bg-{{inkling.kind_color}}">{{inkling.kind_label}}</span>
+            <span class="fw-bold">{{inkling.title}}</span>
+            <span class="badge {{if (eq inkling.status "open") "text-bg-success" "text-bg-danger"}}">{{inkling.status}}</span>
+            {{#if inkling.locked}}
+              {{#if (eq inkling.approval_state "approved")}}
+                <span class="badge text-bg-secondary">LOCKED - Completed</span>
+              {{else if (eq inkling.approval_state "submitted")}}
+                <span class="badge text-bg-secondary">LOCKED - Awaiting Staff Review</span>
+              {{else}}
+                <span class="badge text-bg-secondary">LOCKED</span>
               {{/if}}
-              {{#unless (eq inkling.character_id this.viewerId)}}
-                {{#if inkling.character_name}}
-                  <span class="inkling-owner">for {{inkling.character_name}}</span>
-                {{/if}}
-              {{/unless}}
-              {{#if inkling.player_unread}}
-                <span class="badge text-bg-warning">unread</span>
+            {{/if}}
+            {{#unless (eq inkling.character_id this.viewerId)}}
+              {{#if inkling.character_name}}
+                <span class="text-muted small">for {{inkling.character_name}}</span>
               {{/if}}
-              <span class="message-count">
-                {{inkling.message_count}} message{{if (eq inkling.message_count 1) "" "s"}}
-                {{#if inkling.player_unread}}<span class="unread-asterisk">*</span>{{/if}}
-              </span>
-              <span class="created-date">{{local-date inkling.created_at 'MMM D, YYYY h:mm A'}}</span>
-              {{#if inkling.linked_job}}
-                <span class="badge text-bg-secondary">Job #{{inkling.linked_job.id}} ({{inkling.linked_job.status}})</span>
-              {{/if}}
-              {{#if inkling.tags.length}}
-                <span class="inkling-tags">{{inkling.tags_label}}</span>
-              {{/if}}
-            </div>
-            <span class="expand-icon {{if (eq this.expandedId inkling.id) "open"}}">&#9660;</span>
+            {{/unless}}
+            {{#if inkling.player_unread}}
+              <span class="badge text-bg-warning">unread</span>
+            {{/if}}
+            <span class="text-muted small">
+              {{inkling.message_count}} message{{if (eq inkling.message_count 1) "" "s"}}
+              {{#if inkling.player_unread}}<span class="text-warning fw-bold">*</span>{{/if}}
+            </span>
+            <span class="text-muted small">{{local-date inkling.created_at 'MMM D, YYYY h:mm A'}}</span>
+            {{#if inkling.linked_job}}
+              <span class="badge text-bg-secondary">Job #{{inkling.linked_job.id}} ({{inkling.linked_job.status}})</span>
+            {{/if}}
+            {{#if inkling.tags.length}}
+              <span class="text-muted small">{{inkling.tags_label}}</span>
+            {{/if}}
           </div>
-
-          {{#if (eq this.expandedId inkling.id)}}
-            {{#with this.expandedInkling as |detail|}}
-              <div class="inkling-detail">
-
-                {{#if detail.shared_with}}
-                  {{#if (or detail.shared_with.players.length detail.shared_with.groups.length)}}
-                    <div class="shared-with-section">
-                      <h3>Shared With</h3>
-                      {{#if detail.shared_with.players.length}}
-                        <div class="shared-with-row">
-                          <span class="shared-with-label">Players:</span> {{detail.shared_with.players}}
-                        </div>
-                      {{/if}}
-                      {{#if detail.shared_with.groups.length}}
-                        <div class="shared-with-row">
-                          <span class="shared-with-label">Groups:</span> {{detail.shared_with.groups}}
-                        </div>
-                      {{/if}}
-                    </div>
-                  {{/if}}
-                {{/if}}
-
-                {{#if detail.rolls.length}}
-                  <div class="rolls-section">
-                    <h3>Rolls</h3>
-                    {{#each detail.rolls as |roll|}}
-                      <div class="roll {{if roll.private "private" "public"}}">
-                        <div class="roll-header">
-                          <span class="message-ref">#{{roll.ref}}</span>
-                          <span class="badge text-bg-info">ROLL</span>
-                          <strong>{{roll.roll_spec}}</strong>
-                          {{#if (and (not (eq roll.roll_type "player")) roll.target_character)}}
-                            <span class="roll-target">for {{roll.target_character}}</span>
-                          {{/if}}
-                          {{#if roll.private}}<span class="badge text-bg-info" style="text-transform: uppercase;">PRIVATE</span>{{/if}}
-                          <span class="roll-result">{{roll.result}}</span>
-                          <span class="roll-meta">by {{roll.creator}}</span>
-                        </div>
-                        {{#if roll.reroll_count}}
-                          <div class="roll-reroll-info">
-                            Rerolled {{roll.reroll_count}} time{{if (eq roll.reroll_count 1) "" "s"}}
-                            {{#if roll.luck_cost}} (cost: {{roll.luck_cost}} luck){{/if}}
-                          </div>
-                        {{/if}}
-                        {{#if (and (eq roll.roll_type "player") (eq roll.character_id roll.creator_id) (eq detail.status "open"))}}
-                          <button type="button" class="btn btn-sm btn-secondary" {{action "rerollWithLuck" detail.id roll.id}}>
-                            Reroll with Luck
-                          </button>
-                        {{/if}}
-                      </div>
-                    {{/each}}
-                  </div>
-                {{/if}}
-
-                <div class="messages-section">
-                  {{#each detail.messages as |msg|}}
-                    <div class="message {{if msg.is_staff "staff" "player"}} {{if msg.is_private "private"}}">
-                      <div class="message-header">
-                        <span class="message-ref">#{{msg.ref}}</span>
-                        <strong>{{msg.author}}</strong>
-                        {{#if (eq msg.message_type "submitted")}}<span class="badge text-bg-info">SUBMITTED</span>{{/if}}
-                        {{#if (eq msg.message_type "approved")}}<span class="badge text-bg-success">APPROVED</span>{{/if}}
-                        {{#if (eq msg.message_type "needs_changes")}}<span class="badge text-bg-warning">NEEDS CHANGES</span>{{/if}}
-                        {{#if (eq msg.message_type "reward")}}<span class="badge text-bg-info">REWARD</span>{{/if}}
-                        {{#if (and msg.is_staff (not msg.message_type))}}<span class="badge text-bg-danger">STAFF</span>{{/if}}
-                        {{#if msg.is_gm_note}}<span class="badge text-bg-danger">GM</span>{{/if}}
-                        {{#if msg.is_personal}}<span class="badge text-bg-info">PRIVATE TO YOU</span>{{/if}}
-                        {{#if msg.is_private}}
-                          <span class="badge text-bg-info" style="text-transform: uppercase;">
-                            {{#if msg.private_recipient_label}}
-                              PRIVATE TO {{msg.private_recipient_label}}
-                            {{else if (not msg.is_staff)}}
-                              PRIVATE TO STAFF
-                            {{else}}
-                              PRIVATE
-                            {{/if}}
-                          </span>
-                        {{/if}}
-                        <span class="message-time">{{local-date msg.created_at 'MMM D, YYYY h:mm A'}}</span>
-                      </div>
-                      <div class="message-text">{{msg.text}}</div>
-                    </div>
-                  {{/each}}
-                </div>
-
-                {{#if (eq detail.status "open")}}
-                  {{#if (and detail.locked (not this.isStaff))}}
-                    <div class="alert alert-secondary">
-                      This inkling has been submitted and is locked until staff respond. You'll be notified here when they do.
-                    </div>
-                  {{else}}
-                    <div class="roll-form-section">
-                      {{#unless this.showRollForm}}
-                        <button type="button" class="btn btn-success" {{action "toggleRollForm"}}>+ Add Roll</button>
-                      {{else}}
-                        <div class="roll-form">
-                          <div class="form-group">
-                            <label for="inklings-roll-type">Roll Type</label>
-                            <select id="inklings-roll-type" onchange={{action "setRollType" value="target.value"}}>
-                              <option value="player">My Roll</option>
-                              {{#if this.isStaff}}
-                                <option value="npc">NPC Roll</option>
-                                <option value="static">Static Number</option>
-                              {{/if}}
-                            </select>
-                          </div>
-
-                          {{#if (eq this.rollType "player")}}
-                            <div class="form-group">
-                              <label for="inklings-roll-spec">Attribute/Skill</label>
-                              {{input id="inklings-roll-spec" type="text" value=this.rollSpec placeholder="Enter attribute/skill name"}}
-                            </div>
-                          {{/if}}
-
-                          {{#if (eq this.rollType "npc")}}
-                            <div class="form-group">
-                              <label for="inklings-npc-name">NPC Name (optional)</label>
-                              {{input id="inklings-npc-name" type="text" value=this.npcName placeholder="e.g. Guard Captain"}}
-                            </div>
-                          {{/if}}
-
-                          {{#if (or (eq this.rollType "npc") (eq this.rollType "static"))}}
-                            <div class="form-group">
-                              <label for="inklings-roll-spec-2">Skill / Attribute</label>
-                              {{input id="inklings-roll-spec-2" type="text" value=this.rollSpec placeholder=(if (eq this.rollType "static") "Description" "Skill or attribute rolled")}}
-                            </div>
-                            <div class="form-group">
-                              <label for="inklings-roll-result">{{if (eq this.rollType "static") "Number" "Result"}}</label>
-                              {{input id="inklings-roll-result" type="text" value=this.rollResult placeholder=(if (eq this.rollType "static") "Enter a number" "e.g. Good (7)")}}
-                            </div>
-                          {{/if}}
-
-                          <div class="form-group checkbox">
-                            <label>
-                              {{input type="checkbox" checked=this.rollIsPrivate}}
-                              Private (only visible to player and staff)
-                            </label>
-                          </div>
-
-                          <div class="form-actions">
-                            <button type="button" class="btn btn-success" {{action "addRoll" detail.id}}>Add Roll</button>
-                            <button type="button" class="btn btn-secondary" {{action "toggleRollForm"}}>Cancel</button>
-                          </div>
-                        </div>
-                      {{/unless}}
-                    </div>
-
-                    <div class="reply-section">
-                      <textarea oninput={{action "updateReplyText" detail.id value="target.value"}} placeholder="Add a reply..." rows="3">{{get this.replyTextById detail.id}}</textarea>
-                      <div class="reply-actions">
-                        <label class="private-checkbox">
-                          <input type="checkbox" checked={{get this.privateReplyById detail.id}} onchange={{action "togglePrivateReply" detail.id}} />
-                          Private (only you and staff can see this)
-                        </label>
-                        <button type="button" class="btn btn-success" {{action "submitReply" detail.id}}>Add Reply</button>
-                      </div>
-                    </div>
-
-                    <div class="personal-entry-section">
-                      <div class="alert alert-info">
-                        <strong>Personal Entry:</strong> Private notes visible only to you. These may become visible under game policies (transfers, roster changes, administration). Do not record sensitive out-of-game information.
-                      </div>
-                      <textarea oninput={{action "updateReplyText" detail.id value="target.value"}} placeholder="Add a personal entry (private note)..." rows="3">{{get this.replyTextById detail.id}}</textarea>
-                      <div class="personal-actions">
-                        <button type="button" class="btn btn-success" {{action "submitPersonalReply" detail.id}}>Add Personal Entry</button>
-                      </div>
-                    </div>
-
-                    {{#if (or detail.tags.length (or this.isStaff (eq detail.character_id this.viewerId)))}}
-                      <div class="tags-section">
-                        {{#if detail.tags.length}}
-                          <div class="tags-list">
-                            <strong>Tags:</strong>
-                            {{#each detail.tags as |tag|}}
-                              <span class="tag">
-                                {{tag}}
-                                {{#if (or this.isStaff (eq detail.character_id this.viewerId))}}
-                                  <button type="button" class="tag-remove" {{action "removeTag" detail.id tag}}>×</button>
-                                {{/if}}
-                              </span>
-                            {{/each}}
-                          </div>
-                        {{/if}}
-                        {{#if (or this.isStaff (eq detail.character_id this.viewerId))}}
-                          <div class="tag-input-section">
-                            <input type="text" value={{get this.tagInputById detail.id}} oninput={{action "updateTagInput" detail.id value="target.value"}} placeholder="Add a tag..." />
-                            <button type="button" class="btn btn-secondary" {{action "addTag" detail.id}}>Add Tag</button>
-                          </div>
-                        {{/if}}
-                      </div>
-                    {{/if}}
-
-                    {{#if (and (not this.isStaff) (eq detail.character_id this.viewerId) (not detail.locked))}}
-                      <div class="alert alert-warning">
-                        <p>So far this hasn't been sent to staff. Submit when you're ready for them to see it - you won't get a response until you do.</p>
-                        <button type="button" class="btn btn-primary" {{action "submitInkling" detail.id}}>Submit for Review</button>
-                      </div>
-                    {{/if}}
-                  {{/if}}
-
-                  {{#if (and detail.locked (eq detail.approval_state "approved") (eq detail.character_id this.viewerId) (not this.isStaff))}}
-                    <div class="alert alert-info">
-                      <p>Need to make changes? Use <code>+inkling/requestunlock {{detail.id}}=&lt;reason&gt;</code> to request staff reopen this inkling.</p>
-                    </div>
-                  {{/if}}
-                {{/if}}
-
-                {{#if this.isStaff}}
-                  <div class="staff-actions">
-                    <div class="staff-action-row">
-                      <button type="button" class="btn btn-secondary" {{action "addGmNote" detail.id}}>+ GM Note</button>
-                    </div>
-                    {{#if (eq detail.approval_state "submitted")}}
-                      <div class="staff-action-row">
-                        <button type="button" class="btn btn-success" {{action "approveInkling" detail.id}}>Approve</button>
-                        <button type="button" class="btn btn-warning" {{action "requestChanges" detail.id}}>Request Changes</button>
-                      </div>
-                    {{/if}}
-                    <div class="staff-action-row">
-                      <button type="button" class="btn btn-info" {{action "grantReward" detail.id}}>Grant Reward</button>
-                    </div>
-                  </div>
-                {{/if}}
-
-                {{#if (and (eq detail.status "open") (or this.isStaff (eq detail.character_id this.viewerId)))}}
-                  <div class="inkling-actions">
-                    <div class="share-form">
-                      <input type="text" value={{get this.shareTargetById detail.id}} oninput={{action "updateShareTarget" detail.id value="target.value"}} placeholder="Share with character(s)..." />
-                      <button type="button" class="btn btn-secondary" {{action "shareInkling" detail.id}}>Share</button>
-                    </div>
-                    <button type="button" class="btn btn-warning" {{action "closeInkling" detail.id}}>Close Inkling</button>
-                  </div>
-                {{/if}}
-
-                {{#if (or this.isStaff (eq detail.character_id this.viewerId))}}
-                  <div class="inkling-actions inkling-actions-danger">
-                    <button type="button" class="btn btn-danger" {{action "deleteInkling" detail.id}}>
-                      {{if this.isStaff "Delete Inkling" "Request Deletion"}}
-                    </button>
-                  </div>
-                {{/if}}
-
-              </div>
-            {{/with}}
-          {{/if}}
-        </div>
+        </button>
       {{/each}}
     </div>
   {{/if}}
+
+  {{inkling-detail-modal
+    open=this.showDetailModal
+    inklingId=this.selectedInklingId
+    characterId=this.characterId
+    viewerId=this.viewerId
+    isStaff=this.isStaff
+    onClose=(action "closeDetail")
+    onUpdate=(action "inklingUpdated")
+    onDelete=(action "inklingDeleted")
+  }}
 
 </div>

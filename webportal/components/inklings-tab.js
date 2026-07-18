@@ -1,13 +1,17 @@
-// Inklings web portal component.
+// Inklings web portal component - list view.
 // Automatically installed to ares-webportal/app/components/ via plugin/install.
 // The web portal integration is optional - MUSH-only games do not need it.
 //
-// Native AresMUSH web portal component for browsing and managing inklings.
-// Uses standard AresMUSH gameApi service and flashMessages for error handling.
+// Renders the list of inklings and the "New Inkling" form. Selecting a row
+// opens inkling-detail-modal (see the sibling inkling-detail-modal.js),
+// which owns all detail-view state and every mutating action (reply, tag,
+// roll, approve, share, close, delete...). This component only tracks
+// which inkling is selected and reconciles its own list when the modal
+// reports a change via onUpdate/onDelete - it never renders detail content
+// itself.
 
 import Component from '@ember/component';
 import { A } from '@ember/array';
-import { computed } from '@ember/object';
 import { inject as service } from '@ember/service';
 
 export default Component.extend({
@@ -31,8 +35,6 @@ export default Component.extend({
 
   // --- Internal state ---
   inklings: null,
-  expandedId: null,
-  expandedInklingDetail: null,
   loading: true,
   statusFilter: 'open',
 
@@ -41,35 +43,18 @@ export default Component.extend({
   newTitle: '',
   newText: '',
 
-  replyTextById: null,
-  privateReplyById: null,
-  personalReplyById: null,
-  shareTargetById: null,
-  tagInputById: null,
-
-  showRollForm: false,
-  rollType: 'player',
-  rollSpec: '',
-  npcName: '',
-  rollResult: '',
-  rollIsPrivate: false,
+  selectedInklingId: null,
+  showDetailModal: false,
 
   init() {
     this._super(...arguments);
     this.set('inklings', A());
-    this.set('replyTextById', {});
-    this.set('privateReplyById', {});
-    this.set('personalReplyById', {});
-    this.set('shareTargetById', {});
-    this.set('tagInputById', {});
   },
 
   didInsertElement() {
     this._super(...arguments);
     this.loadInklings();
   },
-
-  // --- Data loading --------------------------------------------------
 
   loadInklings() {
     this.set('loading', true);
@@ -91,39 +76,6 @@ export default Component.extend({
         this.set('loading', false);
       });
   },
-
-  replaceInkling(updated) {
-    let list = this.inklings;
-    let idx = list.findIndex((i) => i.id === updated.id);
-    if (idx > -1) {
-      list.removeAt(idx);
-      list.insertAt(idx, updated);
-    }
-    // Also update the expanded detail if it's currently showing this inkling
-    if (this.expandedId === updated.id) {
-      this.set('expandedInklingDetail', updated);
-    }
-  },
-
-  reloadInklingDetail(id) {
-    return this.gameApi.requestOne('inklings_get_inkling', {
-      char_id: this.characterId,
-      inkling_id: id
-    }, null).then((response) => {
-      if (response.error) {
-        return;
-      }
-      this.set('expandedInklingDetail', response.inkling);
-      return response.inkling;
-    });
-  },
-
-  expandedInkling: computed('expandedInklingDetail', 'expandedId', function () {
-    if (!this.expandedId) {
-      return null;
-    }
-    return this.expandedInklingDetail;
-  }),
 
   actions: {
     setStatusFilter(filter) {
@@ -172,370 +124,38 @@ export default Component.extend({
       });
     },
 
-    expandInkling(id) {
-      if (this.expandedId === id) {
-        this.set('expandedId', null);
-        return;
-      }
-
-      this.reloadInklingDetail(id).then((inkling) => {
-        if (!inkling) {
-          this.flashMessages.danger('Failed to load inkling details');
-          return;
-        }
-        this.set('expandedId', id);
-      }).catch((error) => {
-        this.flashMessages.danger('Failed to load inkling details: ' + (error.message || 'Unknown error'));
+    openDetail(id) {
+      this.setProperties({
+        selectedInklingId: id,
+        showDetailModal: true
       });
     },
 
-    updateReplyText(id, value) {
-      let hash = Object.assign({}, this.replyTextById);
-      hash[id] = value;
-      this.set('replyTextById', hash);
-    },
-
-    togglePrivateReply(id) {
-      let hash = Object.assign({}, this.privateReplyById);
-      hash[id] = !hash[id];
-      this.set('privateReplyById', hash);
-    },
-
-    submitReply(id) {
-      let text = (this.replyTextById || {})[id];
-      if (!text || !text.trim()) {
-        this.flashMessages.danger('Please enter reply text');
-        return;
-      }
-      let isPrivate = !!(this.privateReplyById || {})[id];
-
-      this.gameApi.requestOne('inklings_reply_to_inkling', {
-        char_id: this.characterId,
-        inkling_id: id,
-        text,
-        is_private: isPrivate
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.reloadInklingDetail(id).then(() => {
-          let hash = Object.assign({}, this.replyTextById);
-          hash[id] = '';
-          this.set('replyTextById', hash);
-        });
+    closeDetail() {
+      this.setProperties({
+        showDetailModal: false,
+        selectedInklingId: null
       });
     },
 
-    togglePersonalReply(id) {
-      let hash = Object.assign({}, this.personalReplyById);
-      hash[id] = !hash[id];
-      this.set('personalReplyById', hash);
-    },
-
-    submitPersonalReply(id) {
-      let text = (this.replyTextById || {})[id];
-      if (!text || !text.trim()) {
-        this.flashMessages.danger('Please enter personal entry text');
-        return;
+    // Called by inkling-detail-modal whenever it fetches or mutates the
+    // selected inkling, so the list row (badges, status, message count)
+    // stays in sync without the list ever touching detail fields itself.
+    inklingUpdated(updated) {
+      let list = this.inklings;
+      let idx = list.findIndex((i) => i.id === updated.id);
+      if (idx > -1) {
+        list.removeAt(idx);
+        list.insertAt(idx, updated);
       }
+    },
 
-      let confirmed = confirm('Personal entries are intended as private notes, but may become visible under game policies (character transfers, roster changes, or administration). Proceed?');
-      if (!confirmed) {
-        return;
+    inklingDeleted(id) {
+      let match = this.inklings.find((i) => i.id === id);
+      if (match) {
+        this.inklings.removeObject(match);
       }
-
-      this.gameApi.requestOne('inklings_reply_to_inkling', {
-        char_id: this.characterId,
-        inkling_id: id,
-        text,
-        is_personal: true
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.reloadInklingDetail(id).then(() => {
-          let hash = Object.assign({}, this.replyTextById);
-          hash[id] = '';
-          this.set('replyTextById', hash);
-        });
-      });
-    },
-
-    updateTagInput(id, value) {
-      let hash = Object.assign({}, this.tagInputById);
-      hash[id] = value;
-      this.set('tagInputById', hash);
-    },
-
-    addTag(id) {
-      let tag = (this.tagInputById || {})[id];
-      if (!tag || !tag.trim()) {
-        this.flashMessages.danger('Please enter a tag');
-        return;
-      }
-
-      this.gameApi.requestOne('inklings_add_tag', {
-        char_id: this.characterId,
-        inkling_id: id,
-        tag: tag.trim()
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.reloadInklingDetail(id).then(() => {
-          let hash = Object.assign({}, this.tagInputById);
-          hash[id] = '';
-          this.set('tagInputById', hash);
-        });
-      });
-    },
-
-    removeTag(id, tag) {
-      this.gameApi.requestOne('inklings_remove_tag', {
-        char_id: this.characterId,
-        inkling_id: id,
-        tag
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.reloadInklingDetail(id);
-      });
-    },
-
-    addGmNote(id) {
-      let text = prompt('Enter GM note:');
-      if (!text || !text.trim()) {
-        return;
-      }
-
-      this.gameApi.requestOne('inklings_add_gm_note', {
-        char_id: this.characterId,
-        inkling_id: id,
-        text: text.trim()
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.reloadInklingDetail(id);
-      });
-    },
-
-    approveInkling(id) {
-      let confirmed = confirm('Approve this inkling?');
-      if (!confirmed) {
-        return;
-      }
-
-      this.gameApi.requestOne('inklings_approve_inkling', {
-        inkling_id: id
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.reloadInklingDetail(id);
-      });
-    },
-
-    requestChanges(id) {
-      let feedback = prompt('Enter feedback for revision:');
-      if (!feedback || !feedback.trim()) {
-        return;
-      }
-
-      this.gameApi.requestOne('inklings_request_changes', {
-        inkling_id: id,
-        feedback: feedback.trim()
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.reloadInklingDetail(id);
-      });
-    },
-
-    grantReward(id) {
-      let rewardType = prompt('Enter reward type (xp, fs3_skill, etc):');
-      if (!rewardType) {
-        return;
-      }
-
-      let rewardKey = '';
-      if (rewardType.toLowerCase() === 'fs3_skill') {
-        rewardKey = prompt('Enter skill name:');
-        if (!rewardKey) {
-          return;
-        }
-      }
-
-      let amount = prompt('Enter amount:');
-      if (!amount) {
-        return;
-      }
-
-      this.gameApi.requestOne('inklings_grant_reward', {
-        inkling_id: id,
-        reward_type: rewardType.trim(),
-        reward_key: rewardKey.trim(),
-        amount: amount.trim()
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.reloadInklingDetail(id);
-      });
-    },
-
-    toggleRollForm() {
-      this.toggleProperty('showRollForm');
-    },
-
-    setRollType(type) {
-      this.set('rollType', type);
-    },
-
-    addRoll(id) {
-      if (!this.rollSpec || !this.rollSpec.trim()) {
-        this.flashMessages.danger('Please enter a roll spec');
-        return;
-      }
-      if (this.rollType !== 'player' && (!this.rollResult || !this.rollResult.trim())) {
-        this.flashMessages.danger('Please enter a result');
-        return;
-      }
-
-      let args = {
-        inkling_id: id,
-        roll_type: this.rollType,
-        roll_spec: this.rollSpec,
-        is_private: this.rollIsPrivate
-      };
-
-      if (this.rollType === 'player') {
-        args.result = '';
-        args.result_value = 0;
-      } else {
-        args.result = this.rollResult;
-        args.result_value = parseInt(this.rollResult, 10) || 0;
-        if (this.rollType === 'npc') {
-          args.npc_name = this.npcName || null;
-        }
-      }
-
-      this.gameApi.requestOne('inklings_add_roll', args, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.reloadInklingDetail(id).then(() => {
-          this.setProperties({
-            rollSpec: '',
-            npcName: '',
-            rollResult: '',
-            rollIsPrivate: false,
-            showRollForm: false
-          });
-        });
-      });
-    },
-
-    rerollWithLuck(inklingId, rollId) {
-      this.gameApi.requestOne('character_luck_reroll', {
-        char_id: this.characterId
-      }, null).then((rollData) => {
-        if (rollData.error) {
-          return;
-        }
-        this.gameApi.requestOne('inklings_reroll_with_luck', {
-          inkling_id: inklingId,
-          roll_id: rollId,
-          new_result: rollData.result,
-          new_result_value: rollData.result_value,
-          luck_cost: rollData.luck_cost || 1
-        }, null).then((response) => {
-          if (response.error) {
-            return;
-          }
-          this.reloadInklingDetail(inklingId);
-        });
-      });
-    },
-
-    closeInkling(id) {
-      if (!window.confirm('Close this inkling? This cannot be undone.')) {
-        return;
-      }
-      this.gameApi.requestOne('inklings_close_inkling', {
-        char_id: this.characterId,
-        inkling_id: id
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.replaceInkling(response.inkling);
-        this.set('expandedId', null);
-      });
-    },
-
-    deleteInkling(id) {
-      let confirmMsg = this.isStaff
-        ? 'Delete this inkling? This cannot be undone.'
-        : 'Request deletion of this inkling? This closes the thread and asks staff to review and approve a permanent delete.';
-      if (!window.confirm(confirmMsg)) {
-        return;
-      }
-      this.gameApi.requestOne('inklings_delete_inkling', {
-        char_id: this.characterId,
-        inkling_id: id
-      }, null).then((data) => {
-        if (data.error) {
-          return;
-        }
-        if (data.deleted) {
-          this.inklings.removeObject(this.inklings.find((i) => i.id === id));
-        } else if (data.inkling) {
-          this.replaceInkling(data.inkling);
-        }
-        this.set('expandedId', null);
-      });
-    },
-
-    updateShareTarget(id, value) {
-      let hash = Object.assign({}, this.shareTargetById);
-      hash[id] = value;
-      this.set('shareTargetById', hash);
-    },
-
-    shareInkling(id) {
-      let target = (this.shareTargetById || {})[id];
-      if (!target || !target.trim()) {
-        this.flashMessages.danger('Please enter a character name to share with');
-        return;
-      }
-      this.gameApi.requestOne('inklings_share_inkling', {
-        char_id: this.characterId,
-        inkling_id: id,
-        target_name: target
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        let hash = Object.assign({}, this.shareTargetById);
-        hash[id] = '';
-        this.set('shareTargetById', hash);
-        this.reloadInklingDetail(id);
-      });
-    },
-
-    submitInkling(id) {
-      this.gameApi.requestOne('inklings_submit_inkling', {
-        char_id: this.characterId,
-        inkling_id: id
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.replaceInkling(response.inkling);
-      });
+      this.send('closeDetail');
     }
   }
 });
