@@ -55,6 +55,9 @@ Attach a roll to the inkling thread. Example: `+inkling/roll 14=Firearms+Reflexe
 **`+inkling/private <id>=<text>`**
 Add a private entry to any inkling thread. Private entries are visible only to you and staff — other participants in the thread cannot see them. Like `+inkling/advance`, this doesn't notify staff by itself.
 
+**`+inkling/personal <id>=<text>`**
+Add a personal note to any inkling thread. Personal notes are visible only to you, even staff can't see them. Use this for OOC thoughts, session notes, or reminders you want to keep with the thread.
+
 **`+inkling/submit <id>`**
 Lock the thread and send everything in it to staff as a single request. This is the only thing that actually gets a thread in front of staff - do this whenever you want a response. The thread stays locked until a staff member makes a decision via `+inkling/approve` (approved) or `+inkling/needschanges` (sent back for revisions). While locked, you can view it and read staff replies, but can't add new updates unless staff sends it back for changes.
 

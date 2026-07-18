@@ -41,6 +41,9 @@ Add a new visible update to an inkling thread. This mirrors the response to any 
 **`+inkling/private <id>=<name>/<text>`**
 Add a private update for a specific participant in the thread. If no name is given, it defaults to the thread owner.
 
+**`+inkling/personal <id>=<text>`**
+Add a personal note to an inkling thread. Personal notes are visible only to the author, even other staff can't see them. Useful for staff-only observations or session notes.
+
 **`+inkling/gm <id>=<text>`**
 Add a staff-only reference note. GM notes are never shown to players.
 
