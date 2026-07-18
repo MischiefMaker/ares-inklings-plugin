@@ -100,6 +100,10 @@ module AresMUSH
     # (only the author + staff). For staff private entries this defaults
     # to the inkling's subject character.
     attribute :private_recipient_ids
+    # Optional: marks special system messages for labeling purposes.
+    # Values: "submitted", "approved", "needs_changes", "reward"
+    # Regular player/staff replies have no message_type set.
+    attribute :message_type
 
     reference :inkling, "AresMUSH::Inkling"
     reference :author, "AresMUSH::Character"

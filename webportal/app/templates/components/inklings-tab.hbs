@@ -119,6 +119,7 @@
                       <div class="roll {{if roll.private "private" "public"}}">
                         <div class="roll-header">
                           <span class="message-ref">#{{roll.ref}}</span>
+                          <span class="message-badge">ROLL</span>
                           <strong>{{roll.roll_spec}}</strong>
                           {{#if (and (not (eq roll.roll_type "player")) roll.target_character)}}
                             <span class="roll-target">for {{roll.target_character}}</span>
@@ -149,7 +150,11 @@
                       <div class="message-header">
                         <span class="message-ref">#{{msg.ref}}</span>
                         <strong>{{msg.author}}</strong>
-                        {{#if msg.is_staff}}<span class="staff-badge">STAFF</span>{{/if}}
+                        {{#if (eq msg.message_type "submitted")}}<span class="message-badge">SUBMITTED</span>{{/if}}
+                        {{#if (eq msg.message_type "approved")}}<span class="message-badge">APPROVED</span>{{/if}}
+                        {{#if (eq msg.message_type "needs_changes")}}<span class="message-badge">NEEDS CHANGES</span>{{/if}}
+                        {{#if (eq msg.message_type "reward")}}<span class="message-badge">REWARD</span>{{/if}}
+                        {{#if (and msg.is_staff (not msg.message_type))}}<span class="staff-badge">STAFF</span>{{/if}}
                         {{#if msg.is_gm_note}}<span class="staff-badge">GM</span>{{/if}}
                         {{#if msg.is_personal}}<span class="personal-badge">PRIVATE TO YOU</span>{{/if}}
                         {{#if msg.is_private}}

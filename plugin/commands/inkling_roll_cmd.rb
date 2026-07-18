@@ -109,7 +109,7 @@ module AresMUSH
           created_at: Time.now,
           rolled_at: Time.now)
 
-        client.emit_success t('inklings.roll_added')
+        client.emit_success "#{t('inklings.roll_added')} #{result_text}"
       end
     end
   end

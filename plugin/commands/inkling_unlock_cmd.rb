@@ -36,6 +36,12 @@ module AresMUSH
         nil
       end
 
+      def check_is_locked
+        return nil if !inkling
+        return t('inklings.inkling_not_locked') unless inkling.locked == "true"
+        nil
+      end
+
       def handle
         Inklings.unlock_inkling(inkling, enactor)
         client.emit_success t('inklings.unlock_success')

@@ -114,6 +114,21 @@ module AresMUSH
       def format_message_block(message)
         who = message.author ? Inklings.color_name(message.author.name) : "?"
         tags = []
+
+        # Add message type labels for special workflow messages
+        case message.message_type.to_s
+        when "submitted"
+          tags << "Submitted"
+        when "approved"
+          tags << "Approved"
+        when "needs_changes"
+          tags << "Needs Changes"
+        when "reward"
+          tags << "Reward"
+        end
+
+        # Add other tags
+        tags << "staff" if message.is_staff == "true" && message.message_type.to_s.empty?
         tags << "gm" if message.is_gm_note == "true"
         tags << Inklings.private_tag_label(message) if message.is_private == "true"
         tags << "private to you" if message.is_personal == "true"
@@ -131,7 +146,7 @@ module AresMUSH
         target_text = target_name.to_s.blank? ? "" : " for #{Inklings.color_name(target_name)}"
         private_tag = roll.private == "true" ? " [private]" : ""
         ref = Inklings.event_ref(inkling, roll.seq)
-        "##{ref} #{Inklings.format_time(roll.created_at, '%m/%d %H:%M')} #{who} rolled #{roll.roll_spec}#{target_text}#{private_tag}: #{roll.result}"
+        "##{ref} #{Inklings.format_time(roll.created_at, '%m/%d %H:%M')} #{who}#{private_tag} [Roll]\n\nRolled #{roll.roll_spec}#{target_text}: #{roll.result}"
       end
     end
   end

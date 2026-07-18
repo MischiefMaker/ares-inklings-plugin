@@ -477,7 +477,8 @@ module AresMUSH
         is_private: "false",
         is_gm_note: "true",
         is_personal: "false",
-        private_recipient_ids: "")
+        private_recipient_ids: "",
+        message_type: "submitted")
 
       update_inkling(inkling, locked: "true", approval_state: "submitted")
 
@@ -505,7 +506,20 @@ module AresMUSH
           seq: next_event_seq(inkling),
           is_staff: "true",
           is_private: "false",
-          is_gm_note: "false")
+          is_gm_note: "false",
+          message_type: "approved")
+      else
+        # Add a system message to mark approval even if no feedback was provided
+        InklingMessage.create(
+          inkling: inkling,
+          author: staff,
+          text: "Inkling approved.",
+          created_at: Time.now,
+          seq: next_event_seq(inkling),
+          is_staff: "true",
+          is_private: "false",
+          is_gm_note: "true",
+          message_type: "approved")
       end
 
       close_message = note.blank? ? "Inkling approved." : note
@@ -532,7 +546,8 @@ module AresMUSH
         seq: next_event_seq(inkling),
         is_staff: "true",
         is_private: "false",
-        is_gm_note: "false")
+        is_gm_note: "false",
+        message_type: "needs_changes")
 
       mirror_to_job(inkling, feedback, staff) if inkling.job
       # Close the job to signal this round of review is complete; next submission will create a fresh one
@@ -636,7 +651,8 @@ module AresMUSH
         is_staff: "true",
         is_private: visibility == "all" ? "false" : "true",
         is_gm_note: "false",
-        private_recipient_ids: visibility == "all" ? "" : character.id)
+        private_recipient_ids: visibility == "all" ? "" : character.id,
+        message_type: "reward")
 
       notify_player(character, "<inklings> You have received a reward on inkling ##{inkling.id}: #{summary}.")
 
