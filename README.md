@@ -57,87 +57,52 @@ The web portal component requires manual installation into your `ares-webportal`
 
 ## Installation
 
-### Step 1: Install Plugin Code and Configuration
+### Step 1: Install Core Plugin (Automatic)
 
-**Using `plugin/install` (Recommended):**
-
-From the MUSH, run:
+**From the MUSH, run:**
 
 ```
 plugin/install https://github.com/MischiefMaker/ares-inklings-plugin
 ```
 
-This installs the plugin code to `plugins/inklings/` and merges the configuration into `game/config/inklings.yml`.
+This automatically:
+- Installs plugin code to `plugins/inklings/`
+- Merges configuration into `game/config/inklings.yml`
+- Installs web portal components (templates, helpers, stylesheets) to `ares-webportal/app/`
 
-**Manual Installation (if `plugin/install` is unavailable):**
+**Result:** MUSH commands and basic web portal components are ready to use.
 
-1. Download this repository
-2. Copy the `plugin/` folder to your game's `plugins/` folder and rename it `inklings/` (final path: `plugins/inklings/`)
-3. Copy `game/config/inklings.yml` to your game's `game/config/` folder (or merge the contents if the file already exists)
-4. Restart your game: `@restart`
+**If `plugin/install` is unavailable**, manually copy the `plugin/` folder to `plugins/inklings/` and copy `game/config/inklings.yml` to `game/config/`, then restart with `@restart`.
 
-### Step 2: Install Web Portal Components
+### Step 2: Enable Web Portal Features (Optional, Manual)
 
-Web portal files must be copied manually into your `ares-webportal` checkout. This step is entirely optional — skip it if you're running a MUSH-only game without the web portal.
+If you want players to see the Inklings tab on character profiles:
 
-**Important:** All of the files listed below must be copied together. Do not copy only some of them, as the component requires all supporting files to function.
+**Step 2a: Add the Inklings tab to the profile page**
 
-**Copy these files, preserving the paths in your `ares-webportal` directory:**
+1. Open `ares-webportal/app/components/profile-custom-tabs.hbs`
+2. Paste the contents of `custom-install/profile-custom-tabs.snippet.hbs` into that file at the location marked in the snippet
 
-| From this plugin | To your ares-webportal | Notes |
-|---|---|---|
-| `custom-install/InklingsTab.jsx` | `app/components/InklingsTab.jsx` | React version (for newer web portals) |
-| `custom-install/InklingsTab.css` | `app/components/InklingsTab.css` | React styles |
-| `custom-install/inklings-tab.js` | `app/components/inklings-tab.js` | Ember version (for older web portals) |
-| `custom-install/inklings-tab.hbs` | `app/templates/components/inklings-tab.hbs` | Ember template (only needed with Ember version) |
-| `custom-install/join-list.js` | `app/helpers/join-list.js` | Helper for Ember version |
-| `custom-install/join-list-upper.js` | `app/helpers/join-list-upper.js` | Helper for Ember version |
-| `custom-install/inklings-tab.scss` | `app/styles/inklings-tab.scss` | Styling for both versions |
+3. Open `ares-webportal/app/components/profile-custom.hbs`
+4. Paste the contents of `custom-install/profile-custom.snippet.hbs` into that file at the location marked in the snippet
 
-**Choose Your Component Version:**
-- **React version** (InklingsTab.jsx): Use this if your web portal is using React components
-- **Ember version** (inklings-tab.js/hbs): Use this if your web portal is using Ember components
-- Copy EITHER the React files OR the Ember files, not both
+**Step 2b: Import the stylesheet (optional, for styling)**
 
-**Import the stylesheet:**
+To enable the Inklings web component styling, add this to your `ares-webportal/app/styles/app.scss`:
 
-Add an `@use` statement to your `app/styles/app.scss`:
+```scss
+@use "inklings-tab";
+```
 
-1. Open your game's `ares-webportal/app/styles/app.scss`
-2. Find the section at the top with other `@use` or `@import` statements
-3. Add this line at the end of those imports:
-   ```scss
-   @use "inklings-tab";
-   ```
-   (If your project uses `@import` instead of `@use`, use: `@import "inklings-tab";`)
+(If your project uses `@import` instead of `@use`, use: `@import "inklings-tab";`)
 
-After copying, restart your web portal.
+**Step 2c: Restart the web portal**
 
-### Step 3: Add Styles and Profile Integration (Recommended)
+```
+website/deploy
+```
 
-This step makes the Inklings component visually styled and adds the Inklings tab to the character profile page where players can see all their inklings.
-
-**Add the stylesheet import:**
-
-1. Open `custom-install/app-styles-import.snippet.scss` in this plugin
-2. Open `ares-webportal/app/styles/app.scss` in your game
-3. Copy the `@use "inklings-tab";` line from the snippet
-4. Paste it at the end of your existing `@use` or `@import` statements
-5. Save the file
-
-**Add the Inklings tab to the profile page:**
-
-1. Open `custom-install/profile-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/components/profile-custom-tabs.hbs` following the instructions in the snippet
-2. Open `custom-install/profile-custom.snippet.hbs` and paste into `ares-webportal/app/components/profile-custom.hbs` following the instructions in the snippet
-
-**Why these are needed:**
-- **app-styles-import** — Styles the Inklings component (colors, buttons, layout)
-- **profile-custom-tabs** — Adds the "Inklings" tab to the profile
-- **profile-custom** — Displays the full Inklings browser on the profile
-
-After completing these, restart your web portal using the MUSH command: `website/deploy`.
-
-### Step 4: Configure Character Generation (Optional)
+### Step 3: Configure Character Generation (Optional)
 
 If you want players to create required Inklings during character generation, merge the chargen snippets:
 
@@ -157,7 +122,7 @@ If you want players to create required Inklings during character generation, mer
 
 **Important:** Each snippet file includes a comment showing exactly where to paste its code. Do not simply append to the end of files.
 
-### Step 5: Post-Installation Setup
+### Step 4: Post-Installation Setup
 
 **In-game:**
 
