@@ -67,7 +67,7 @@ module AresMUSH
         notice = t('inklings.personal_entry_added')
         notice << " #{t('inklings.not_yet_submitted_notice', :id => inkling.id)}" unless is_staff
         client.emit_success notice
-        client.emit_line t('inklings.personal_entry_warning')
+        client.emit t('inklings.personal_entry_warning')
       end
     end
   end
