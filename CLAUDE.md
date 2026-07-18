@@ -23,6 +23,17 @@ This ensures that:
 - The repository state is always in sync with the remote
 - No work is lost if the local checkout is damaged or deleted
 
+## Development Guide
+
+`ARES_PLUGIN_DEVELOPMENT_GUIDE.md` is a general-purpose reference for AresMUSH
+plugin development (not Inklings-specific), covering web portal conventions,
+Ruby plugin conventions, installation patterns, and a running list of concrete
+mistakes made and fixed on this project. Consult it before making web-portal
+or install-mechanism changes, and add to it whenever a genuine, verified
+lesson is learned during this project's development or debugging — don't wait
+to be asked. Follow the standing Git Workflow Requirement above for any
+addition to it.
+
 ## Project Context
 
 The Inklings plugin is a complete character development system for AresMUSH. It provides:
