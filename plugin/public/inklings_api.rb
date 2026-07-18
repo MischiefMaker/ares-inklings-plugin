@@ -362,6 +362,7 @@ module AresMUSH
           player_unread: viewer && inkling.character != viewer ? false : inkling.player_unread == "true",
           locked: inkling.locked == "true",
           tags: tags,
+          tags_label: tags.join(", "),
           linked_job: inkling.job ? { id: inkling.job.id, status: inkling.job.status } : nil
         }
       end
@@ -379,8 +380,8 @@ module AresMUSH
 
       def self.format_shared_with(inkling)
         {
-          players: Inklings.shared_with_names(inkling),
-          groups: Inklings.shared_group_list(inkling)
+          players: Inklings.shared_with_names(inkling).join(", "),
+          groups: Inklings.shared_group_list(inkling).join(", ")
         }
       end
 
@@ -397,7 +398,8 @@ module AresMUSH
           is_gm_note: message.is_gm_note == "true",
           is_personal: message.is_personal == "true",
           private_recipient_ids: message.is_private == "true" ? message.private_recipient_ids.to_s.split(",").map(&:strip).reject(&:empty?) : [],
-          private_recipient_names: message.is_private == "true" ? Inklings.private_recipient_names(message) : []
+          private_recipient_names: message.is_private == "true" ? Inklings.private_recipient_names(message) : [],
+          private_recipient_label: message.is_private == "true" ? Inklings.private_recipient_names(message).join(", ") : ""
         }
       end
 

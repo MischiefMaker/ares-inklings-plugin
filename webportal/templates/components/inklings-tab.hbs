@@ -80,7 +80,7 @@
                 <span class="linked-job">Job #{{inkling.linked_job.id}} ({{inkling.linked_job.status}})</span>
               {{/if}}
               {{#if inkling.tags.length}}
-                <span class="inkling-tags">{{join-list inkling.tags}}</span>
+                <span class="inkling-tags">{{inkling.tags_label}}</span>
               {{/if}}
             </div>
             <span class="expand-icon {{if (eq this.expandedId inkling.id) "open"}}">&#9660;</span>
@@ -96,12 +96,12 @@
                       <h3>Shared With</h3>
                       {{#if detail.shared_with.players.length}}
                         <div class="shared-with-row">
-                          <span class="shared-with-label">Players:</span> {{join-list detail.shared_with.players}}
+                          <span class="shared-with-label">Players:</span> {{detail.shared_with.players}}
                         </div>
                       {{/if}}
                       {{#if detail.shared_with.groups.length}}
                         <div class="shared-with-row">
-                          <span class="shared-with-label">Groups:</span> {{join-list detail.shared_with.groups}}
+                          <span class="shared-with-label">Groups:</span> {{detail.shared_with.groups}}
                         </div>
                       {{/if}}
                     </div>
@@ -155,8 +155,8 @@
                         {{#if msg.is_personal}}<span class="personal-badge">PRIVATE TO YOU</span>{{/if}}
                         {{#if msg.is_private}}
                           <span class="private-badge">
-                            {{#if msg.private_recipient_names.length}}
-                              PRIVATE TO {{join-list-upper msg.private_recipient_names}}
+                            {{#if msg.private_recipient_label}}
+                              PRIVATE TO {{msg.private_recipient_label}}
                             {{else if (not msg.is_staff)}}
                               PRIVATE TO STAFF
                             {{else}}
