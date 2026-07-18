@@ -19,9 +19,12 @@ module AresMUSH
     # just unpack request.args and call into it.
     class InklingsGetInklingsWebHandler
       def handle(request)
+        error = AresMUSH::Website.check_login(request)
+        return { error: error } if error
+
         InklingApi.get_inklings(
           request.args["char_id"],
-          request.args["viewer_id"],
+          request.enactor,
           status_filter: request.args["status"] || "open")
       end
     end

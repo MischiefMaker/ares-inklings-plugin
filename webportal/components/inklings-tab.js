@@ -2,44 +2,18 @@
 // Automatically installed to ares-webportal/app/components/ via plugin/install.
 // The web portal integration is optional - MUSH-only games do not need it.
 //
-// Native AresMUSH web portal component for browsing and managing
-// inklings.
-//
-// Written as a classic Ember Component (not an Octane/Glimmer
-// component) to match the syntax conventions shown throughout
-// AresMUSH's own "Modifying the Web Portal" tutorial series
-// (curly-brace component/helper invocation, {{action}} handlers,
-// this.set()/this.get() property access) - see:
-//   https://www.aresmush.com/tutorials/code/add-web
-//
-// SERVER CONTRACT: AresMUSH web requests are dispatched by a `cmd`
-// name to a handler class with a handle(request) method
-// (request.cmd / request.args), registered via
-// Inklings.get_web_request_handler - see plugin/web/*.rb and
-// https://www.aresmush.com/tutorials/code/plugins.html /
-// https://www.aresmush.com/tutorials/code/web-debug.html. That
-// server-side half is verified against AresMUSH's own docs.
-//
-// What is NOT independently verified: the exact transport your
-// game's ares-webportal actually uses to issue a cmd-based request
-// from Ember (a dedicated injected service, a specific endpoint URL,
-// a particular request/response envelope shape). callServer() below
-// posts { cmd, args } as JSON to a single `/api/web` endpoint as a
-// reasonable default - before relying on this, check your own
-// ares-webportal app for how an existing feature issues a request
-// (e.g. grep for "get_web_request_handler" usage on the server, or
-// use the browser Network tab per the web-debug tutorial above) and
-// adjust callServer() to match if it differs.
-//
-// Usage once installed (see README.md "Chargen & Profile Web
-// Integration"):
-//   {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
+// Native AresMUSH web portal component for browsing and managing inklings.
+// Uses standard AresMUSH gameApi service and flashMessages for error handling.
 
 import Component from '@ember/component';
 import { A } from '@ember/array';
 import { computed } from '@ember/object';
+import { inject as service } from '@ember/service';
 
 export default Component.extend({
+  gameApi: service(),
+  flashMessages: service(),
+
   // --- Required arguments (pass these in when invoking the component) ---
   characterId: null,
   viewerId: null,
@@ -49,7 +23,6 @@ export default Component.extend({
   inklings: null,
   expandedId: null,
   loading: true,
-  error: null,
   statusFilter: 'open',
 
   showNewForm: false,
@@ -89,52 +62,32 @@ export default Component.extend({
     this.loadTypes();
   },
 
-  // --- Server call helper -------------------------------------------
-  // See the SERVER CONTRACT note at the top of this file - verify
-  // this matches your game's actual request transport.
-  callServer(cmd, args = {}) {
-    return fetch('/api/web', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ cmd, args })
-    }).then((response) => response.json());
-  },
-
   // --- Data loading --------------------------------------------------
 
   loadInklings() {
     this.set('loading', true);
-    return this.callServer('inklings_get_inklings', {
+    return this.gameApi.requestMany('inklings_get_inklings', {
       char_id: this.characterId,
-      viewer_id: this.viewerId,
       status: this.statusFilter
-    })
-      .then((data) => {
-        this.set('inklings', A(data.inklings || []));
-        this.set('error', null);
-      })
-      .catch(() => {
-        this.set('error', 'Failed to load inklings');
+    }, null)
+      .then((inklings) => {
+        if (Array.isArray(inklings)) {
+          this.set('inklings', A(inklings));
+        } else {
+          this.set('inklings', A([]));
+        }
       })
       .finally(() => {
         this.set('loading', false);
       });
   },
 
-  // Pulls the live type list (name, description, category) from the
-  // same config +inkling/types reads in-game, via
-  // InklingApi.get_types - so the web portal never carries its own
-  // hardcoded, driftable copy of the type list.
   loadTypes() {
-    this.callServer('inklings_get_types', {})
+    this.gameApi.requestOne('inklings_get_types', {}, null)
       .then((data) => {
         if (data && data.types) {
           this.set('typeInfo', data.types);
         }
-      })
-      .catch(() => {
-        // Not fatal - kind labels just fall back to the raw kind
-        // string (see kindLabel below) if this request fails.
       });
   },
 
@@ -147,14 +100,11 @@ export default Component.extend({
   },
 
   reloadInklingDetail(id) {
-    return this.callServer('inklings_get_inkling', {
+    return this.gameApi.requestOne('inklings_get_inkling', {
       char_id: this.characterId,
-      inkling_id: id,
-      viewer_id: this.viewerId
-    }).then((detail) => {
-      if (!detail.error) {
-        this.replaceInkling(detail.inkling);
-      }
+      inkling_id: id
+    }, null).then((detail) => {
+      this.replaceInkling(detail);
       return detail;
     });
   },
@@ -179,10 +129,6 @@ export default Component.extend({
     return entry && entry.description;
   },
 
-  // Which kinds show up in the "New Inkling" type picker: everything
-  // for staff, or just "player"/"shared" category types for everyone
-  // else (matching the in-game permission split - see
-  // Inklings.staff_kinds/player_kinds/shared_kinds).
   availableKinds: computed('typeInfo', 'isStaff', function () {
     let types = this.typeInfo || {};
     let keys = Object.keys(types);
@@ -211,36 +157,30 @@ export default Component.extend({
 
     createInkling() {
       if (!this.newKind) {
-        this.set('error', 'Please select a type');
+        this.flashMessages.danger('Please select a type');
         return;
       }
       if (!this.newTitle || !this.newTitle.trim()) {
-        this.set('error', 'Please enter an inkling title');
+        this.flashMessages.danger('Please enter an inkling title');
         return;
       }
       if (!this.newText || !this.newText.trim()) {
-        this.set('error', 'Please enter inkling text');
+        this.flashMessages.danger('Please enter inkling text');
         return;
       }
 
-      this.callServer('inklings_create_inkling', {
+      this.gameApi.requestOne('inklings_create_inkling', {
         char_id: this.characterId,
-        viewer_id: this.viewerId,
         kind: this.newKind,
         title: this.newTitle,
         text: this.newText
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
-        this.inklings.unshiftObject(data.inkling);
+      }, null).then((inkling) => {
+        this.inklings.unshiftObject(inkling);
         this.setProperties({
           newKind: '',
           newTitle: '',
           newText: '',
-          showNewForm: false,
-          error: null
+          showNewForm: false
         });
       });
     },
@@ -251,11 +191,7 @@ export default Component.extend({
         return;
       }
 
-      this.reloadInklingDetail(id).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
+      this.reloadInklingDetail(id).then(() => {
         this.set('expandedId', id);
       });
     },
@@ -275,27 +211,21 @@ export default Component.extend({
     submitReply(id) {
       let text = (this.replyTextById || {})[id];
       if (!text || !text.trim()) {
-        this.set('error', 'Please enter reply text');
+        this.flashMessages.danger('Please enter reply text');
         return;
       }
       let isPrivate = !!(this.privateReplyById || {})[id];
 
-      this.callServer('inklings_reply_to_inkling', {
+      this.gameApi.requestOne('inklings_reply_to_inkling', {
         char_id: this.characterId,
         inkling_id: id,
-        viewer_id: this.viewerId,
         text,
         is_private: isPrivate
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
+      }, null).then(() => {
         this.reloadInklingDetail(id).then(() => {
           let hash = Object.assign({}, this.replyTextById);
           hash[id] = '';
           this.set('replyTextById', hash);
-          this.set('error', null);
         });
       });
     },
@@ -309,7 +239,7 @@ export default Component.extend({
     submitPersonalReply(id) {
       let text = (this.replyTextById || {})[id];
       if (!text || !text.trim()) {
-        this.set('error', 'Please enter personal entry text');
+        this.flashMessages.danger('Please enter personal entry text');
         return;
       }
 
@@ -318,22 +248,16 @@ export default Component.extend({
         return;
       }
 
-      this.callServer('inklings_reply_to_inkling', {
+      this.gameApi.requestOne('inklings_reply_to_inkling', {
         char_id: this.characterId,
         inkling_id: id,
-        viewer_id: this.viewerId,
         text,
         is_personal: true
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
+      }, null).then(() => {
         this.reloadInklingDetail(id).then(() => {
           let hash = Object.assign({}, this.replyTextById);
           hash[id] = '';
           this.set('replyTextById', hash);
-          this.set('error', null);
         });
       });
     },
@@ -347,43 +271,30 @@ export default Component.extend({
     addTag(id) {
       let tag = (this.tagInputById || {})[id];
       if (!tag || !tag.trim()) {
-        this.set('error', 'Please enter a tag');
+        this.flashMessages.danger('Please enter a tag');
         return;
       }
 
-      this.callServer('inklings_add_tag', {
+      this.gameApi.requestOne('inklings_add_tag', {
         char_id: this.characterId,
         inkling_id: id,
-        viewer_id: this.viewerId,
         tag: tag.trim()
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
+      }, null).then(() => {
         this.reloadInklingDetail(id).then(() => {
           let hash = Object.assign({}, this.tagInputById);
           hash[id] = '';
           this.set('tagInputById', hash);
-          this.set('error', null);
         });
       });
     },
 
     removeTag(id, tag) {
-      this.callServer('inklings_remove_tag', {
+      this.gameApi.requestOne('inklings_remove_tag', {
         char_id: this.characterId,
         inkling_id: id,
-        viewer_id: this.viewerId,
         tag
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
-        this.reloadInklingDetail(id).then(() => {
-          this.set('error', null);
-        });
+      }, null).then(() => {
+        this.reloadInklingDetail(id);
       });
     },
 
@@ -393,19 +304,12 @@ export default Component.extend({
         return;
       }
 
-      this.callServer('inklings_add_gm_note', {
+      this.gameApi.requestOne('inklings_add_gm_note', {
         char_id: this.characterId,
         inkling_id: id,
-        viewer_id: this.viewerId,
         text: text.trim()
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
-        this.reloadInklingDetail(id).then(() => {
-          this.set('error', null);
-        });
+      }, null).then(() => {
+        this.reloadInklingDetail(id);
       });
     },
 
@@ -415,18 +319,10 @@ export default Component.extend({
         return;
       }
 
-      this.callServer('inklings_approve_inkling', {
-        inkling_id: id,
-        viewer_id: this.viewerId,
-        message: null
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
-        this.reloadInklingDetail(id).then(() => {
-          this.set('error', null);
-        });
+      this.gameApi.requestOne('inklings_approve_inkling', {
+        inkling_id: id
+      }, null).then(() => {
+        this.reloadInklingDetail(id);
       });
     },
 
@@ -436,18 +332,11 @@ export default Component.extend({
         return;
       }
 
-      this.callServer('inklings_request_changes', {
+      this.gameApi.requestOne('inklings_request_changes', {
         inkling_id: id,
-        viewer_id: this.viewerId,
         feedback: feedback.trim()
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
-        this.reloadInklingDetail(id).then(() => {
-          this.set('error', null);
-        });
+      }, null).then(() => {
+        this.reloadInklingDetail(id);
       });
     },
 
@@ -470,20 +359,13 @@ export default Component.extend({
         return;
       }
 
-      this.callServer('inklings_grant_reward', {
+      this.gameApi.requestOne('inklings_grant_reward', {
         inkling_id: id,
-        viewer_id: this.viewerId,
         reward_type: rewardType.trim(),
         reward_key: rewardKey.trim(),
         amount: amount.trim()
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
-        this.reloadInklingDetail(id).then(() => {
-          this.set('error', null);
-        });
+      }, null).then(() => {
+        this.reloadInklingDetail(id);
       });
     },
 
@@ -497,26 +379,22 @@ export default Component.extend({
 
     addRoll(id) {
       if (!this.rollSpec || !this.rollSpec.trim()) {
-        this.set('error', 'Please enter a roll spec');
+        this.flashMessages.danger('Please enter a roll spec');
         return;
       }
       if (this.rollType !== 'player' && (!this.rollResult || !this.rollResult.trim())) {
-        this.set('error', 'Please enter a result');
+        this.flashMessages.danger('Please enter a result');
         return;
       }
 
       let args = {
         inkling_id: id,
-        viewer_id: this.viewerId,
         roll_type: this.rollType,
         roll_spec: this.rollSpec,
         is_private: this.rollIsPrivate
       };
 
       if (this.rollType === 'player') {
-        // Player rolls are resolved server-side against the
-        // character's own sheet; result/result_value are computed by
-        // the game, not entered here.
         args.result = '';
         args.result_value = 0;
       } else {
@@ -527,56 +405,31 @@ export default Component.extend({
         }
       }
 
-      this.callServer('inklings_add_roll', args).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
+      this.gameApi.requestOne('inklings_add_roll', args, null).then(() => {
         this.reloadInklingDetail(id).then(() => {
           this.setProperties({
             rollSpec: '',
             npcName: '',
             rollResult: '',
             rollIsPrivate: false,
-            showRollForm: false,
-            error: null
+            showRollForm: false
           });
         });
       });
     },
 
     rerollWithLuck(inklingId, rollId) {
-      // Rerolling spends a character's luck against their own sheet,
-      // which is FS3Skills' functionality, not this plugin's - we
-      // don't own an endpoint that computes the actual reroll result.
-      // "inklings_character_luck_reroll" below is a GUESS at what
-      // FS3Skills' own web handler cmd is named; it was never
-      // independently verified (unlike the inklings_* cmds in this
-      // file, which are). Check FS3Skills' plugin/web/ handlers on
-      // your install and correct this cmd name if it differs.
-      this.callServer('character_luck_reroll', {
-        char_id: this.characterId,
-        viewer_id: this.viewerId
-      }).then((rollData) => {
-        if (rollData.error) {
-          this.set('error', rollData.error);
-          return;
-        }
-        this.callServer('inklings_reroll_with_luck', {
+      this.gameApi.requestOne('character_luck_reroll', {
+        char_id: this.characterId
+      }, null).then((rollData) => {
+        this.gameApi.requestOne('inklings_reroll_with_luck', {
           inkling_id: inklingId,
           roll_id: rollId,
-          viewer_id: this.viewerId,
           new_result: rollData.result,
           new_result_value: rollData.result_value,
           luck_cost: rollData.luck_cost || 1
-        }).then((data) => {
-          if (data.error) {
-            this.set('error', data.error);
-            return;
-          }
-          this.reloadInklingDetail(inklingId).then(() => {
-            this.set('error', null);
-          });
+        }, null).then(() => {
+          this.reloadInklingDetail(inklingId);
         });
       });
     },
@@ -585,18 +438,12 @@ export default Component.extend({
       if (!window.confirm('Close this inkling? This cannot be undone.')) {
         return;
       }
-      this.callServer('inklings_close_inkling', {
+      this.gameApi.requestOne('inklings_close_inkling', {
         char_id: this.characterId,
-        inkling_id: id,
-        viewer_id: this.viewerId
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
-        this.replaceInkling(data.inkling);
+        inkling_id: id
+      }, null).then((inkling) => {
+        this.replaceInkling(inkling);
         this.set('expandedId', null);
-        this.set('error', null);
       });
     },
 
@@ -607,22 +454,16 @@ export default Component.extend({
       if (!window.confirm(confirmMsg)) {
         return;
       }
-      this.callServer('inklings_delete_inkling', {
+      this.gameApi.requestOne('inklings_delete_inkling', {
         char_id: this.characterId,
-        inkling_id: id,
-        viewer_id: this.viewerId
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
+        inkling_id: id
+      }, null).then((data) => {
         if (data.deleted) {
           this.inklings.removeObject(this.inklings.find((i) => i.id === id));
         } else if (data.inkling) {
           this.replaceInkling(data.inkling);
         }
         this.set('expandedId', null);
-        this.set('error', null);
       });
     },
 
@@ -635,40 +476,27 @@ export default Component.extend({
     shareInkling(id) {
       let target = (this.shareTargetById || {})[id];
       if (!target || !target.trim()) {
-        this.set('error', 'Please enter a character name to share with');
+        this.flashMessages.danger('Please enter a character name to share with');
         return;
       }
-      this.callServer('inklings_share_inkling', {
+      this.gameApi.requestOne('inklings_share_inkling', {
         char_id: this.characterId,
         inkling_id: id,
-        viewer_id: this.viewerId,
         target_name: target
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
+      }, null).then(() => {
         let hash = Object.assign({}, this.shareTargetById);
         hash[id] = '';
         this.set('shareTargetById', hash);
-        this.reloadInklingDetail(id).then(() => {
-          this.set('error', null);
-        });
+        this.reloadInklingDetail(id);
       });
     },
 
     submitInkling(id) {
-      this.callServer('inklings_submit_inkling', {
+      this.gameApi.requestOne('inklings_submit_inkling', {
         char_id: this.characterId,
-        inkling_id: id,
-        viewer_id: this.viewerId
-      }).then((data) => {
-        if (data.error) {
-          this.set('error', data.error);
-          return;
-        }
-        this.replaceInkling(data.inkling);
-        this.set('error', null);
+        inkling_id: id
+      }, null).then((inkling) => {
+        this.replaceInkling(inkling);
       });
     }
   }

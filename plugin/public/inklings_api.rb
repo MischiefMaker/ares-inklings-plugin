@@ -18,13 +18,11 @@ module AresMUSH
         { types: types }
       end
 
-      # GET /api/characters/:char_id/inklings
-      def self.get_inklings(char_id, viewer_id, status_filter: "open")
+      # Web endpoint: get_inklings
+      # viewer is already authenticated (passed by web handler)
+      def self.get_inklings(char_id, viewer, status_filter: "open")
         char = Character[char_id]
         return { error: "Character not found" } if !char
-
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
 
         unless viewer.id == char.id || Inklings.can_manage_inklings?(viewer)
           return { error: "Not authorized" }
