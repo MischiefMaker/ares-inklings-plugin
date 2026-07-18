@@ -45,6 +45,9 @@ export default Component.extend({
 
   selectedInklingId: null,
 
+  // TEMPORARY DEBUG - remove once bs-modal is confirmed working.
+  showTestModal: false,
+
   init() {
     this._super(...arguments);
     this.set('inklings', A());
@@ -133,6 +136,11 @@ export default Component.extend({
 
     closeDetail() {
       this.set('selectedInklingId', null);
+    },
+
+    // TEMPORARY DEBUG - remove once bs-modal is confirmed working.
+    toggleTestModal() {
+      this.toggleProperty('showTestModal');
     },
 
     // Called by inkling-detail-modal whenever it fetches or mutates the
