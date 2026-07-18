@@ -98,6 +98,7 @@ module AresMUSH
         tags = []
         tags << "gm" if message.is_gm_note == "true"
         tags << Inklings.private_tag_label(message) if message.is_private == "true"
+        tags << "private to you" if message.is_personal == "true"
         tag_text = tags.empty? ? "" : " [#{tags.join(", ")}]"
 
         ref = Inklings.event_ref(inkling, message.seq)
