@@ -101,8 +101,8 @@ If you want players to create required Inklings during character generation, mer
 **Backend Hook (Required if using chargen):**
 
 1. Open `custom-install/custom_char_fields.snippet.rb` in this plugin
-2. Open `plugins/profile/custom_char_fields.rb` in your game
-3. Find the location comment in the snippet and paste the code at that location
+2. Open `plugins/profile/custom_char_fields.rb` in your **ares** folder (not ares-webportal)
+3. Follow each step in the snippet file and paste the code at the marked locations
 4. Save the file
 
 **Web Portal Form Fields (Optional, only if you want chargen fields on the web portal):**

@@ -1,6 +1,6 @@
 # CUSTOM CHARACTER FIELDS SNIPPET - CHARGEN-REQUIRED TYPES ONLY
 #
-# FILE: plugins/profile/custom_char_fields.rb
+# FILE: ares/plugins/profile/custom_char_fields.rb (in the ares folder, not ares-webportal)
 # NOTE: This is a SHARED HOOK FILE used by multiple plugins.
 #       You will ADD CODE to existing methods, not replace the whole file.
 #
@@ -31,7 +31,7 @@
 # STEP 1: Import the Inklings API
 # ============================================================================
 #
-# FILE: plugins/profile/custom_char_fields.rb
+# FILE: ares/plugins/profile/custom_char_fields.rb
 # LOCATION: At the very top of the file, before any class/module definitions
 #
 # 1. Open plugins/profile/custom_char_fields.rb
