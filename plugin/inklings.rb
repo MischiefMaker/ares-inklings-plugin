@@ -342,7 +342,11 @@ module AresMUSH
         mirror_to_job(inkling, message, enactor)
         return inkling.job
       else
-        result = Jobs.create_job(self.job_category, title, message, enactor)
+        # Add staff command instructions to the job body
+        staff_instructions = "\n\n---\n\nSTAFF ACTIONS:\nUse +inkling/approve #{inkling.id} to approve.\nUse +inkling/needschanges #{inkling.id}=<feedback> to request revisions."
+        job_body = message + staff_instructions
+
+        result = Jobs.create_job(self.job_category, title, job_body, enactor)
         if result[:error]
           Global.logger.error("Inklings: Failed to create job for inkling ##{inkling.id} - #{result[:error]}")
           return nil
@@ -450,9 +454,30 @@ module AresMUSH
     # since that represents a finished round of review.
     def self.submit_inkling(inkling, submitter)
       title = submission_job_title(submitter, inkling.kind)
-      body = compile_thread_text(inkling)
+
+      # For resubmissions (has an open job already), just add a note about the resubmission
+      if inkling.job && inkling.job.status != "closed"
+        body = "#{submitter.name} has resubmitted this inkling.\n\nUse +inkling #{inkling.id} to view the full thread."
+      else
+        # For initial submission, include the full thread
+        body = compile_thread_text(inkling)
+      end
 
       ensure_job(inkling, title, body, submitter)
+
+      # Add a submission note to the thread itself
+      InklingMessage.create(
+        inkling: inkling,
+        author: submitter,
+        text: "[SUBMITTED TO STAFF]",
+        created_at: Time.now,
+        seq: next_event_seq(inkling),
+        is_staff: "false",
+        is_private: "false",
+        is_gm_note: "true",
+        is_personal: "false",
+        private_recipient_ids: "")
+
       update_inkling(inkling, locked: "true", approval_state: "submitted")
 
       dispatch_inkling_submitted(inkling)
@@ -509,6 +534,8 @@ module AresMUSH
         is_gm_note: "false")
 
       mirror_to_job(inkling, feedback, staff) if inkling.job
+      # Close the job to signal this round of review is complete; next submission will create a fresh one
+      Jobs.close_job(staff, inkling.job, "Changes requested. Player to revise and resubmit.") if inkling.job
 
       update_inkling(inkling, player_unread: "true", locked: "false", approval_state: "needs_changes")
       notify_player(inkling.character, "<inklings> Staff have requested changes on your inkling ##{inkling.id}. Use +inkling #{inkling.id} to view their feedback.")
