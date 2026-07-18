@@ -142,7 +142,7 @@ If you want players to create required Inklings during character generation, mer
 
 1. Open `webportal/snippets/chargen-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom-tabs.hbs` at the location marked in the snippet
 2. Open `webportal/snippets/chargen-custom.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom.hbs` at the marked location
-3. Open `webportal/snippets/chargen-custom.snippet.js` and paste into `ares-webportal/app/components/chargen-custom.js` at the marked location
+3. Open `webportal/snippets/chargen-custom.snippet.example` and paste into `ares-webportal/app/components/chargen-custom.js` at the marked location
 4. Restart your web portal using the MUSH command: `website/deploy`.
 
 **Important:** Each snippet file includes a comment showing exactly where to paste its code. Do not simply append to the end of files.
