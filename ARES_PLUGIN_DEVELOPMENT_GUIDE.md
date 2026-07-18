@@ -1,0 +1,813 @@
+# AresMUSH Plugin Development Guide
+
+A development reference for building and maintaining AresMUSH plugins, distilled
+from the Inklings project. This is **not** an Inklings design document — it
+captures conventions, architecture, and lessons that apply to any AresMUSH
+plugin (Grimoire, SOUL, or whatever comes next).
+
+Treat this as a starting checklist, not a substitute for verifying against
+current Ares source before you write code.
+
+---
+
+## 1. Core Philosophy
+
+1. **Follow existing AresMUSH conventions before inventing anything.** If Ares
+   already has a pattern for a problem (routing, data loading, custom fields,
+   formatting, permissions), use it. A plugin that "feels native" reuses the
+   host application's plumbing instead of building parallel plumbing next to it.
+
+2. **Verify APIs against actual Ares source code, not memory or tutorial
+   prose.** Tutorials describe the general shape of a system; they go stale,
+   omit details, and sometimes describe an older API. The checked-in source of
+   `aresmush/aresmush` and `aresmush/ares-webportal` is the only thing that's
+   actually running. When in doubt, read the code that will execute, not a
+   description of it.
+
+3. **Prefer existing helpers and hooks over custom implementations.** Before
+   writing a helper, a formatter, a filter, or a lifecycle hook, check whether
+   Ares (or the specific bundled addon it ships, like `ember-truth-helpers`)
+   already provides it. Every custom helper is something a future maintainer
+   has to learn instead of already knowing.
+
+4. **Keep MUSH and Web functionality in parity.** Whatever a player or staff
+   member can do from the MUSH command line, they should be able to do from
+   the web portal (and vice versa), assuming the plugin ships web
+   integration. Treat the MUSH command set as the authoritative feature list;
+   the web layer is a second front end onto the same backend logic, not a
+   separate feature surface.
+
+5. **Minimize duplicated logic between Ruby and Ember.** Authorization
+   checks, filtering rules, and formatting decisions should exist in exactly
+   one place — almost always Ruby, since that's where the MUSH command side
+   already has to implement them. If a JS computed property re-derives a
+   permission check that a Ruby method already performs, one of them will
+   drift out of sync with the other. It's not a question of if, only when.
+
+6. **Keep the web layer as thin as possible.** Ember components should bind
+   to data, dispatch actions, and render — not decide who's allowed to do
+   what, not reshape API payloads, not carry business rules. If a template
+   helper or component method is doing anything more sophisticated than
+   `{{if}}`/`{{eq}}`-level branching, ask whether that logic belongs server-side.
+
+7. **Push business logic into Ruby where appropriate.** Ruby is where
+   authorization, validation, and cross-cutting rules (config-driven types,
+   permission checks, formatting for different viewers) belong, because it's
+   the side that already has access to the full data model and is already
+   the enforcement point for the MUSH commands.
+
+---
+
+## 2. Research Process
+
+Start every plugin task — new feature or bug fix — with research, in this
+order:
+
+1. **Read the official tutorials** at `aresmush.com/tutorials/code/`. They
+   give you the vocabulary and the intended shape of a system (Routes vs.
+   Components, GameApi, custom fields, hooks). Treat them as an index, not
+   ground truth.
+
+2. **Check the current Ares source.** Clone or fetch (via GitHub API/raw URLs
+   if you don't have a local checkout) `AresMUSH/aresmush` (the core engine —
+   bundled plugins live under `plugins/<name>/`) and `AresMUSH/ares-webportal`
+   (the Ember app — this is where `GameApi`, routes, mixins, and the
+   `profile-*`/`chargen-*` extension-point components actually live). **This
+   is the authoritative source.** When a tutorial and the current source
+   disagree, the source wins — the tutorial is describing a version of Ares
+   that may no longer exist.
+
+3. **Compare bundled plugins.** Core plugins like Jobs (`plugins/jobs/` in
+   `aresmush`, plus `app/routes/job*.js` / `app/controllers/job*.js` /
+   `app/templates/job*.hbs` in `ares-webportal`) show the full Route +
+   Controller + Template pattern for a first-class page, including
+   `RSVP.hash()` for parallel `gameApi` calls, `response.error` handling, and
+   `this.send('reloadModel')` for refreshing after a mutation. FS3Skills and
+   FS3Combat show web-handler dispatch conventions at scale.
+
+4. **Compare high-quality third-party plugins.** Bundled plugins are often
+   core-hardcoded into routes a real plugin can't touch (see Scenes below).
+   For patterns a *third-party* plugin can actually replicate, look at real
+   community plugins — `AresMUSH/ares-rpg-plugin` and
+   `cailleach1310/ares-marque-plugin` were both directly useful during this
+   project:
+   - `ares-rpg-plugin`'s `webportal/components/rpg-profile.js` is nearly
+     empty (`tagName: ''`) and reads `this.char.rpg.sheet` directly — no
+     component-level data fetch at all.
+   - `ares-rpg-plugin`'s `webportal/components/rpg-chargen.js` shows the
+     `onUpdate()` callback-registration pattern chargen extensions use.
+   - `ares-marque-plugin`'s `webportal/components/profile-dowayne.js` reads
+     `@house` (bound from `this.char.custom.house_list`) with zero `gameApi`
+     calls for initial data, and only calls `gameApi` from user-triggered
+     actions.
+   These two examples are what revealed that **third-party profile-tab
+   components do not self-fetch their initial data** — see §3.
+
+5. **Verify assumptions before implementing, not after.** If you write code
+   that assumes an event name, a field name, or an API shape you haven't
+   confirmed, say so in a comment and flag it for verification — don't let
+   an assumption silently masquerade as a confirmed fact. (Inklings'
+   `plugin/events/job_reply_event_handler.rb` is a good model for how to do
+   this honestly: it's explicitly commented as "scaffolding, not a confirmed
+   working implementation," names exactly which file to check to confirm the
+   real event/field names, and explains why. That kind of comment is a gift
+   to whoever picks the file up next — including future you.)
+
+**When tutorials and current source disagree, current source is
+authoritative — full stop.** Concretely on this project: the tutorial's
+description of `GameApi` didn't mention that `requestOne`/`requestMany`
+already flash `response.error` automatically, or that `requestMany` calls
+`.map()` on the raw response (i.e. only works against endpoints that return a
+bare array). Both facts only became clear from reading
+`ares-webportal/app/services/game-api.js` directly, and both were load-bearing
+for a real bug.
+
+---
+
+## 3. Web Portal Conventions
+
+### The three shapes a screen can take
+
+- **Full page** — its own URL, its own Route + Controller + Template. Route's
+  `model()` uses `RSVP.hash()` to fire parallel `gameApi` calls and returns
+  `EmberObject.create(model)`. Mutating actions live on the Controller. This
+  is the Jobs pattern (`app/routes/job.js`, `app/controllers/job.js`,
+  `app/templates/job.hbs` in `ares-webportal`).
+
+- **Embedded widget on an existing page** (a profile tab, a chargen tab) —
+  a plain `Component`, invoked from a manual-paste snippet
+  (`profile-custom.hbs`, `chargen-custom.hbs`) into a slot the *game owner's*
+  webportal checkout already has. This is what a plugin adding a profile or
+  chargen tab actually builds. See below for how these get their data.
+
+- **Reusable template snippet** — a Helper, for genuinely trivial, stateless
+  presentation logic with no existing Ares equivalent. Check
+  `ember-truth-helpers` (bundled: `eq`, `and`, `or`, `not`) and Ares's own
+  helpers (`local-date`, `ansi-format`, `title`, `link-to`) before writing one.
+
+### How a profile/chargen tab component gets its data (this was the big one)
+
+For **static or small viewer-scoped reference data** (a sheet, a config-driven
+type list, a small nested table), the idiomatic pattern — confirmed against
+`ares-rpg-plugin` and `ares-marque-plugin`, and already half-used by this
+plugin for chargen-required fields before this project extended it — is:
+
+1. Ares core (`aresmush/plugins/profile/custom_char_fields.rb`) defines the
+   hooks:
+   ```ruby
+   def self.get_fields_for_viewing(char, viewer)   # profile display
+   def self.get_fields_for_editing(char, viewer)   # profile edit form
+   def self.get_fields_for_chargen(char)           # chargen form
+   def self.save_fields_from_profile_edit2(char, enactor, char_data)
+   def self.save_fields_from_chargen(char, chargen_data)
+   ```
+   `get_fields_for_viewing`/`get_fields_for_editing` receive `viewer`, so
+   permission-scoped fields are computed server-side, once, with the right
+   viewer context.
+2. A plugin implements these hooks by pasting code into the game's own
+   `aresmush/plugins/profile/custom_char_fields.rb` — a **shared file** every
+   plugin that wants custom fields adds to, which is exactly why this can
+   only be a manual-paste snippet, never an auto-installed file (see §5).
+3. Whatever hash keys those hooks return show up as `char.custom.<key>` on
+   the *already-loaded* Character API response — no extra request.
+4. The profile-tab component receives that data as a passed-in attribute
+   (`{{my-tab someProp=this.char.custom.my_key}}`) and just reads it. No
+   `didInsertElement`, no `gameApi` call, no loading state, no race.
+
+For **genuinely dynamic, mutation-heavy, per-viewer-filtered data** (a list
+of threads, each with its own messages and permissions) there is **no clean
+route-level hook available to a third-party plugin**. Scenes gets exactly
+this treatment on the character page (`app/routes/char.js` in
+`ares-webportal` adds a `scenes: api.requestOne('scenes', {...})` key to its
+own `RSVP.hash()`) — but that's because Scenes is hardcoded into core's own
+route, not because there's a general extension point. A third-party plugin
+can't edit `char.js`. In this situation, a self-fetching component
+(`didInsertElement` → `gameApi` call) really is the best available option —
+just implement it correctly (see the GameApi pitfalls below) and keep the
+*type/config data* the component also needs out of that same fetch by using
+the `char.custom.*` mechanism instead, so the crash-prone part of the load
+(the dynamic list) is isolated from the part that doesn't need to be dynamic
+at all (the type picker).
+
+### GameApi — the exact contract (read `app/services/game-api.js`, don't guess)
+
+```js
+requestOne(cmd, args = {}, transitionToOnError = 'home')
+requestMany(cmd, args = {}, transitionToOnError = 'home')
+```
+
+- **`requestOne`** is for a single object *or a composite hash* (e.g.
+  `{ inklings: [...] }`, `{ inkling: {...} }`, `{ types: {...} }`). On
+  success it wraps the whole response in `EmberObject.create(response)`. This
+  is the default choice for almost every handler that returns `{ error: }` on
+  failure and a shaped hash on success.
+- **`requestMany`** calls `response.map(r => EmberObject.create(r))`
+  **directly on the raw response** — it only works if the handler's success
+  response *is* a bare JSON array, not a hash wrapping one. Using it against
+  a handler that returns `{ inklings: [...] }` throws inside the service's
+  own `.then()`, silently rejects the promise, and the caller never sees an
+  error — the list just stays empty forever. **This was a real, shipped bug
+  on this project.** Rule of thumb: if your Ruby handler's happy path is
+  `{ some_key: [...] }`, use `requestOne` and read `.some_key` off the
+  result. Only use `requestMany` against a handler whose happy-path return
+  value is a literal array.
+- **Both methods already handle the error path for you.** On
+  `response.error`, the service calls `this.flashMessages.danger(response.error)`
+  itself and (unless you pass `null` as the third arg) redirects. **You do
+  not need to add your own `.catch()` or call `flashMessages` yourself for
+  API errors** — you only need `if (response.error) { return; }` before
+  touching the response data, to stop success-path code from running against
+  an error-shaped object. Confirmed against Jobs' and Marque's own
+  controllers/components, which follow exactly this shape:
+  ```js
+  api.requestOne('someCmd', { ... }).then((response) => {
+    if (response.error) { return; }
+    // ... use response.whatever here, not response itself
+  });
+  ```
+- **Unwrap composite responses before using them.** If your Ruby handler
+  returns `{ inkling: {...} }`, the resolved value in `.then()` is the whole
+  wrapper — `response.inkling`, not `response`, is the actual record. Passing
+  the wrapper straight into a helper that expects the record (e.g.
+  `list.findIndex(i => i.id === updated.id)`) fails silently: `updated.id` is
+  `undefined`, the find never matches, and the UI just doesn't update instead
+  of throwing. **This was also a real, shipped bug on this project** — three
+  separate actions passed the raw wrapped response into code expecting the
+  unwrapped record. When you add a new action, write down the Ruby method's
+  actual return shape next to the JS call site, or you will get this wrong.
+
+### Web request handlers (Ruby side of the same contract)
+
+Every plugin dispatches web requests the same way it dispatches commands and
+events — by `cmd` name, through a `case`/`when` in the plugin module:
+
+```ruby
+def self.get_web_request_handler(request)
+  case request.cmd
+  when "my_plugin_do_thing"
+    return MyPluginDoThingWebHandler
+  end
+  nil
+end
+```
+
+Handler classes are thin: check login, unpack `request.args`, delegate to a
+`public/*_api.rb` class that holds the actual logic (so the same logic is
+reachable from MUSH commands and web handlers alike), and return a hash. Every
+guard clause returns `{ error: "..." }` on failure — this is what `GameApi`
+expects and automatically surfaces via `flashMessages`.
+
+### Custom fields, profile hooks, chargen hooks
+
+Covered in detail above — the single most important mechanism for getting
+plugin data onto the profile page and chargen without a separate request.
+Two things worth calling out explicitly because they're easy to get wrong:
+
+- Merging a helper method's returned hash into a hash literal requires
+  **double splat (`**`)**, not single splat (`*`). `{ a: 1, *some_hash }` is a
+  hard Ruby `SyntaxError` (confirmed with `ruby -c`), not a runtime warning —
+  if a snippet with this typo gets pasted into the game's shared
+  `custom_char_fields.rb`, that file fails to load entirely, which can take
+  down more than just your plugin's fields.
+- `get_fields_for_viewing`/`get_fields_for_editing` receive `viewer` — use it.
+  Computing a permission-filtered value once, server-side, in the hook is
+  strictly better than shipping the unfiltered value and re-deriving the
+  filter in Ember.
+
+### Helpers
+
+Check before writing one:
+- `ember-truth-helpers` (bundled): `eq`, `and`, `or`, `not`.
+- Ares's own: `local-date` (dayjs-backed date formatting — don't write your
+  own date helper), `ansi-format`, `title`, `link-to`.
+- Array/string formatting (`join`, `uppercase`, `capitalize`) has **no**
+  bundled equivalent in `ares-webportal` (`ember-composable-helpers` and
+  `ember-cli-string-helpers` are not dependencies) — but before writing a
+  helper for this, ask whether the formatting can move server-side instead
+  (see below). A helper that only exists to `Array.join` data the API
+  already assembled is a sign the API should just return the joined string.
+
+### Templates
+
+- Data flows in from a Route's `model` or a Component's passed-in
+  attributes — not fetched imperatively inside the template.
+- Use `{{#if}}`/`{{#each}}`/`{{eq}}` for branching; anything heavier belongs
+  in a computed property (Component) or the Ruby formatter (server).
+- Bootstrap 5 (`bootstrap` + `ember-bootstrap`) is loaded globally by
+  `ares-webportal`'s own `app/styles/app.scss` on every page, including
+  pages your plugin's tab renders into. `.btn`, `.btn-*`, `.btn-sm`,
+  `.badge`, `.text-bg-*`, `.alert`/`.alert-*`, and the flex utility classes
+  are free — don't hand-roll them.
+
+### Styles
+
+Only genuinely domain-specific layout (a custom collapsible-thread UI, a
+custom filter-toggle control with no Bootstrap equivalent) belongs in a
+plugin's own `.scss`. Before adding a rule, check whether it duplicates a
+Bootstrap class name under a slightly different definition — that's strictly
+worse than using the real class, since it silently shadows the framework
+styling other pages rely on staying consistent.
+
+### Data loading — server vs. client responsibilities
+
+| Belongs in Ruby (server) | Belongs in Ember (client) |
+|---|---|
+| Authorization / permission checks | Rendering, based on what the server already decided |
+| Filtering a list by viewer role or status | Local UI state (which row is expanded, form field values) |
+| Formatting values for display (joined strings, labels, colors) | Dispatching actions and showing loading/error state |
+| Computing "what can this viewer do" once | `{{if}}`/`{{eq}}`-level branching on server-provided flags |
+
+If you find yourself writing a computed property that re-derives a
+permission check the Ruby side already enforces (this project's
+`availableKinds` computed property duplicated `create_inkling`'s staff-only
+authorization check almost exactly), move the computation server-side and
+have the client just render what it's given.
+
+---
+
+## 4. Ruby Plugin Conventions
+
+Standard plugin directory layout (confirmed against this project's own
+structure, which matches the tutorials):
+
+```
+plugin/
+  <plugin_name>.rb        # module-level registration: get_cmd_handler,
+                           # get_event_handler, get_web_request_handler,
+                           # shared config-reading helpers
+  commands/                # one class per MUSH command
+  web/                      # one thin handler class per web request cmd
+  public/                   # *_api.rb classes — the actual business logic,
+                             # shared by commands and web handlers
+  models/                   # Ohm::Model classes
+  hooks/                    # app_review_hook.rb, chargen_hook.rb, etc.
+  events/                   # event handler classes (CronEvent, etc.)
+  locales/                  # locale_en.yml — all user-facing strings
+  help/{admin,en,player}/   # help file markdown
+```
+
+**Database models live in the base `AresMUSH` module, not the plugin's own
+module**, even though the file lives under the plugin's folder:
+
+```ruby
+module AresMUSH
+  # not module AresMUSH::MyPlugin
+  class MyModel < Ohm::Model
+    include ObjectModel
+    ...
+  end
+end
+```
+
+### Commands
+
+`include CommandHandler` and implement:
+```ruby
+def parse_args      # populate attr_accessors from cmd.args / cmd.switches
+def required_args   # array of args that must be present
+def check_*          # any number of validation methods, each returning
+                      # nil (ok) or an error string
+def handle           # the actual effect; client.emit_success/client.emit
+```
+**Validation `check_*` methods run in alphabetical order by method name, not
+declaration order.** If one check depends on another having already run
+(e.g. a "can I close this" check needs "does this exist" to have run first),
+don't assume declaration order gives you that — memoize the lookup and guard
+defensively (`return nil if !inkling` at the top of a later-alphabetical
+check), the way `InklingCloseCmd#check_can_close` does.
+
+Memoize repeated lookups (`def inkling; @inkling ||= Inklings.find_inkling(id); end`)
+so multiple `check_*` methods and `handle` don't each independently re-fetch
+the same record.
+
+### Web handlers
+
+Thin adapters only — see §3. `handle(request)` checks login, unpacks
+`request.args`, delegates to a `public/*_api.rb` class, returns a hash.
+
+### API classes (`public/`)
+
+Where the actual logic lives, callable identically from a MUSH command and a
+web handler. Every method that can fail returns `{ error: "..." }` on the
+failure path — this is the contract both `CommandHandler` output and
+`GameApi` (see §3) are built around. Format methods (`format_x_summary`,
+`format_x_detail`) belong here too — this is the natural place to compute
+anything a view (MUSH text or JSON) needs to display, so it's computed once
+and doesn't drift between the two front ends.
+
+### Configuration
+
+`Global.read_config("plugin_name", "setting_key")`. Read config live rather
+than memoizing it at boot — admins expect config edits to take effect without
+a full plugin reload (a `+plugin/config` or file-edit-and-`@restart`
+workflow, not a code deploy). Prefer config-driven enumerations (a `types:`
+section admins edit in `game/config/<plugin>.yml`) over hardcoded constants
+wherever the set of values is remotely likely to vary by game.
+
+### Localization
+
+All user-facing strings live in `plugin/locales/locale_en.yml`, namespaced
+under the plugin name, and are referenced via `t('plugin_name.key')`
+(interpolation via `%{name}` placeholders). Don't hardcode user-facing
+strings directly in command/handler code — even for a single-locale game,
+this keeps all copy in one auditable place.
+
+### Permissions
+
+Gate staff-only functionality behind a **configurable** permission name, not
+a hardcoded role check:
+```ruby
+def self.can_manage_my_thing?(enactor)
+  return false if !enactor
+  permission = Global.read_config("my_plugin", "manage_permission") || "manage_jobs"
+  enactor.has_permission?(permission)
+end
+```
+Defaulting to an existing permission (`manage_jobs`, in this project's case)
+means games that already have a working staff-permission structure get
+sensible behavior with zero config. Reserve genuinely narrower permissions
+(`manage_game`) for irreversible/destructive commands specifically, not for
+everyday staff functionality.
+
+### Events
+
+Registered the same way as commands and web handlers:
+```ruby
+def self.get_event_handler(event_name)
+  case event_name
+  when "CronEvent"
+    return MyPluginCronHandler
+  end
+  nil
+end
+```
+**Do not guess an event's class name or field names.** If you're hooking
+into another plugin's event (e.g. a Jobs reply event) and haven't confirmed
+the exact class/fields against that plugin's actual source in the target
+install, write the handler defensively (`event.respond_to?(:field) ? event.field : ...`)
+and leave an explicit, honest comment saying so — see
+`plugin/events/job_reply_event_handler.rb` in this repo for the pattern.
+Fix it for real the moment you can check the actual dependency's source.
+
+### Formatting helpers
+
+Ansi color helpers (`color_name`, `color_title`, `color_type` in this
+project) are applied to text emitted directly to a MUSH client, never to
+values that get read back by another system (a web JSON payload, another
+plugin's formatter) — those callers shouldn't have to strip ansi escapes
+back out. Keep a clean line between "text for a terminal" and "data for
+anything else."
+
+---
+
+## 5. Installation Best Practices
+
+### `plugin/install` expectations
+
+`plugin/install <url>` (or manual copy into `plugins/<name>/`) handles:
+- Plugin Ruby code
+- Merging `game/config/<plugin>.yml`
+- Copying files that are **always safe to auto-copy** into the target
+  webportal checkout, if any
+
+It does **not** merge into files the game already owns and other plugins
+also want to extend (`profile-custom.hbs`, `profile-custom-tabs.hbs`,
+`chargen-custom.hbs`, `chargen-custom-tabs.hbs`, `chargen-custom.js`,
+`custom_char_fields.rb`). Those are shared, hand-edited files by design —
+there is no manifest format that lets an automated installer safely append
+to them without risking another plugin's already-pasted code.
+
+**There is no `.ares-manifest.yml` convention.** This project added one
+speculatively, then had to remove it after confirming against actual Ares
+plugin-installer behavior that it does nothing — `plugin/install` doesn't
+read or expect it. Don't invent an installer manifest format; verify what
+the installer actually consumes before assuming a config file will be
+picked up.
+
+### What should be automated (auto-copied by `plugin/install`)
+
+Only files that are **unconditionally safe to place into the target
+directory regardless of whether the optional web integration is ever
+completed** — meaning files that Ember's own resolver won't choke on and
+that do nothing until wired up:
+- The component's `.js`/`.hbs`, in the exact resolver-expected paths
+  (`webportal/components/`, `webportal/templates/components/`)
+- Helpers, in `webportal/helpers/`
+- Styles, in `webportal/styles/` (inert until imported into `app.scss`)
+
+### What belongs in `custom-install/` (manual snippets, never auto-copied)
+
+Anything that requires editing a file the *game* already owns and that other
+plugins may also be extending:
+- `profile-custom.hbs` / `profile-custom-tabs.hbs` insertions
+- `chargen-custom.hbs` / `chargen-custom-tabs.hbs` / `chargen-custom.js` insertions
+- `custom_char_fields.rb` hook additions
+- Anything documented as a numbered "find this method, paste before this
+  line" instruction rather than a drop-in file
+
+Write these as literal, mechanical, "find X, paste Y before Z" steps a
+non-developer administrator can follow without understanding Ember or Ruby —
+not prose describing the change.
+
+### Optional web integration
+
+Structure the README so a MUSH-only install (Step 1 only) works completely
+and the web tab is simply absent — never broken. A partially-completed web
+install (some files present, others not) should degrade gracefully, not
+throw a routing error. Concretely: never let a file with the wrong resolver
+shape (see below) end up somewhere Ember's auto-resolver will find and try
+to load it.
+
+### README expectations
+
+- Describe exactly what's automatic vs. manual, matching what actually
+  happens — don't describe an aspirational installer.
+- Give a numbered, mechanical install path with clear optional/required
+  markers per step.
+- Keep a "Known Limitations" section honest about things that don't fully
+  work (e.g. a feature that depends on the specific game having a
+  particular field configured).
+
+### Lessons learned from the legacy React implementation
+
+This plugin's web tab started as a React component
+(`InklingsTab.jsx`/`InklingsTab.css`, added early in the project) before
+being rewritten in Ember, which is what `ares-webportal` actually is. Real
+consequences, from this project's own git history:
+
+1. **A leftover `.jsx` file auto-copied into `app/components/` broke the
+   entire web portal**, not just the plugin's own tab. Ember's resolver
+   discovered the file in the components directory and tried to treat it as
+   an Ember component, producing an unrelated-looking error ("More context
+   objects were passed than there are dynamic segments for the route") that
+   gave no hint the actual cause was a stray React file. **A framework
+   mismatch in an auto-copied file is a whole-portal risk, not a
+   contained one.**
+2. **The fix was two-part and both parts mattered**: delete the dead
+   React files outright (don't just stop referencing them — an unused file
+   in a resolver-scanned directory is still dangerous), *and* verify every
+   remaining auto-copied file is in the exact path Ember's resolver expects
+   (`webportal/components/`, not `webportal/app/app/components/` or similar
+   nesting mistakes — this project went through several path corrections
+   before landing on the right structure).
+3. **When in doubt about whether a file is safe to auto-copy, it isn't.**
+   This project's install path oscillated (auto-copy → manual-only →
+   auto-copy again) before settling on: auto-copy only pure, inert
+   framework files in exactly the right resolver paths; manual-paste
+   everything that touches a file the game already owns. If you're not
+   certain a file is inert until wired up, put it in `custom-install/` and
+   make the admin paste/copy it deliberately.
+
+---
+
+## 6. Extensibility Principles
+
+- **Config over hardcoding.** Enumerable domain concepts (types, categories,
+  reward kinds) belong in `game/config/<plugin>.yml`, read live via
+  `Global.read_config`, not as Ruby constants or (worse) hardcoded lists
+  duplicated in Ember. Every hardcoded list is a place a game owner has to
+  either accept your defaults or fork your code.
+- **Generic hooks over plugin-specific special-casing.** Use Ares's existing
+  hook points (`app_review_issues`, `chargen_finalize`, custom-fields hooks,
+  event handlers) rather than reaching into another plugin's internals
+  directly. This is also what keeps a plugin functional when the *other*
+  plugin isn't installed.
+- **Generic reward/interop systems**, not point-to-point integrations. This
+  project's reward system (`reward_type`/`reward_key`/`amount`, applied via a
+  generic `grant_reward` path rather than one method per possible reward
+  kind) is the shape to reuse: add a new reward kind by handling a new
+  `reward_type` value, not by adding a new API method.
+- **Avoid direct dependencies on plugins that may not be installed.** Guard
+  optional integrations (this project's FS3Skills-dependent rolling, luck
+  points) behind existence checks, and document plainly what happens when
+  the dependency is absent (degrade, don't crash). Don't assume a "common"
+  plugin is present.
+- **Avoid direct dependencies on *future* plugins or unconfirmed APIs.**
+  Don't wire a hard integration against another plugin's event/field names
+  you haven't verified against that plugin's actual source — see the
+  `job_reply_event_handler.rb` scaffolding note in §2 and §4. Ship the
+  honest, verifiable version; leave the rest as a documented gap, not a
+  guess dressed up as a fact.
+- **Lifecycle events over polling or manual coordination.** Prefer firing/
+  listening for events (`CronEvent`, plugin-specific dispatch events) over
+  having one plugin poll another plugin's state.
+
+---
+
+## 7. Performance Guidelines
+
+- **Ruby**: authorization, filtering, formatting, anything that determines
+  *what* a viewer is allowed to see or do. Compute it once, server-side,
+  scoped to the actual viewer — not "compute everything, filter in the
+  client."
+- **Ember**: rendering what the server already decided, local UI state
+  (expanded/collapsed, form inputs, filters that don't need a round trip),
+  and dispatching actions. If a component method's job is "look something up
+  in a hash the server sent" (a label, a color, a description), consider
+  whether the server should just include that value directly on the record
+  instead of sending a separate lookup table for the client to join against
+  — one fewer place for the join key to be missing/stale/racy against.
+- **Avoid duplicate filtering.** If the server already filters a list by
+  viewer permission/status, don't re-filter it in a computed property. If
+  you find yourself doing this, it usually means the server's filtered
+  result and the client's "what should I be able to do" logic have started
+  to drift apart — see §3's table.
+- **Avoid unnecessary API calls.** Static or small per-viewer reference data
+  (a type list, config-driven options) should ride along on data the page
+  already loads (`char.custom.*` — see §3) rather than triggering its own
+  request. Reserve separate requests for data that's genuinely too large,
+  too dynamic, or too privacy-sensitive to eagerly load on every page view.
+- **Minimize client-side logic generally.** Every computed property,
+  helper, or component method is something that has to independently agree
+  with the server's behavior forever. The less of that surface exists, the
+  less can drift.
+
+---
+
+## 8. Common Mistakes
+
+Each of these happened on this project — concretely, not hypothetically.
+
+1. **Inventing APIs / event names instead of verifying them.** The Jobs
+   reply event handler was written against a plausible-but-unconfirmed event
+   class/field set. *Avoid it*: if you can't check the actual dependency's
+   source before writing the integration, write it defensively and mark it
+   explicitly as unverified scaffolding — don't let a guess read as fact in
+   the code.
+
+2. **Inventing helpers Ares already provides.** This project shipped its own
+   `eq`/`and`/`or`/`not` helpers, duplicating `ember-truth-helpers`
+   (bundled), and its own `format-date` helper, duplicating the built-in
+   `local-date`. *Avoid it*: check `ares-webportal`'s `package.json` and
+   `app/helpers/` before writing any helper.
+
+3. **Building custom architecture where Ares already had a pattern.** The
+   `.btn`/badge/alert CSS reinvented Bootstrap 5 components already loaded
+   globally by `ares-webportal`. The `typeInfo` self-fetch reinvented what
+   the `char.custom.*` hook mechanism already solves for exactly this kind
+   of data. *Avoid it*: before writing a UI pattern or a data-loading
+   mechanism, find the closest analog in a real Ares plugin and check
+   whether it solved the same problem already.
+
+4. **Client-side duplication of server-side logic.** `availableKinds`
+   re-derived the staff/player authorization check `create_inkling` already
+   enforced. *Avoid it*: any time a computed property or component method
+   answers "is this viewer allowed to X," check whether an API method
+   already answers that question, and have the server return the
+   pre-filtered answer instead.
+
+5. **Assuming web conventions instead of confirming them.** Assumed
+   `requestMany` behaves like "fetch a list" in the abstract, without
+   checking that it literally calls `.map()` on the raw response. Assumed a
+   response object was the unwrapped record without checking the Ruby
+   method's actual return shape. *Avoid it*: read `game-api.js` and the
+   specific Ruby method you're calling before writing the `.then()`.
+
+6. **Trusting stale GitHub state (default branch, file existence) without
+   checking.** Different reference repos on GitHub used `master` vs. `main`
+   as their default branch; guessing wrong silently returns a 404 that looks
+   like "this doesn't exist" rather than "wrong branch name." *Avoid it*:
+   check a repo's actual default branch (or try both) before concluding a
+   file or pattern doesn't exist upstream.
+
+7. **Incorrect install assumptions.** Assumed `.ares-manifest.yml` was a
+   real, consumed installer format without checking; assumed single splat
+   (`*`) merges a hash into a hash literal in Ruby without checking (it's a
+   `SyntaxError`). *Avoid it*: for anything install-mechanism-related,
+   verify against actual installer behavior or `ruby -c`, not intuition.
+
+8. **Legacy code that should have been deleted, not left inert.** The
+   original React component wasn't just unused — it was actively dangerous
+   sitting in an auto-copied, resolver-scanned directory. *Avoid it*: when a
+   rewrite makes a file obsolete, delete it in the same change, especially
+   if it lives anywhere an automated process (installer, resolver, dispatch
+   `case`/`when`) might still pick it up. An orphaned, unreferenced web
+   handler + dispatch case is the same category of risk at a smaller scale —
+   delete dead endpoints once nothing calls them, don't leave them as inert
+   surface area.
+
+---
+
+## 9. Plugin Review Checklist
+
+Before considering a plugin (or a plugin change) complete:
+
+**Architecture**
+- [ ] Every screen/component's data-loading approach matches a confirmed
+      real-plugin precedent (Route+Controller for full pages; passed-in
+      `char.custom.*` for static/small profile-tab data; self-fetch only
+      where no cleaner extension point exists)
+- [ ] No custom CSS/JS reimplements something Bootstrap 5 or
+      `ember-truth-helpers` already provides
+- [ ] No helper exists where a built-in Ares helper already covers it
+- [ ] Web handlers are thin adapters; business logic lives in `public/*_api.rb`,
+      shared with MUSH commands
+
+**Parity & duplication**
+- [ ] Every MUSH command has an equivalent web action, and vice versa
+      (or the gap is deliberate and documented)
+- [ ] No permission/filtering/formatting logic is duplicated between Ruby
+      and Ember — checked explicitly, not assumed
+- [ ] No dead/orphaned endpoints (grep for the web `cmd` name across the
+      whole repo — if only the dispatch `case` and handler file reference
+      it, it's dead)
+
+**Configuration**
+- [ ] Enumerable domain concepts are config-driven (`game/config/<plugin>.yml`),
+      not hardcoded
+- [ ] Permissions are configurable (a settable permission name), not
+      hardcoded role checks
+- [ ] Config is read live (`Global.read_config`), not memoized at boot
+
+**Lifecycle & interop**
+- [ ] Uses Ares's existing hook points (app review, chargen, custom fields,
+      events) rather than reaching into other plugins directly
+- [ ] Any dependency on another plugin's API/event is verified against that
+      plugin's actual source, or explicitly flagged as unverified
+- [ ] Optional dependencies degrade gracefully when absent, documented in
+      "Known Limitations"
+
+**Installation**
+- [ ] A MUSH-only install (automated steps only, no manual web snippets)
+      works completely, with the web tab simply absent
+- [ ] Nothing auto-copied by `plugin/install` can break Ember's resolver if
+      the optional web steps are never completed
+- [ ] Everything that edits a shared game-owned file (`profile-custom.hbs`,
+      `custom_char_fields.rb`, etc.) is a manual, mechanical `custom-install/`
+      snippet — never assumed to be auto-mergeable
+- [ ] README's automatic/manual split matches what the code actually does
+- [ ] No legacy/dead implementation files remain anywhere an installer or
+      resolver could pick them up
+
+**Correctness**
+- [ ] Every `gameApi.requestOne`/`requestMany` call matches its handler's
+      actual return shape (bare array → `requestMany`; hash, including a
+      composite one → `requestOne`)
+- [ ] Every `.then()` that touches a response unwraps composite responses
+      correctly (`response.thing`, not `response`) and guards on
+      `response.error` before using the data
+- [ ] Ruby hash-merge syntax (`**`, not `*`) verified with `ruby -c` on any
+      snippet a user will paste
+
+**Documentation**
+- [ ] README accurately describes install steps, in the order they need to
+      happen, with required/optional clearly marked
+- [ ] Locale file has an entry for every user-facing string
+- [ ] Help files exist for both player and admin-facing commands
+
+---
+
+## 10. References
+
+**Official documentation** (aresmush.com/tutorials/code/) — read for
+vocabulary and intent, verify against source for exact behavior:
+- [Web Portal Overview](https://www.aresmush.com/tutorials/code/web-portal.html)
+- [Web Portal Routes](https://aresmush.com/tutorials/code/web-routes.html)
+- [Game Api](https://www.aresmush.com/tutorials/code/web-game-api.html)
+- [Web Portal Services](https://www.aresmush.com/tutorials/code/web-services.html)
+- [Web Portal Templates](https://www.aresmush.com/tutorials/code/web-templates.html)
+- [Web Portal Mixins](https://www.aresmush.com/tutorials/code/web-mixins.html)
+- [Web Portal Navigation](https://aresmush.com/tutorials/code/web-nav.html)
+- [Debugging Web Requests](https://www.aresmush.com/tutorials/code/web-debug.html)
+- [Custom Character Fields](https://aresmush.com/tutorials/code/hooks/char-fields.html)
+- [Ares Architecture](https://www.aresmush.com/tutorials/code/architecture.html)
+- [Using Permissions in Code](https://aresmush.com/tutorials/manage/roles.html#using-permissions-in-code)
+- [Learning EmberJS](https://aresmush.com/tutorials/code/ember.html) (index page only — links out to general Ember docs)
+
+**Authoritative source repositories** (clone or fetch via GitHub API/raw URLs
+— treat as ground truth over the tutorials above):
+- [`AresMUSH/aresmush`](https://github.com/AresMUSH/aresmush) — core engine
+  and bundled plugins (`plugins/<name>/`). Look here for
+  `custom_char_fields.rb`'s real hook signatures, bundled plugins' command/
+  web-handler conventions, and locale file conventions.
+- [`AresMUSH/ares-webportal`](https://github.com/AresMUSH/ares-webportal) —
+  the actual Ember app. Look here for `app/services/game-api.js` (the real
+  `GameApi` contract), `app/routes/char.js` (how the profile page's own
+  route loads Scenes as a parallel `RSVP.hash` request), `app/routes/job.js`
+  + `app/controllers/job.js` (full Route+Controller page pattern), and
+  `app/components/profile-*`/`chargen-*` (the actual extension-point
+  components a plugin's manual snippets get pasted into).
+
+**Third-party plugins worth comparing against** for patterns a real,
+non-core plugin can replicate:
+- [`AresMUSH/ares-rpg-plugin`](https://github.com/AresMUSH/ares-rpg-plugin) —
+  `webportal/components/rpg-profile.js` (near-empty component reading
+  `char.rpg.sheet` directly — the "no self-fetch for static data" pattern)
+  and `webportal/components/rpg-chargen.js` (the `onUpdate()` callback
+  registration pattern for chargen extensions).
+- [`cailleach1310/ares-marque-plugin`](https://github.com/cailleach1310/ares-marque-plugin) —
+  `webportal/components/profile-dowayne.js` (actions-only component reading
+  `char.custom.house_list`) and `custom_files/profile-custom.hbs` (a real,
+  working example of the manual-snippet extension point in practice,
+  including a nested list/table embedded entirely via `char.custom.*`).
+
+**This project's own git history** is itself a useful reference for what
+went wrong and how it was fixed — particularly:
+- `2df299c` — removing a leftover React component that was breaking the
+  Ember resolver, and the auto-copy vs. manual-snippet split that resulted.
+- `a4af6d0`, `67a4a36` — removing custom helpers that duplicated bundled
+  Ares/Ember functionality.
+- `6f4f417` — removing a speculative `.ares-manifest.yml` that didn't match
+  actual installer behavior.
+- `plugin/events/job_reply_event_handler.rb` — a live example of how to
+  write and honestly flag an unverified integration.
