@@ -11,6 +11,7 @@
 
 import Component from '@ember/component';
 import { inject as service } from '@ember/service';
+import { next } from '@ember/runloop';
 
 export default Component.extend({
   gameApi: service(),
@@ -45,8 +46,17 @@ export default Component.extend({
   didReceiveAttrs() {
     this._super(...arguments);
     if (this.inklingId && this.inklingId !== this._loadedId) {
+      // Mark synchronously so a second didReceiveAttrs firing before the
+      // deferred load below runs doesn't queue a duplicate fetch.
+      this._loadedId = this.inklingId;
       this.resetFormState();
-      this.loadDetail();
+      // gameApi.requestOne is RSVP-backed, and RSVP promises can resolve
+      // synchronously enough to flush within the *same* render transaction
+      // that's still processing this didReceiveAttrs call - Ember then
+      // flags the resulting this.set() as a "modified twice in a single
+      // render" violation. Deferring the fetch (and its state updates) to
+      // the next run loop keeps it safely outside that transaction.
+      next(this, 'loadDetail');
     }
   },
 
