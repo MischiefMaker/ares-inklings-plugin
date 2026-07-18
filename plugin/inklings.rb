@@ -859,27 +859,39 @@ module AresMUSH
     #   Global.dispatcher.add_event_handler("inkling:created", method(:on_inkling_created))
 
     def self.dispatch_inkling_created(inkling)
-      Global.dispatcher.dispatch("inkling:created", inkling)
+      Global.dispatcher.dispatch("inkling:created", inkling) if Global.dispatcher.respond_to?(:dispatch)
+    rescue => e
+      Global.logger.warn("Inklings: Could not dispatch inkling:created - #{e.message}")
     end
 
     def self.dispatch_inkling_submitted(inkling)
-      Global.dispatcher.dispatch("inkling:submitted", inkling)
+      Global.dispatcher.dispatch("inkling:submitted", inkling) if Global.dispatcher.respond_to?(:dispatch)
+    rescue => e
+      Global.logger.warn("Inklings: Could not dispatch inkling:submitted - #{e.message}")
     end
 
     def self.dispatch_inkling_approved(inkling, staff)
-      Global.dispatcher.dispatch("inkling:approved", inkling, staff)
+      Global.dispatcher.dispatch("inkling:approved", inkling, staff) if Global.dispatcher.respond_to?(:dispatch)
+    rescue => e
+      Global.logger.warn("Inklings: Could not dispatch inkling:approved - #{e.message}")
     end
 
     def self.dispatch_inkling_needs_changes(inkling, staff)
-      Global.dispatcher.dispatch("inkling:needs_changes", inkling, staff)
+      Global.dispatcher.dispatch("inkling:needs_changes", inkling, staff) if Global.dispatcher.respond_to?(:dispatch)
+    rescue => e
+      Global.logger.warn("Inklings: Could not dispatch inkling:needs_changes - #{e.message}")
     end
 
     def self.dispatch_inkling_shared(inkling, shared_with)
-      Global.dispatcher.dispatch("inkling:shared", inkling, shared_with)
+      Global.dispatcher.dispatch("inkling:shared", inkling, shared_with) if Global.dispatcher.respond_to?(:dispatch)
+    rescue => e
+      Global.logger.warn("Inklings: Could not dispatch inkling:shared - #{e.message}")
     end
 
     def self.dispatch_inkling_rewarded(inkling, reward)
-      Global.dispatcher.dispatch("inkling:rewarded", inkling, reward)
+      Global.dispatcher.dispatch("inkling:rewarded", inkling, reward) if Global.dispatcher.respond_to?(:dispatch)
+    rescue => e
+      Global.logger.warn("Inklings: Could not dispatch inkling:rewarded - #{e.message}")
     end
   end
 end
