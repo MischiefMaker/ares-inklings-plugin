@@ -55,12 +55,9 @@ module AresMUSH
       end
 
       # POST /api/characters/:char_id/inklings
-      def self.create_inkling(char_id, viewer_id, kind, text, title = nil)
+      def self.create_inkling(char_id, viewer, kind, text, title = nil)
         char = Character[char_id]
         return { error: "Character not found" } if !char
-
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
 
         unless viewer.id == char.id || Inklings.can_manage_inklings?(viewer)
           return { error: "Not authorized" }
@@ -111,16 +108,13 @@ module AresMUSH
         { inkling: format_inkling_detail(inkling, viewer) }
       end
 
-      # GET /api/characters/:char_id/inklings/:inkling_id
-      def self.get_inkling(char_id, inkling_id, viewer_id)
+      # Web endpoint: get_inkling
+      def self.get_inkling(char_id, inkling_id, viewer)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
-
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
 
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_view_inkling?(inkling, viewer)
@@ -131,16 +125,13 @@ module AresMUSH
         { inkling: format_inkling_detail(inkling, viewer) }
       end
 
-      # POST /api/characters/:char_id/inklings/:inkling_id/reply
-      def self.reply_to_inkling(char_id, inkling_id, viewer_id, text, is_private: false, is_personal: false)
+      # Web endpoint: reply_to_inkling
+      def self.reply_to_inkling(char_id, inkling_id, viewer, text, is_private: false, is_personal: false)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
-
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
 
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_view_inkling?(inkling, viewer)
@@ -196,16 +187,14 @@ module AresMUSH
       end
 
       # PUT /api/characters/:char_id/inklings/:inkling_id/close
-      def self.close_inkling(char_id, inkling_id, viewer_id)
+      def self.close_inkling(char_id, inkling_id, viewer)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
-
+        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
         return { error: "Your character must be approved to close inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
@@ -221,16 +210,14 @@ module AresMUSH
       # job - see Inklings.submit_inkling. Building up a thread does
       # NOT notify staff by itself; nothing reaches staff until this
       # is called (in-game: +inkling/submit).
-      def self.submit_inkling(char_id, inkling_id, viewer_id)
+      def self.submit_inkling(char_id, inkling_id, viewer)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
-
+        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
         return { error: "Your character must be approved to submit inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
@@ -248,16 +235,14 @@ module AresMUSH
       # files a job asking staff to review and approve a permanent
       # deletion (a staff member then carries that out themselves,
       # either here or via +inkling/delete in-game).
-      def self.delete_inkling(char_id, inkling_id, viewer_id)
+      def self.delete_inkling(char_id, inkling_id, viewer)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
-
+        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
         return { error: "Your character must be approved to delete inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
@@ -282,16 +267,14 @@ module AresMUSH
       end
 
       # POST /api/characters/:char_id/inklings/:inkling_id/share
-      def self.share_inkling(char_id, inkling_id, viewer_id, target_name)
+      def self.share_inkling(char_id, inkling_id, viewer, target_name)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
-
+        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
         return { error: "Your character must be approved to share inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
@@ -423,16 +406,14 @@ module AresMUSH
       end
 
       # POST - Add a tag to an inkling
-      def self.add_tag(char_id, inkling_id, viewer_id, tag)
+      def self.add_tag(char_id, inkling_id, viewer, tag)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
-
+        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_view_inkling?(inkling, viewer)
         return { error: "Not authorized to manage tags" } if inkling.character != viewer && !Inklings.can_manage_inklings?(viewer)
@@ -450,16 +431,14 @@ module AresMUSH
       end
 
       # POST - Remove a tag from an inkling
-      def self.remove_tag(char_id, inkling_id, viewer_id, tag)
+      def self.remove_tag(char_id, inkling_id, viewer, tag)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
-
+        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_view_inkling?(inkling, viewer)
         return { error: "Not authorized to manage tags" } if inkling.character != viewer && !Inklings.can_manage_inklings?(viewer)
@@ -476,16 +455,14 @@ module AresMUSH
       end
 
       # POST - Add a GM note to an inkling (staff only)
-      def self.add_gm_note(char_id, inkling_id, viewer_id, text)
+      def self.add_gm_note(char_id, inkling_id, viewer, text)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
-
+        
         return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
         return { error: "Text cannot be empty" } if text.to_s.blank?
 
@@ -507,13 +484,11 @@ module AresMUSH
       end
 
       # POST - Approve a submitted inkling (staff only)
-      def self.approve_inkling(inkling_id, viewer_id, message = nil)
+      def self.approve_inkling(inkling_id, viewer, message = nil)
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
-
+        
         return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
         return { error: "Inkling not submitted for review" } if inkling.approval_state != "submitted"
 
@@ -523,13 +498,11 @@ module AresMUSH
       end
 
       # POST - Request changes to a submitted inkling (staff only)
-      def self.request_changes_inkling(inkling_id, viewer_id, feedback)
+      def self.request_changes_inkling(inkling_id, viewer, feedback)
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
-
+        
         return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
         return { error: "Inkling not submitted for review" } if inkling.approval_state != "submitted"
         return { error: "Feedback cannot be empty" } if feedback.to_s.blank?
@@ -540,13 +513,11 @@ module AresMUSH
       end
 
       # POST - Grant a reward to an inkling character (staff only)
-      def self.grant_inkling_reward(inkling_id, viewer_id, reward_type, reward_key, amount)
+      def self.grant_inkling_reward(inkling_id, viewer, reward_type, reward_key, amount)
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
-
+        
         return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
         return { error: "Reward type cannot be empty" } if reward_type.to_s.blank?
         return { error: "Amount cannot be empty" } if amount.to_s.blank?
