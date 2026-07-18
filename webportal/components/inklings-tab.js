@@ -95,7 +95,8 @@ export default Component.extend({
     let list = this.inklings;
     let idx = list.findIndex((i) => i.id === updated.id);
     if (idx > -1) {
-      list.replace(idx, 1, [updated]);
+      list.removeAt(idx);
+      list.insertAt(idx, updated);
     }
   },
 
