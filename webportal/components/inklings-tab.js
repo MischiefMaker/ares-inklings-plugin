@@ -32,6 +32,7 @@ export default Component.extend({
   // --- Internal state ---
   inklings: null,
   expandedId: null,
+  expandedInklingDetail: null,
   loading: true,
   statusFilter: 'open',
 
@@ -98,6 +99,10 @@ export default Component.extend({
       list.removeAt(idx);
       list.insertAt(idx, updated);
     }
+    // Also update the expanded detail if it's currently showing this inkling
+    if (this.expandedId === updated.id) {
+      this.set('expandedInklingDetail', updated);
+    }
   },
 
   reloadInklingDetail(id) {
@@ -108,17 +113,16 @@ export default Component.extend({
       if (response.error) {
         return;
       }
-      this.replaceInkling(response.inkling);
+      this.set('expandedInklingDetail', response.inkling);
       return response.inkling;
     });
   },
 
-  expandedInkling: computed('inklings.[]', 'expandedId', function () {
-    let id = this.expandedId;
-    if (!id) {
+  expandedInkling: computed('expandedInklingDetail', 'expandedId', function () {
+    if (!this.expandedId) {
       return null;
     }
-    return (this.inklings || []).find((i) => i.id === id);
+    return this.expandedInklingDetail;
   }),
 
   actions: {
