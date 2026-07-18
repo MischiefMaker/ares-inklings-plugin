@@ -104,33 +104,20 @@ export default Component.extend({
       char_id: this.characterId,
       inkling_id: id
     }, null).then((response) => {
-      console.log('reloadInklingDetail response:', JSON.stringify(response, null, 2));
       if (response.error) {
-        console.log('API returned error:', response.error);
         return;
       }
-      console.log('response.inkling keys:', response.inkling ? Object.keys(response.inkling) : 'null');
       this.replaceInkling(response.inkling);
       return response.inkling;
-    }).catch((error) => {
-      console.error('reloadInklingDetail API call failed:', error);
-      throw error;
     });
   },
 
   expandedInkling: computed('inklings.[]', 'expandedId', function () {
-    try {
-      let id = this.expandedId;
-      if (!id) {
-        return null;
-      }
-      let inkling = (this.inklings || []).find((i) => i.id === id);
-      console.log('expandedInkling computed returned:', inkling);
-      return inkling;
-    } catch (e) {
-      console.error('Error in expandedInkling computed:', e);
+    let id = this.expandedId;
+    if (!id) {
       return null;
     }
+    return (this.inklings || []).find((i) => i.id === id);
   }),
 
   actions: {
@@ -181,26 +168,18 @@ export default Component.extend({
     },
 
     expandInkling(id) {
-      console.log('expandInkling called with id:', id, 'currentExpandedId:', this.expandedId);
-
       if (this.expandedId === id) {
-        console.log('Collapsing inkling');
         this.set('expandedId', null);
         return;
       }
 
-      console.log('Calling reloadInklingDetail for id:', id);
       this.reloadInklingDetail(id).then((inkling) => {
-        console.log('reloadInklingDetail returned:', inkling);
         if (!inkling) {
-          console.log('inkling is null, not setting expandedId');
           this.flashMessages.danger('Failed to load inkling details');
           return;
         }
-        console.log('Setting expandedId to:', id);
         this.set('expandedId', id);
       }).catch((error) => {
-        console.error('Promise rejected:', error);
         this.flashMessages.danger('Failed to load inkling details: ' + (error.message || 'Unknown error'));
       });
     },
