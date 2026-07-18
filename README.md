@@ -102,7 +102,7 @@ this matches how other Ares plugins expose profile-tab reference data (e.g. the
 RPG plugin's `char.rpg.sheet`). Without this step the dropdown will be empty:
 
 1. Open `custom-install/custom_char_fields.snippet.rb` in this plugin
-2. Open `plugins/profile/custom_char_fields.rb` in your **ares** folder (not ares-webportal)
+2. Open `plugins/profile/custom_char_fields.rb` in your **aresmush** folder (not ares-webportal)
 3. Follow **Step 2** in the snippet file (the `get_fields_for_viewing` addition) and paste it at the marked location
 4. Save the file
 
@@ -116,7 +116,7 @@ If you want players to create required Inklings during character generation, mer
 **Backend Hook (Required if using chargen):**
 
 1. Open `custom-install/custom_char_fields.snippet.rb` in this plugin
-2. Open `plugins/profile/custom_char_fields.rb` in your **ares** folder (not ares-webportal)
+2. Open `plugins/profile/custom_char_fields.rb` in your **aresmush** folder (not ares-webportal)
 3. Follow Steps 1, 3, 4, 5, and 6 in the snippet file and paste the code at the marked locations
    (Step 2 is shared with the profile tab's type picker - see Step 2c above; if you
    already did that, just add the chargen-required-fields line to the same hash)

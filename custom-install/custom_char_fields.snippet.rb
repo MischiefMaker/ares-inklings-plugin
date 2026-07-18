@@ -1,6 +1,6 @@
 # CUSTOM CHARACTER FIELDS SNIPPET - CHARGEN-REQUIRED TYPES + TYPE PICKER DATA
 #
-# FILE: ares/plugins/profile/custom_char_fields.rb (in the ares folder, not ares-webportal)
+# FILE: aresmush/plugins/profile/custom_char_fields.rb (in the aresmush folder, not ares-webportal)
 # NOTE: This is a SHARED HOOK FILE used by multiple plugins.
 #       You will ADD CODE to existing methods, not replace the whole file.
 #
@@ -46,7 +46,7 @@
 # STEP 1: Add fields to get_fields_for_chargen
 # ============================================================================
 #
-# FILE: ares/plugins/profile/custom_char_fields.rb
+# FILE: aresmush/plugins/profile/custom_char_fields.rb
 # METHOD: def self.get_fields_for_chargen(char)
 #
 # This displays the chargen-required inkling types as editable fields during chargen.
@@ -65,7 +65,7 @@
 # STEP 2: Add fields to get_fields_for_viewing
 # ============================================================================
 #
-# FILE: ares/plugins/profile/custom_char_fields.rb
+# FILE: aresmush/plugins/profile/custom_char_fields.rb
 # METHOD: def self.get_fields_for_viewing(char, viewer)
 #
 # This displays the chargen-required inkling types as read-only fields on the
@@ -90,7 +90,7 @@
 # STEP 3: Add fields to get_fields_for_editing
 # ============================================================================
 #
-# FILE: ares/plugins/profile/custom_char_fields.rb
+# FILE: aresmush/plugins/profile/custom_char_fields.rb
 # METHOD: def self.get_fields_for_editing(char, viewer)
 #
 # This displays the chargen-required inkling types as editable fields on the profile.
@@ -109,7 +109,7 @@
 # STEP 4: Add code to save profile edits
 # ============================================================================
 #
-# FILE: ares/plugins/profile/custom_char_fields.rb
+# FILE: aresmush/plugins/profile/custom_char_fields.rb
 # METHOD: def self.save_fields_from_profile_edit2(char, viewer, args)
 #
 # IMPORTANT: Use save_fields_from_profile_edit2, NOT save_fields_from_profile_edit
@@ -134,7 +134,7 @@
 # STEP 5: Add code to save chargen data
 # ============================================================================
 #
-# FILE: ares/plugins/profile/custom_char_fields.rb
+# FILE: aresmush/plugins/profile/custom_char_fields.rb
 # METHOD: def self.save_fields_from_chargen(char, args)
 #
 # 1. Find the method "def self.save_fields_from_chargen(char, args)"
@@ -154,7 +154,7 @@
 # STEP 6: Add the helper methods
 # ============================================================================
 #
-# FILE: ares/plugins/profile/custom_char_fields.rb
+# FILE: aresmush/plugins/profile/custom_char_fields.rb
 # LOCATION: At the end of the CustomCharFields class (before the final "end")
 #
 # 1. Go to the end of the CustomCharFields class/module definition
