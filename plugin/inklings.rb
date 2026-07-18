@@ -794,8 +794,8 @@ module AresMUSH
     # plugin/web/*.rb for the handler classes themselves; all of them
     # are thin adapters delegating into InklingApi/RollsApi
     # (plugin/public/), which hold the actual logic.
-    def self.get_web_request_handler(cmd_name)
-      case cmd_name
+    def self.get_web_request_handler(request)
+      case request.cmd
       when "inklings_get_inklings"
         return InklingsGetInklingsWebHandler
       when "inklings_get_inkling"
