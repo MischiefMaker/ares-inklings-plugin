@@ -168,18 +168,26 @@ export default Component.extend({
     },
 
     expandInkling(id) {
+      console.log('expandInkling called with id:', id, 'currentExpandedId:', this.expandedId);
+
       if (this.expandedId === id) {
+        console.log('Collapsing inkling');
         this.set('expandedId', null);
         return;
       }
 
+      console.log('Calling reloadInklingDetail for id:', id);
       this.reloadInklingDetail(id).then((inkling) => {
+        console.log('reloadInklingDetail returned:', inkling);
         if (!inkling) {
+          console.log('inkling is null, not setting expandedId');
           this.flashMessages.danger('Failed to load inkling details');
           return;
         }
+        console.log('Setting expandedId to:', id);
         this.set('expandedId', id);
       }).catch((error) => {
+        console.error('Promise rejected:', error);
         this.flashMessages.danger('Failed to load inkling details: ' + (error.message || 'Unknown error'));
       });
     },
