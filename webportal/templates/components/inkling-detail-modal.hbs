@@ -5,12 +5,18 @@
 
 {{#bs-modal open=this.isOpen onHide=(action "close") size="lg" as |modal|}}
   {{#modal.header closeButton=true}}
-    <h4 class="modal-title">Debug: Title Only</h4>
+    {{#if this.detail}}
+      <h4 class="modal-title">
+        <span class="badge text-bg-{{this.detail.kind_color}}">{{this.detail.kind_label}}</span>
+        {{this.detail.title}}
+      </h4>
+    {{else}}
+      <h4 class="modal-title">Loading...</h4>
+    {{/if}}
   {{/modal.header}}
 
   {{#modal.body}}
     {{#if this.detail}}
-      <p>Title: {{this.detail.title}}</p>
 
       <div class="mb-3" style="max-height: 400px; overflow-y: auto;">
         {{#each this.detail.messages as |msg|}}
