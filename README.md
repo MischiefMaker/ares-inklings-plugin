@@ -80,15 +80,24 @@ This installs the plugin code to `plugins/inklings/` and merges the configuratio
 
 Web portal files must be copied manually into your `ares-webportal` checkout. This step is entirely optional — skip it if you're running a MUSH-only game without the web portal.
 
+**Important:** All of the files listed below must be copied together. Do not copy only some of them, as the component requires all supporting files to function.
+
 **Copy these files, preserving the paths in your `ares-webportal` directory:**
 
-| From this plugin | To your ares-webportal |
-|---|---|
-| `custom-install/inklings-tab.js` | `app/components/inklings-tab.js` |
-| `webportal/app/templates/components/inklings-tab.hbs` | `app/templates/components/inklings-tab.hbs` |
-| `webportal/app/helpers/join-list.js` | `app/helpers/join-list.js` |
-| `webportal/app/helpers/join-list-upper.js` | `app/helpers/join-list-upper.js` |
-| `webportal/app/styles/inklings-tab.scss` | `app/styles/inklings-tab.scss` |
+| From this plugin | To your ares-webportal | Notes |
+|---|---|---|
+| `custom-install/InklingsTab.jsx` | `app/components/InklingsTab.jsx` | React version (for newer web portals) |
+| `custom-install/InklingsTab.css` | `app/components/InklingsTab.css` | React styles |
+| `custom-install/inklings-tab.js` | `app/components/inklings-tab.js` | Ember version (for older web portals) |
+| `custom-install/inklings-tab.hbs` | `app/templates/components/inklings-tab.hbs` | Ember template (only needed with Ember version) |
+| `custom-install/join-list.js` | `app/helpers/join-list.js` | Helper for Ember version |
+| `custom-install/join-list-upper.js` | `app/helpers/join-list-upper.js` | Helper for Ember version |
+| `custom-install/inklings-tab.scss` | `app/styles/inklings-tab.scss` | Styling for both versions |
+
+**Choose Your Component Version:**
+- **React version** (InklingsTab.jsx): Use this if your web portal is using React components
+- **Ember version** (inklings-tab.js/hbs): Use this if your web portal is using Ember components
+- Copy EITHER the React files OR the Ember files, not both
 
 **Import the stylesheet:**
 

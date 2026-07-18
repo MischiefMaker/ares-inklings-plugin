@@ -1,3 +1,15 @@
+// INSTALLATION: Copy these files to your ares-webportal:
+//   custom-install/InklingsTab.jsx → app/components/InklingsTab.jsx
+//   custom-install/InklingsTab.css → app/components/InklingsTab.css
+//
+// This is part of Step 2 (Install Web Portal Components) in the README.
+// The web portal integration is optional - MUSH-only games do not need it.
+// IMPORTANT: Do not copy this file to the web portal unless you complete
+// ALL steps in Step 2. Incomplete installation breaks the web portal.
+//
+// This is the React/modern version of the Inklings component.
+// For Ember-based web portals, use the Ember version instead (inklings-tab.js).
+
 import React, { useState, useEffect } from 'react';
 import { api } from '@/api';
 import './InklingsTab.css';
