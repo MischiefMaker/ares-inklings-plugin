@@ -51,7 +51,7 @@
         <div class="inkling-item">
           <div class="inkling-header {{if (eq this.expandedId inkling.id) "expanded"}}" {{action "expandInkling" inkling.id}}>
             <div class="inkling-summary">
-              <span class="inkling-kind {{inkling.kind}}">{{this.kindLabel inkling.kind}}</span>
+              <span class="badge text-bg-{{inkling.kind_color}}">{{this.kindLabel inkling.kind}}</span>
               <span class="inkling-title">{{inkling.title}}</span>
               <span class="badge {{if (eq inkling.status "open") "text-bg-success" "text-bg-danger"}}">{{inkling.status}}</span>
               {{#if inkling.locked}}

@@ -8,10 +8,12 @@ module AresMUSH
       # previously drifted out of sync with the actual backend kinds).
       def self.get_types
         types = Inklings.all_kinds.each_with_object({}) do |kind, hash|
+          config = Inklings.type_config[kind] || {}
           hash[kind] = {
             name: Inklings.kind_label(kind),
             description: Inklings.kind_description(kind),
-            category: (Inklings.type_config[kind] || {})["category"]
+            category: config["category"],
+            color: config["color"] || "secondary"
           }
         end
 
@@ -348,10 +350,12 @@ module AresMUSH
         visible_rolls ||= viewer ? visible_rolls_for(inkling, viewer) : inkling.rolls.to_a
 
         tags = inkling.tags.to_s.split(",").map(&:strip).reject(&:empty?)
+        kind_color = (Inklings.type_config[inkling.kind] || {})["color"] || "secondary"
 
         {
           id: inkling.id,
           kind: inkling.kind,
+          kind_color: kind_color,
           title: inkling.title,
           status: inkling.status,
           created_at: inkling.created_at,

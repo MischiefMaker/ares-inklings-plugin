@@ -151,33 +151,6 @@
   flex-wrap: wrap;
 }
 
-.inkling-kind {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 12px;
-  font-weight: bold;
-  color: white;
-  background: #666;
-}
-
-.inkling-kind.hint,
-.inkling-kind.vision,
-.inkling-kind.nudge,
-.inkling-kind.hook {
-  background: #d9534f;
-}
-
-.inkling-kind.initiative,
-.inkling-kind.request,
-.inkling-kind.pitch,
-.inkling-kind.goal {
-  background: #5cb85c;
-}
-
-.inkling-kind.secret {
-  background: #8e44ad;
-}
 
 .inkling-title {
   font-weight: bold;

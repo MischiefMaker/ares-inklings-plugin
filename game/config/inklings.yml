@@ -43,6 +43,10 @@ inklings:
   #                 characters can create this type during character
   #                 creation (used by goal/secret today, for the
   #                 chargen hook that prompts for both).
+  #   color       - Optional color for the type badge in the web portal
+  #                 (hex code or Bootstrap color name: primary, success,
+  #                 danger, warning, info, secondary, dark, light).
+  #                 Defaults to neutral gray if omitted.
   #
   # Note: rolls are NOT a type - they're a different kind of record
   # that can be attached to any inkling thread, and work differently
@@ -53,44 +57,54 @@ inklings:
       category: staff
       name: Hint
       description: A hint or guidance from staff about something.
+      color: danger
     vision:
       category: staff
       name: Vision
       description: An in-character vision or supernatural experience.
+      color: danger
     nudge:
       category: staff
       name: Nudge
       description: A gentle nudge from staff to encourage RP in a certain direction.
+      color: danger
     hook:
       category: staff
       name: Hook
       description: A plot hook or opportunity from staff.
+      color: danger
     initiative:
       category: player
       name: Initiative
       description: Something your character is actively doing that requires staff feedback - an action they're taking, something they're researching, or anything they're pursuing that touches the wider game world.
+      color: success
     request:
       category: player
       name: Request
       description: A request for staff assistance or plot.
+      color: success
     pitch:
       category: player
       name: Pitch
       description: A pitch for a scene, plot arc, or event you'd like to happen.
+      color: success
     goal:
       category: player
       name: Goal
       description: A long-term goal your character is working toward.
       chargen: true
+      color: success
     secret:
       category: shared
       name: Secret
       description: An IC secret your character holds, shareable with other players.
       chargen: true
+      color: info
     progress:
       category: player
       name: Progress
       description: A personal record of your character's development, important events, growth, discoveries, relationships, and ongoing history. Use this to maintain a chronicle of significant moments and changes.
+      color: info
 
   # Bonus XP awarded periodically to characters who have submitted an
   # inkling of the configured type since the last award cycle ran. See
