@@ -18,6 +18,16 @@ export default Component.extend({
   characterId: null,
   viewerId: null,
   isStaff: false,
+  // Array of { kind, name, color } this viewer may create, e.g.
+  // typeInfo=this.char.custom.inkling_types - see
+  // custom-install/custom_char_fields.snippet.rb. Supplied by the
+  // character payload's get_fields_for_viewing hook rather than
+  // fetched here, since it's small, viewer-scoped reference data
+  // needed before the player has done anything (as soon as they open
+  // the "New Inkling" form) - the same pattern other Ares plugins use
+  // for profile-tab reference data (e.g. RPG's char.rpg.sheet,
+  // Marque's char.custom.house_list).
+  typeInfo: null,
 
   // --- Internal state ---
   inklings: null,
@@ -43,8 +53,6 @@ export default Component.extend({
   rollResult: '',
   rollIsPrivate: false,
 
-  typeInfo: null,
-
   init() {
     this._super(...arguments);
     this.set('inklings', A());
@@ -53,41 +61,33 @@ export default Component.extend({
     this.set('personalReplyById', {});
     this.set('shareTargetById', {});
     this.set('tagInputById', {});
-    this.set('typeInfo', {});
   },
 
   didInsertElement() {
     this._super(...arguments);
     this.loadInklings();
-    this.loadTypes();
   },
 
   // --- Data loading --------------------------------------------------
 
   loadInklings() {
     this.set('loading', true);
-    return this.gameApi.requestMany('inklings_get_inklings', {
+    // requestOne, not requestMany - inklings_get_inklings returns a
+    // composite hash ({ inklings: [...] }), and requestOne is the
+    // Ares convention for that (requestMany expects the raw JSON
+    // response to already be the array).
+    return this.gameApi.requestOne('inklings_get_inklings', {
       char_id: this.characterId,
       status: this.statusFilter
     }, null)
-      .then((inklings) => {
-        if (Array.isArray(inklings)) {
-          this.set('inklings', A(inklings));
-        } else {
-          this.set('inklings', A([]));
+      .then((response) => {
+        if (response.error) {
+          return;
         }
+        this.set('inklings', A(response.inklings || []));
       })
       .finally(() => {
         this.set('loading', false);
-      });
-  },
-
-  loadTypes() {
-    this.gameApi.requestOne('inklings_get_types', {}, null)
-      .then((data) => {
-        if (data && data.types) {
-          this.set('typeInfo', data.types);
-        }
       });
   },
 
@@ -103,9 +103,12 @@ export default Component.extend({
     return this.gameApi.requestOne('inklings_get_inkling', {
       char_id: this.characterId,
       inkling_id: id
-    }, null).then((detail) => {
-      this.replaceInkling(detail);
-      return detail;
+    }, null).then((response) => {
+      if (response.error) {
+        return;
+      }
+      this.replaceInkling(response.inkling);
+      return response.inkling;
     });
   },
 
@@ -115,30 +118,6 @@ export default Component.extend({
       return null;
     }
     return (this.inklings || []).find((i) => i.id === id);
-  }),
-
-  kindLabel(kind) {
-    let types = this.typeInfo || {};
-    let entry = types[kind];
-    return (entry && entry.name) || kind;
-  },
-
-  kindDescription(kind) {
-    let types = this.typeInfo || {};
-    let entry = types[kind];
-    return entry && entry.description;
-  },
-
-  availableKinds: computed('typeInfo', 'isStaff', function () {
-    let types = this.typeInfo || {};
-    let keys = Object.keys(types);
-    if (this.isStaff) {
-      return keys;
-    }
-    return keys.filter((k) => {
-      let category = types[k] && types[k].category;
-      return category === 'player' || category === 'shared';
-    });
   }),
 
   actions: {
@@ -174,8 +153,11 @@ export default Component.extend({
         kind: this.newKind,
         title: this.newTitle,
         text: this.newText
-      }, null).then((inkling) => {
-        this.inklings.unshiftObject(inkling);
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
+        this.inklings.unshiftObject(response.inkling);
         this.setProperties({
           newKind: '',
           newTitle: '',
@@ -221,7 +203,10 @@ export default Component.extend({
         inkling_id: id,
         text,
         is_private: isPrivate
-      }, null).then(() => {
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
         this.reloadInklingDetail(id).then(() => {
           let hash = Object.assign({}, this.replyTextById);
           hash[id] = '';
@@ -253,7 +238,10 @@ export default Component.extend({
         inkling_id: id,
         text,
         is_personal: true
-      }, null).then(() => {
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
         this.reloadInklingDetail(id).then(() => {
           let hash = Object.assign({}, this.replyTextById);
           hash[id] = '';
@@ -279,7 +267,10 @@ export default Component.extend({
         char_id: this.characterId,
         inkling_id: id,
         tag: tag.trim()
-      }, null).then(() => {
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
         this.reloadInklingDetail(id).then(() => {
           let hash = Object.assign({}, this.tagInputById);
           hash[id] = '';
@@ -293,7 +284,10 @@ export default Component.extend({
         char_id: this.characterId,
         inkling_id: id,
         tag
-      }, null).then(() => {
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
         this.reloadInklingDetail(id);
       });
     },
@@ -308,7 +302,10 @@ export default Component.extend({
         char_id: this.characterId,
         inkling_id: id,
         text: text.trim()
-      }, null).then(() => {
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
         this.reloadInklingDetail(id);
       });
     },
@@ -321,7 +318,10 @@ export default Component.extend({
 
       this.gameApi.requestOne('inklings_approve_inkling', {
         inkling_id: id
-      }, null).then(() => {
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
         this.reloadInklingDetail(id);
       });
     },
@@ -335,7 +335,10 @@ export default Component.extend({
       this.gameApi.requestOne('inklings_request_changes', {
         inkling_id: id,
         feedback: feedback.trim()
-      }, null).then(() => {
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
         this.reloadInklingDetail(id);
       });
     },
@@ -364,7 +367,10 @@ export default Component.extend({
         reward_type: rewardType.trim(),
         reward_key: rewardKey.trim(),
         amount: amount.trim()
-      }, null).then(() => {
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
         this.reloadInklingDetail(id);
       });
     },
@@ -405,7 +411,10 @@ export default Component.extend({
         }
       }
 
-      this.gameApi.requestOne('inklings_add_roll', args, null).then(() => {
+      this.gameApi.requestOne('inklings_add_roll', args, null).then((response) => {
+        if (response.error) {
+          return;
+        }
         this.reloadInklingDetail(id).then(() => {
           this.setProperties({
             rollSpec: '',
@@ -422,13 +431,19 @@ export default Component.extend({
       this.gameApi.requestOne('character_luck_reroll', {
         char_id: this.characterId
       }, null).then((rollData) => {
+        if (rollData.error) {
+          return;
+        }
         this.gameApi.requestOne('inklings_reroll_with_luck', {
           inkling_id: inklingId,
           roll_id: rollId,
           new_result: rollData.result,
           new_result_value: rollData.result_value,
           luck_cost: rollData.luck_cost || 1
-        }, null).then(() => {
+        }, null).then((response) => {
+          if (response.error) {
+            return;
+          }
           this.reloadInklingDetail(inklingId);
         });
       });
@@ -441,8 +456,11 @@ export default Component.extend({
       this.gameApi.requestOne('inklings_close_inkling', {
         char_id: this.characterId,
         inkling_id: id
-      }, null).then((inkling) => {
-        this.replaceInkling(inkling);
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
+        this.replaceInkling(response.inkling);
         this.set('expandedId', null);
       });
     },
@@ -458,6 +476,9 @@ export default Component.extend({
         char_id: this.characterId,
         inkling_id: id
       }, null).then((data) => {
+        if (data.error) {
+          return;
+        }
         if (data.deleted) {
           this.inklings.removeObject(this.inklings.find((i) => i.id === id));
         } else if (data.inkling) {
@@ -483,7 +504,10 @@ export default Component.extend({
         char_id: this.characterId,
         inkling_id: id,
         target_name: target
-      }, null).then(() => {
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
         let hash = Object.assign({}, this.shareTargetById);
         hash[id] = '';
         this.set('shareTargetById', hash);
@@ -495,8 +519,11 @@ export default Component.extend({
       this.gameApi.requestOne('inklings_submit_inkling', {
         char_id: this.characterId,
         inkling_id: id
-      }, null).then((inkling) => {
-        this.replaceInkling(inkling);
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
+        this.replaceInkling(response.inkling);
       });
     }
   }

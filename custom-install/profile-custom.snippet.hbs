@@ -17,7 +17,7 @@
 
   ---START COPY HERE---
   <div class="tab-pane fade" id="inklings-tab-pane">
-    {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff}}
+    {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff typeInfo=this.char.custom.inkling_types}}
   </div>
   ---END COPY---
 
@@ -28,23 +28,33 @@
   - Do NOT change this value
 
   PROPERTY NAMES:
-  - The component uses: characterId, viewerId, and isStaff
-  - These are passed from: this.char.id, this.viewer.id, and this.viewer.isStaff
+  - The component uses: characterId, viewerId, isStaff, and typeInfo
+  - These are passed from: this.char.id, this.viewer.id, this.viewer.isStaff, and this.char.custom.inkling_types
   - If your profile-custom.hbs uses different property names, update them here
   - Common alternatives: character instead of char, user instead of viewer, etc.
   - Check the rest of your profile-custom.hbs to see what names are used
 
+  TYPE PICKER DATA (typeInfo):
+  - char.custom.inkling_types is populated by custom_char_fields.snippet.rb's
+    get_fields_for_viewing hook, NOT fetched by the component itself - this must
+    be installed too, or the "New Inkling" type dropdown will be empty.
+  - See custom-install/custom_char_fields.snippet.rb, Step 2.
+
   ABOUT THE COMPONENT:
-  The {{inklings-tab}} component is self-contained - it handles all Inkling operations:
+  The {{inklings-tab}} component handles all Inkling operations:
   - View existing Inklings
   - Create new ones
   - Add messages and rolls
   - Submit for staff review
   - Share with other characters/groups
   - All changes save immediately (doesn't use the profile page's save flow)
+  Its only dependency on the rest of the profile page is typeInfo (see above) -
+  everything else it loads or sends itself via the gameApi service.
 
   IMPORTANT: Before using this snippet, you must complete Step 2 of the README
   (Install Web Portal Components), which includes copying inklings-tab.js to your
-  webportal. The web portal integration is entirely optional - if you're running a
-  MUSH-only game, you do not need this snippet or the component at all.
+  webportal, AND install custom_char_fields.snippet.rb (Step 2 there) so
+  char.custom.inkling_types is populated. The web portal integration is entirely
+  optional - if you're running a MUSH-only game, you do not need this snippet or
+  the component at all.
 }}

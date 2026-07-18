@@ -129,6 +129,18 @@ module AresMUSH
       type_config.key?(kind.to_s)
     end
 
+    # Kinds this viewer is allowed to create (via +inkling/new or the
+    # web portal's "New Inkling" picker). Staff can create any type;
+    # everyone else is limited to player/shared kinds. Mirrors the
+    # authorization check in InklingApi.create_inkling - kept as a
+    # single source of truth here rather than duplicated client-side,
+    # since this exists purely to build user-facing type lists like
+    # the web portal's create-inkling dropdown.
+    def self.creatable_kinds(viewer)
+      return all_kinds if can_manage_inklings?(viewer)
+      player_kinds + shared_kinds
+    end
+
     # Display label for a kind, e.g. "Secret" for "secret". Falls back
     # to a capitalized version of the raw kind if it's missing from
     # config entirely - this covers old data using a kind that's since
@@ -812,8 +824,6 @@ module AresMUSH
         return InklingsShareInklingWebHandler
       when "inklings_submit_inkling"
         return InklingsSubmitInklingWebHandler
-      when "inklings_get_types"
-        return InklingsGetTypesWebHandler
       when "inklings_add_roll"
         return InklingsAddRollWebHandler
       when "inklings_reroll_with_luck"

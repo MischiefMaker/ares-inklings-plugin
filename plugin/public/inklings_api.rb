@@ -1,23 +1,20 @@
 module AresMUSH
   module Inklings
     class InklingApi
-      # GET /api/inklings/types
-      # Live type list, sourced from the same game/config/inklings.yml
-      # config that +inkling/types reads in-game - so the web portal
-      # never needs its own hardcoded copy of the type list (which
-      # previously drifted out of sync with the actual backend kinds).
-      def self.get_types
-        types = Inklings.all_kinds.each_with_object({}) do |kind, hash|
+      # Type list for the web portal's "New Inkling" picker, filtered
+      # to what this viewer may create (see Inklings.creatable_kinds).
+      # Embedded directly on the character payload via the
+      # get_fields_for_viewing custom-fields hook (see
+      # custom-install/custom_char_fields.snippet.rb) rather than
+      # fetched by a separate web request - the inklings-tab component
+      # needs this synchronously, before the player has done anything,
+      # so there's no good moment to background-load it without
+      # racing the player opening the "New Inkling" form.
+      def self.creatable_type_options(viewer)
+        Inklings.creatable_kinds(viewer).sort.map do |kind|
           config = Inklings.type_config[kind] || {}
-          hash[kind] = {
-            name: Inklings.kind_label(kind),
-            description: Inklings.kind_description(kind),
-            category: config["category"],
-            color: config["color"] || "secondary"
-          }
+          { kind: kind, name: Inklings.kind_label(kind), color: config["color"] || "secondary" }
         end
-
-        { types: types }
       end
 
       # Web endpoint: get_inklings
@@ -355,6 +352,7 @@ module AresMUSH
         {
           id: inkling.id,
           kind: inkling.kind,
+          kind_label: Inklings.kind_label(inkling.kind),
           kind_color: kind_color,
           title: inkling.title,
           status: inkling.status,

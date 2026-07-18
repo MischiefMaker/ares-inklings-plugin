@@ -94,6 +94,21 @@ To enable the Inklings web component styling, add this to your `ares-webportal/a
 @use "inklings-tab";
 ```
 
+**Step 2c: Add the type-picker backend hook (Required)**
+
+The Inklings tab's "New Inkling" type dropdown is populated from the character
+payload (`char.custom.inkling_types`), not fetched separately by the component -
+this matches how other Ares plugins expose profile-tab reference data (e.g. the
+RPG plugin's `char.rpg.sheet`). Without this step the dropdown will be empty:
+
+1. Open `custom-install/custom_char_fields.snippet.rb` in this plugin
+2. Open `plugins/profile/custom_char_fields.rb` in your **ares** folder (not ares-webportal)
+3. Follow **Step 2** in the snippet file (the `get_fields_for_viewing` addition) and paste it at the marked location
+4. Save the file
+
+(If you're also setting up chargen in Step 3 below, you'll come back to this same
+file for its other steps - Step 2 here can be done now regardless.)
+
 ### Step 3: Configure Character Generation (Optional)
 
 If you want players to create required Inklings during character generation, merge the chargen snippets:
@@ -102,7 +117,9 @@ If you want players to create required Inklings during character generation, mer
 
 1. Open `custom-install/custom_char_fields.snippet.rb` in this plugin
 2. Open `plugins/profile/custom_char_fields.rb` in your **ares** folder (not ares-webportal)
-3. Follow each step in the snippet file and paste the code at the marked locations
+3. Follow Steps 1, 3, 4, 5, and 6 in the snippet file and paste the code at the marked locations
+   (Step 2 is shared with the profile tab's type picker - see Step 2c above; if you
+   already did that, just add the chargen-required-fields line to the same hash)
 4. Save the file
 
 **Web Portal Form Fields (Optional, only if you want chargen fields on the web portal):**

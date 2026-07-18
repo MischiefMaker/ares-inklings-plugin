@@ -22,8 +22,8 @@
         <label for="inklings-new-kind">Type</label>
         <select id="inklings-new-kind" onchange={{action "setNewKind" value="target.value"}}>
           <option value="">-- Select a type --</option>
-          {{#each this.availableKinds as |kind|}}
-            <option value={{kind}}>{{this.kindLabel kind}}</option>
+          {{#each this.typeInfo as |t|}}
+            <option value={{t.kind}}>{{t.name}}</option>
           {{/each}}
         </select>
       </div>
@@ -51,7 +51,7 @@
         <div class="inkling-item">
           <div class="inkling-header {{if (eq this.expandedId inkling.id) "expanded"}}" {{action "expandInkling" inkling.id}}>
             <div class="inkling-summary">
-              <span class="badge text-bg-{{inkling.kind_color}}">{{this.kindLabel inkling.kind}}</span>
+              <span class="badge text-bg-{{inkling.kind_color}}">{{inkling.kind_label}}</span>
               <span class="inkling-title">{{inkling.title}}</span>
               <span class="badge {{if (eq inkling.status "open") "text-bg-success" "text-bg-danger"}}">{{inkling.status}}</span>
               {{#if inkling.locked}}

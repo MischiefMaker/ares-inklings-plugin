@@ -1,22 +1,30 @@
-# CUSTOM CHARACTER FIELDS SNIPPET - CHARGEN-REQUIRED TYPES ONLY
+# CUSTOM CHARACTER FIELDS SNIPPET - CHARGEN-REQUIRED TYPES + TYPE PICKER DATA
 #
 # FILE: ares/plugins/profile/custom_char_fields.rb (in the ares folder, not ares-webportal)
 # NOTE: This is a SHARED HOOK FILE used by multiple plugins.
 #       You will ADD CODE to existing methods, not replace the whole file.
 #
 # PURPOSE:
-# This snippet integrates the CHARGEN-REQUIRED inkling types (as defined in
-# game/config/inklings.yml chargen_required_types) as editable custom character
-# fields on the profile page.
+# This snippet integrates two things via the standard Ares custom-character-fields
+# hooks (https://aresmush.com/tutorials/code/hooks/char-fields.html):
+# 1. The CHARGEN-REQUIRED inkling types (as defined in game/config/inklings.yml
+#    chargen_required_types) as editable custom character fields on the profile page.
+# 2. The inkling TYPE LIST used by the {{inklings-tab}} component's "New Inkling"
+#    type picker (char.custom.inkling_types) - embedded on the character payload
+#    the profile page already loads, so the web portal component never needs a
+#    separate request just to populate a dropdown. This is the same pattern other
+#    Ares plugins use for profile-tab reference data (e.g. the RPG plugin's
+#    char.rpg.sheet), rather than the component fetching it itself.
 #
 # IMPORTANT - TWO SEPARATE INTEGRATIONS:
-# 1. THIS SNIPPET (custom_char_fields) - Shows/edits chargen-required types only
-#    Examples: secret and goal (or whatever your chargen_required_types config specifies)
+# 1. THIS SNIPPET (custom_char_fields) - Chargen-required fields, AND the type
+#    list the inklings-tab component's "New Inkling" picker depends on.
+#    Skipping this snippet means the "New Inkling" type dropdown will be empty.
 # 2. PROFILE-CUSTOM.SNIPPET.HBS (inklings-tab) - Shows ALL inklings for the character
 #    Players see the full Inklings browser here (all types, all features)
 #
 # Do not confuse these - they serve different purposes:
-# - custom_char_fields: Quick editable fields for chargen requirements
+# - custom_char_fields: Chargen-required fields + inklings-tab's type-picker data
 # - inklings-tab: Full inkling management interface (shows all inklings)
 #
 # CONFIGURATION:
@@ -26,6 +34,13 @@
 # This snippet will automatically handle any configured types.
 #
 # This snippet has 6 steps. Follow them in order. Each step is a separate copy-paste.
+#
+# IF YOU ALREADY INSTALLED AN EARLIER VERSION OF THIS SNIPPET:
+# Steps 2 and 3 below use "**build_inkling_fields(...)" (double splat, needed to
+# merge a Hash's keys into a surrounding hash literal). An earlier version of this
+# snippet used a single "*" there, which is invalid Ruby in that position and would
+# raise an error on every profile page load. If your live custom_char_fields.rb has
+# a single "*" on those lines, change it to "**".
 
 # ============================================================================
 # STEP 1: Add fields to get_fields_for_chargen
@@ -53,7 +68,11 @@
 # FILE: ares/plugins/profile/custom_char_fields.rb
 # METHOD: def self.get_fields_for_viewing(char, viewer)
 #
-# This displays the chargen-required inkling types as read-only fields on the profile.
+# This displays the chargen-required inkling types as read-only fields on the
+# profile, AND embeds the inkling type list the {{inklings-tab}} component's
+# "New Inkling" picker needs (char.custom.inkling_types) - already filtered to
+# what this viewer may create (get_fields_for_viewing receives viewer for
+# exactly this kind of permission-aware field).
 #
 # 1. Find the method "def self.get_fields_for_viewing(char, viewer)"
 # 2. Find the line with "return {" or the opening "{"
@@ -62,7 +81,9 @@
 #
 # ---START COPY HERE---
         # Chargen-required inklings (displayed as custom fields)
-        *build_inkling_fields(char, viewer, for_editing: false)
+        **build_inkling_fields(char, viewer, for_editing: false),
+        # Type list for the inklings-tab component's "New Inkling" picker
+        inkling_types: Inklings::InklingApi.creatable_type_options(viewer)
 # ---END COPY---
 
 # ============================================================================
@@ -81,7 +102,7 @@
 #
 # ---START COPY HERE---
         # Chargen-required inklings (displayed as custom fields)
-        *build_inkling_fields(char, viewer, for_editing: true)
+        **build_inkling_fields(char, viewer, for_editing: true)
 # ---END COPY---
 
 # ============================================================================
