@@ -83,7 +83,7 @@
         # Chargen-required inklings (displayed as custom fields)
         **build_inkling_fields(char, viewer, for_editing: false),
         # Type list for the inklings-tab component's "New Inkling" picker
-        inkling_types: Inklings::InklingApi.creatable_type_options(viewer)
+        inkling_types: (Inklings::InklingApi.creatable_type_options(viewer) rescue (AresMUSH::Coder.log_error("Error getting creatable_type_options for char #{char.id}, viewer #{viewer.id}"); []))
 # ---END COPY---
 
 # ============================================================================
@@ -164,18 +164,22 @@
 # ---START COPY HERE---
     def self.build_inkling_fields(char, viewer, for_editing: false)
       fields = {}
-      Inklings.chargen_required_types.each do |kind|
-        inkling = Inkling.find(character_id: char.id, kind: kind).first
-        title_key = "inkling_#{kind}_title".to_sym
-        text_key = "inkling_#{kind}_text".to_sym
+      begin
+        Inklings.chargen_required_types.each do |kind|
+          inkling = Inkling.find(character_id: char.id, kind: kind).first
+          title_key = "inkling_#{kind}_title".to_sym
+          text_key = "inkling_#{kind}_text".to_sym
 
-        if for_editing
-          fields[title_key] = inkling&.title
-          fields[text_key] = inkling&.messages&.to_a&.first&.text
-        else
-          fields[title_key] = inkling&.title
-          fields[text_key] = inkling ? Website.format_markdown_for_html(inkling.messages.to_a.first&.text) : nil
+          if for_editing
+            fields[title_key] = inkling&.title
+            fields[text_key] = inkling&.messages&.to_a&.first&.text
+          else
+            fields[title_key] = inkling&.title
+            fields[text_key] = inkling ? Website.format_markdown_for_html(inkling.messages.to_a.first&.text) : nil
+          end
         end
+      rescue => e
+        AresMUSH::Coder.log_error "Error in build_inkling_fields for char #{char.id}: #{e.message}", e
       end
       fields
     end
