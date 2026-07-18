@@ -25,7 +25,7 @@
 # - chargen-custom.snippet.js (the field names sent to server)
 # This snippet will automatically handle any configured types.
 #
-# This snippet has 6 steps. Follow them in order. Each step is a separate copy-paste.
+# This snippet has 7 steps. Follow them in order. Each step is a separate copy-paste.
 
 # ============================================================================
 # STEP 1: Import the Inklings API
@@ -45,7 +45,26 @@ require_relative '../../inklings/public/inklings_api'
 # (It should be above the "module AresMUSH" or "class" line)
 
 # ============================================================================
-# STEP 2: Add fields to get_fields_for_viewing
+# STEP 2: Add fields to get_fields_for_chargen
+# ============================================================================
+#
+# FILE: plugins/profile/custom_char_fields.rb
+# METHOD: def self.get_fields_for_chargen(char)
+#
+# This displays the chargen-required inkling types as editable fields during chargen.
+#
+# 1. Find the method "def self.get_fields_for_chargen(char)"
+# 2. Find the line with "return {" or the opening "{"
+# 3. Find the closing "}" of that hash
+# 4. Copy and paste these lines BEFORE the closing "}":
+#
+# ---START COPY HERE---
+        # Chargen-required inklings (displayed as custom fields)
+        *build_inkling_fields(char, char, for_editing: true)
+# ---END COPY---
+
+# ============================================================================
+# STEP 3: Add fields to get_fields_for_viewing
 # ============================================================================
 #
 # FILE: plugins/profile/custom_char_fields.rb
@@ -64,7 +83,7 @@ require_relative '../../inklings/public/inklings_api'
 # ---END COPY---
 
 # ============================================================================
-# STEP 3: Add fields to get_fields_for_editing
+# STEP 4: Add fields to get_fields_for_editing
 # ============================================================================
 #
 # FILE: plugins/profile/custom_char_fields.rb
@@ -83,7 +102,7 @@ require_relative '../../inklings/public/inklings_api'
 # ---END COPY---
 
 # ============================================================================
-# STEP 4: Add code to save profile edits
+# STEP 5: Add code to save profile edits
 # ============================================================================
 #
 # FILE: plugins/profile/custom_char_fields.rb
@@ -108,7 +127,7 @@ require_relative '../../inklings/public/inklings_api'
 # ---END COPY---
 
 # ============================================================================
-# STEP 5: Add code to save chargen data
+# STEP 6: Add code to save chargen data
 # ============================================================================
 #
 # FILE: plugins/profile/custom_char_fields.rb
@@ -128,7 +147,7 @@ require_relative '../../inklings/public/inklings_api'
 # ---END COPY---
 
 # ============================================================================
-# STEP 6: Add the helper methods
+# STEP 7: Add the helper methods
 # ============================================================================
 #
 # FILE: plugins/profile/custom_char_fields.rb
