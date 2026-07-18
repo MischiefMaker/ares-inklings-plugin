@@ -11,6 +11,19 @@
   {{#modal.body}}
     {{#if this.detail}}
       <p>Title: {{this.detail.title}}</p>
+
+      <div class="mb-3" style="max-height: 400px; overflow-y: auto;">
+        {{#each this.detail.messages as |msg|}}
+          <div class="border-bottom pb-2 mb-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+              <span class="text-muted small font-monospace">#{{msg.ref}}</span>
+              <strong>{{msg.author}}</strong>
+              <span class="text-muted small ms-auto">{{local-date msg.created_at 'MMM D, YYYY h:mm A'}}</span>
+            </div>
+            <div style="white-space: pre-wrap; word-break: break-word;">{{msg.text}}</div>
+          </div>
+        {{/each}}
+      </div>
     {{else}}
       <p>No detail loaded.</p>
     {{/if}}
