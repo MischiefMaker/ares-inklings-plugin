@@ -81,10 +81,10 @@ If you want players to see the Inklings tab on character profiles:
 **Step 2a: Add the Inklings tab to the profile page**
 
 1. Open `ares-webportal/app/components/profile-custom-tabs.hbs`
-2. Paste the contents of `custom-install/profile-custom-tabs.snippet.hbs` into that file at the location marked in the snippet
+   - Paste the `<li>` from `custom-install/profile-custom-tabs.snippet.hbs` into this file
 
-3. Open `ares-webportal/app/components/profile-custom.hbs`
-4. Paste the contents of `custom-install/profile-custom.snippet.hbs` into that file at the location marked in the snippet
+2. Open `ares-webportal/app/components/profile-custom.hbs`
+   - Paste the `<div class="tab-pane">` from `custom-install/profile-custom.snippet.hbs` into this file
 
 **Step 2b: Import the stylesheet (optional, for styling)**
 
