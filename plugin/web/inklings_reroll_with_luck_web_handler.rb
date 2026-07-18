@@ -11,10 +11,13 @@ module AresMUSH
     # given and deducts the character's luck.
     class InklingsRerollWithLuckWebHandler
       def handle(request)
+        error = AresMUSH::Website.check_login(request)
+        return { error: error } if error
+
         RollsApi.reroll_with_luck(
           request.args["inkling_id"],
           request.args["roll_id"],
-          request.args["viewer_id"],
+          request.enactor,
           request.args["new_result"],
           request.args["new_result_value"],
           request.args["luck_cost"])
