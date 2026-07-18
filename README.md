@@ -68,9 +68,9 @@ plugin/install https://github.com/MischiefMaker/ares-inklings-plugin
 This automatically:
 - Installs plugin code to `plugins/inklings/`
 - Merges configuration into `game/config/inklings.yml`
-- Installs web portal components (templates, helpers, stylesheets) to `ares-webportal/app/`
+- Installs web portal components to `ares-webportal/app/` (component, helpers, templates, and styles)
 
-**Result:** MUSH commands and basic web portal components are ready to use.
+**Result:** MUSH commands and web portal components are ready. The Inklings tab will appear on character profiles once you complete the optional Step 2 below.
 
 **If `plugin/install` is unavailable**, manually copy the `plugin/` folder to `plugins/inklings/` and copy `game/config/inklings.yml` to `game/config/`, then restart with `@restart`.
 
