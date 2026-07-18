@@ -53,14 +53,14 @@
             <div class="inkling-summary">
               <span class="inkling-kind {{inkling.kind}}">{{this.kindLabel inkling.kind}}</span>
               <span class="inkling-title">{{inkling.title}}</span>
-              <span class="inkling-status {{inkling.status}}">{{inkling.status}}</span>
+              <span class="badge {{if (eq inkling.status "open") "text-bg-success" "text-bg-danger"}}">{{inkling.status}}</span>
               {{#if inkling.locked}}
                 {{#if (eq inkling.approval_state "approved")}}
-                  <span class="locked-badge">LOCKED - Completed</span>
+                  <span class="badge text-bg-secondary">LOCKED - Completed</span>
                 {{else if (eq inkling.approval_state "submitted")}}
-                  <span class="locked-badge">LOCKED - Awaiting Staff Review</span>
+                  <span class="badge text-bg-secondary">LOCKED - Awaiting Staff Review</span>
                 {{else}}
-                  <span class="locked-badge">LOCKED</span>
+                  <span class="badge text-bg-secondary">LOCKED</span>
                 {{/if}}
               {{/if}}
               {{#unless (eq inkling.character_id this.viewerId)}}
@@ -69,7 +69,7 @@
                 {{/if}}
               {{/unless}}
               {{#if inkling.player_unread}}
-                <span class="unread-badge">unread</span>
+                <span class="badge text-bg-warning">unread</span>
               {{/if}}
               <span class="message-count">
                 {{inkling.message_count}} message{{if (eq inkling.message_count 1) "" "s"}}
@@ -77,7 +77,7 @@
               </span>
               <span class="created-date">{{local-date inkling.created_at 'MMM D, YYYY h:mm A'}}</span>
               {{#if inkling.linked_job}}
-                <span class="linked-job">Job #{{inkling.linked_job.id}} ({{inkling.linked_job.status}})</span>
+                <span class="badge text-bg-secondary">Job #{{inkling.linked_job.id}} ({{inkling.linked_job.status}})</span>
               {{/if}}
               {{#if inkling.tags.length}}
                 <span class="inkling-tags">{{inkling.tags_label}}</span>
@@ -115,12 +115,12 @@
                       <div class="roll {{if roll.private "private" "public"}}">
                         <div class="roll-header">
                           <span class="message-ref">#{{roll.ref}}</span>
-                          <span class="message-badge">ROLL</span>
+                          <span class="badge text-bg-info">ROLL</span>
                           <strong>{{roll.roll_spec}}</strong>
                           {{#if (and (not (eq roll.roll_type "player")) roll.target_character)}}
                             <span class="roll-target">for {{roll.target_character}}</span>
                           {{/if}}
-                          {{#if roll.private}}<span class="private-badge">PRIVATE</span>{{/if}}
+                          {{#if roll.private}}<span class="badge text-bg-info" style="text-transform: uppercase;">PRIVATE</span>{{/if}}
                           <span class="roll-result">{{roll.result}}</span>
                           <span class="roll-meta">by {{roll.creator}}</span>
                         </div>
@@ -131,7 +131,7 @@
                           </div>
                         {{/if}}
                         {{#if (and (eq roll.roll_type "player") (eq roll.character_id roll.creator_id) (eq detail.status "open"))}}
-                          <button type="button" class="btn btn-small btn-secondary" {{action "rerollWithLuck" detail.id roll.id}}>
+                          <button type="button" class="btn btn-sm btn-secondary" {{action "rerollWithLuck" detail.id roll.id}}>
                             Reroll with Luck
                           </button>
                         {{/if}}
@@ -146,15 +146,15 @@
                       <div class="message-header">
                         <span class="message-ref">#{{msg.ref}}</span>
                         <strong>{{msg.author}}</strong>
-                        {{#if (eq msg.message_type "submitted")}}<span class="message-badge">SUBMITTED</span>{{/if}}
-                        {{#if (eq msg.message_type "approved")}}<span class="message-badge">APPROVED</span>{{/if}}
-                        {{#if (eq msg.message_type "needs_changes")}}<span class="message-badge">NEEDS CHANGES</span>{{/if}}
-                        {{#if (eq msg.message_type "reward")}}<span class="message-badge">REWARD</span>{{/if}}
-                        {{#if (and msg.is_staff (not msg.message_type))}}<span class="staff-badge">STAFF</span>{{/if}}
-                        {{#if msg.is_gm_note}}<span class="staff-badge">GM</span>{{/if}}
-                        {{#if msg.is_personal}}<span class="personal-badge">PRIVATE TO YOU</span>{{/if}}
+                        {{#if (eq msg.message_type "submitted")}}<span class="badge text-bg-info">SUBMITTED</span>{{/if}}
+                        {{#if (eq msg.message_type "approved")}}<span class="badge text-bg-success">APPROVED</span>{{/if}}
+                        {{#if (eq msg.message_type "needs_changes")}}<span class="badge text-bg-warning">NEEDS CHANGES</span>{{/if}}
+                        {{#if (eq msg.message_type "reward")}}<span class="badge text-bg-info">REWARD</span>{{/if}}
+                        {{#if (and msg.is_staff (not msg.message_type))}}<span class="badge text-bg-danger">STAFF</span>{{/if}}
+                        {{#if msg.is_gm_note}}<span class="badge text-bg-danger">GM</span>{{/if}}
+                        {{#if msg.is_personal}}<span class="badge text-bg-info">PRIVATE TO YOU</span>{{/if}}
                         {{#if msg.is_private}}
-                          <span class="private-badge">
+                          <span class="badge text-bg-info" style="text-transform: uppercase;">
                             {{#if msg.private_recipient_label}}
                               PRIVATE TO {{msg.private_recipient_label}}
                             {{else if (not msg.is_staff)}}
@@ -173,7 +173,7 @@
 
                 {{#if (eq detail.status "open")}}
                   {{#if (and detail.locked (not this.isStaff))}}
-                    <div class="locked-notice">
+                    <div class="alert alert-secondary">
                       This inkling has been submitted and is locked until staff respond. You'll be notified here when they do.
                     </div>
                   {{else}}
@@ -245,9 +245,9 @@
                     </div>
 
                     <div class="personal-entry-section">
-                      <p class="personal-warning">
+                      <div class="alert alert-info">
                         <strong>Personal Entry:</strong> Private notes visible only to you. These may become visible under game policies (transfers, roster changes, administration). Do not record sensitive out-of-game information.
-                      </p>
+                      </div>
                       <textarea oninput={{action "updateReplyText" detail.id value="target.value"}} placeholder="Add a personal entry (private note)..." rows="3">{{get this.replyTextById detail.id}}</textarea>
                       <div class="personal-actions">
                         <button type="button" class="btn btn-success" {{action "submitPersonalReply" detail.id}}>Add Personal Entry</button>
@@ -279,15 +279,15 @@
                     {{/if}}
 
                     {{#if (and (not this.isStaff) (eq detail.character_id this.viewerId) (not detail.locked))}}
-                      <div class="submit-section">
-                        <p class="submit-reminder">So far this hasn't been sent to staff. Submit when you're ready for them to see it - you won't get a response until you do.</p>
+                      <div class="alert alert-warning">
+                        <p>So far this hasn't been sent to staff. Submit when you're ready for them to see it - you won't get a response until you do.</p>
                         <button type="button" class="btn btn-primary" {{action "submitInkling" detail.id}}>Submit for Review</button>
                       </div>
                     {{/if}}
                   {{/if}}
 
                   {{#if (and detail.locked (eq detail.approval_state "approved") (eq detail.character_id this.viewerId) (not this.isStaff))}}
-                    <div class="unlock-request-note">
+                    <div class="alert alert-info">
                       <p>Need to make changes? Use <code>+inkling/requestunlock {{detail.id}}=&lt;reason&gt;</code> to request staff reopen this inkling.</p>
                     </div>
                   {{/if}}
