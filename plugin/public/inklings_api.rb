@@ -159,10 +159,17 @@ module AresMUSH
         end
 
         recipient_ids = ""
+        # Only staff can set explicit recipients for private messages.
+        # For staff, inherit from the previous message or default to the inkling creator.
+        # For players, private messages are always staff-only (recipient_ids stays empty) -
+        # this ensures players cannot inadvertently share their private messages with the creator.
         if is_private && is_staff
           last_msg = inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }.last
           recipient_ids = last_msg&.private_recipient_ids.to_s.presence ||
             (last_msg&.author ? last_msg.author.id : inkling.character.id)
+        elsif is_private && !is_staff
+          # Double-check: non-staff players can never have recipient IDs for private messages
+          recipient_ids = ""
         end
 
         message = InklingMessage.create(
