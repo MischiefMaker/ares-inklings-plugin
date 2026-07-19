@@ -2,9 +2,30 @@
 // Inherits Bootstrap 5 and AresMUSH theme styling wherever possible
 
 .inklings-tab {
-  // Override Bootstrap's list-group-item-action color to inherit theme default
-  .list-group-item-action {
+  // Inklings list container
+  .inklings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  // Individual inkling item button
+  .inkling-item {
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem;
+    text-align: left;
+    cursor: pointer;
     color: inherit;
+
+    &:hover {
+      background-color: var(--box-background-color);
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
   }
 }
 

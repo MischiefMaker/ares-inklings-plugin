@@ -48,9 +48,9 @@
   {{else if (eq this.inklings.length 0)}}
     <p class="text-center py-5 mb-0">No inklings yet.</p>
   {{else}}
-    <div class="list-group">
+    <div class="inklings-list">
       {{#each this.inklings as |inkling|}}
-        <button type="button" class="list-group-item list-group-item-action text-start" {{action "openDetail" inkling.id}}>
+        <button type="button" class="inkling-item" {{action "openDetail" inkling.id}}>
           <div class="d-flex align-items-center gap-2 flex-wrap">
             <span class="badge text-bg-{{inkling.kind_color}}">{{inkling.kind_label}}</span>
             <span class="fw-bold">{{inkling.title}}</span>
