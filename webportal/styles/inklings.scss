@@ -1,21 +1,6 @@
 // Inklings plugin styles - minimal, theme-aware
 // Inherits Bootstrap 5 and AresMUSH theme styling wherever possible
 
-// Theme-aware text color
-.primary-words-color {
-  color: var(--primary-words-color);
-}
-
-// Secondary text with reduced opacity
-.secondary-words-color {
-  color: var(--secondary-words-color);
-}
-
-// Staff message background - theme-aware
-.bg-staff-message {
-  background-color: var(--box-background-color);
-}
-
 // Scrollable messages container with fixed height
 .messages-scroll {
   max-height: 400px;
