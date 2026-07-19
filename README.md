@@ -287,18 +287,22 @@ job_category: Plots
 
 ### Bonus XP (Optional)
 
-Configure optional periodic XP awards for characters who create certain inkling types:
+Configure optional periodic XP awards for characters who create certain inkling types each cron cycle:
 
 ```yaml
-inkling_type_xp: progress
-xp_amount: 1
-award_cron:
+inkling_xp_type: progress
+inkling_xp_amount: 1
+inkling_xp_cron:
   day_of_week: [Sat]
   hour: [21]
   minute: [0]
 ```
 
-Set `award_cron: {}` to disable this feature.
+- **`inkling_xp_type`** — The inkling type that qualifies for the bonus (e.g., `progress`, `goal`, `initiative`)
+- **`inkling_xp_amount`** — How much XP to award each qualifying character per cycle (default: 1)
+- **`inkling_xp_cron`** — When the award cycle runs (standard Ares cron format; default: weekly Saturday 9pm). Set to `{}` to disable this feature.
+
+Requires the FS3Skills plugin to be installed.
 
 ## Commands
 

@@ -946,16 +946,16 @@ module AresMUSH
     end
 
     # --- Bonus XP for a configured inkling type -------------------------
-    # See the inkling_type_xp/xp_amount/award_cron settings documented
-    # in game/config/inklings.yml, and InklingXpCronHandler for the
-    # CronEvent hookup (https://www.aresmush.com/tutorials/code/cron.html).
+    # See the inkling_xp_type/inkling_xp_amount/inkling_xp_cron settings
+    # documented in game/config/inklings.yml, and InklingXpCronHandler for
+    # the CronEvent hookup (https://www.aresmush.com/tutorials/code/cron.html).
 
     def self.xp_award_type
-      Global.read_config("inklings", "inkling_type_xp") || "update"
+      Global.read_config("inklings", "inkling_xp_type") || "update"
     end
 
     def self.xp_award_amount
-      Global.read_config("inklings", "xp_amount") || 1
+      Global.read_config("inklings", "inkling_xp_amount") || 1
     end
 
     def self.xp_cron_state

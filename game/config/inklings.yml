@@ -116,38 +116,30 @@ inklings:
       description: A personal record of your character's development, important events, growth, discoveries, relationships, and ongoing history. Use this to maintain a chronicle of significant moments and changes.
       color: info
 
-  # Bonus XP awarded periodically to characters who have submitted an
-  # inkling of the configured type since the last award cycle ran. See
-  # InklingXpCronHandler (plugin/events/) and
-  # Inklings.run_xp_award_cycle (plugin/inklings.rb) for the
-  # implementation. Requires the FS3Skills plugin to be installed and
-  # loaded - if it isn't, the cron job silently does nothing.
+  # Optional periodic XP awards for characters who have submitted an
+  # inkling of the configured type since the last award cycle ran.
+  # Requires the FS3Skills plugin to be installed and loaded - if it
+  # isn't, the cron job silently does nothing. Set inkling_xp_cron to
+  # {} to disable this feature entirely.
   #
-  #   inkling_type_xp - the inkling type that qualifies for the bonus.
-  #     ***NOTE***: "update" (this setting's literal default) is NOT a
-  #     creatable inkling type in this plugin - it was deliberately
-  #     removed as a type (see the comment above PLAYER_KINDS-era
-  #     history in inklings.rb) because "+inkling/update <id>=<text>"
-  #     reads as "update thread #<id>", not "create a new update-type
-  #     thread". Left at this literal default, the reward can only
-  #     ever match legacy data from before that change - it will never
-  #     match a newly-created inkling, since nothing can create one of
-  #     kind "update" anymore. To actually use this feature, either:
-  #       (a) point inkling_type_xp at a real type from the "types"
-  #           section above (e.g. "goal" or "initiative"), or
-  #       (b) add an "update" entry back into "types" above if you
-  #           want a dedicated type just for this reward.
-  #   xp_amount - how much bonus XP to award each qualifying character
-  #     per award period (default: 1).
-  #   award_cron - controls how often the award cycle runs. Standard
+  #   inkling_xp_type - the inkling type that qualifies for the bonus.
+  #     This is an optional reward: each cron cycle, characters who
+  #     submitted an inkling of this type get the XP bonus. Leave this
+  #     at "progress" or change to any real type from the "types" section
+  #     above (e.g. "goal" or "initiative").
+  #     ***NOTE***: "update" is NOT a creatable inkling type in this
+  #     plugin (it was deliberately removed) - do not use "update" here.
+  #   inkling_xp_amount - how much bonus XP to award each qualifying
+  #     character per award period (default: 1).
+  #   inkling_xp_cron - controls how often the award cycle runs. Standard
   #     Ares cron config format - see
   #     https://www.aresmush.com/tutorials/code/cron.html
   #     Default below runs weekly, Saturday at 9pm. Set to {} to
   #     disable the award cycle entirely without removing the other
   #     settings.
-  inkling_type_xp: progress
-  xp_amount: 1
-  award_cron:
+  inkling_xp_type: progress
+  inkling_xp_amount: 1
+  inkling_xp_cron:
     day_of_week:
       - Sat
     hour:
