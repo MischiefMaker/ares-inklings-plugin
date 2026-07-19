@@ -1,11 +1,11 @@
 {{! Detail view for a single inkling, in an ember-bootstrap modal. }}
 {{! See inkling-detail-modal.js in the sibling app/components/ directory }}
 {{! for the component class this template is paired with. }}
-{{! NOTE: deliberately does not use {{#with this.detail as |detail|}} - }}
-{{! that block helper reproducibly triggered Ember's "resolvedDefinition }}
-{{! is null" / recursive-error crash on this install (both here and in }}
-{{! the original in-place-expansion template), for reasons that couldn't }}
-{{! be pinned down further than "don't use {{#with}} in this template". }}
+{{! NOTE: deliberately avoids the #with block helper with this.detail }}
+{{! The #with block helper triggered Ember's "resolvedDefinition is null" }}
+{{! recursive-error crash on this install (both here and in the original }}
+{{! in-place-expansion template), for reasons that couldn't be pinned down }}
+{{! further than "don't use #with with async data in this template". }}
 {{! Every reference below goes through this.detail.* directly instead. }}
 
 {{#bs-modal open=this.isOpen onHide=(action "close") size="lg" as |modal|}}
