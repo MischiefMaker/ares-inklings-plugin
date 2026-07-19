@@ -1,17 +1,13 @@
 ---
-title: Secrets & Goals
+title: Secret & Goal
 ---
 
-# Secrets & Goals
+# Secret & Goal
 
-During character creation, you can optionally fill in your character's Secret and Goal using these commands:
+**`+inkling/secret <title>/<description>`** - Set your character's secret
 
-**`+inkling/secret <title>/<description>`** - Set your character's secret (an IC secret they hold)
+**`+inkling/goal <title>/<description>`** - Set your character's goal
 
-**`+inkling/goal <title>/<description>`** - Set your character's goal (a long-term goal they're working toward)
-
-Both are optional. You can edit them during chargen, or fill them in later after your character is approved.
-
-When your character is approved, these drafts automatically become real Inklings that you can edit and submit to staff.
+When your character is approved, these become real Inklings that you can edit and submit to staff.
 
 For more information about the Inklings system, see `help inklings`.
