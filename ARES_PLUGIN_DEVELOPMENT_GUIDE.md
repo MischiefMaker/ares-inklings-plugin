@@ -158,6 +158,15 @@ NOT auto-installed components. This is a critical distinction from profile tabs.
 - Chargen framework calls `save_fields_from_chargen` with the collected values
 - Plugin's `save_fields_from_chargen` (via manual snippet) creates/updates inklings
 
+**Chargen field layout pattern** (verified on this project):
+For multi-field sections with title + description, use:
+- `<h2>` heading for the section name
+- Flex row (`d-flex align-items-center gap-2 mb-3 w-100`) with a plain `<label class="form-label mb-0">` beside a text input
+- Textarea directly below for the description, with no separate label (use placeholder for guidance)
+- `<hr class="my-4">` to divide sections
+
+This pattern keeps labels readable (plain labels inherit theme text color; avoid `input-group-text` which carries its own background), uses only Bootstrap utilities for spacing and alignment, and works across all Ares themes without plugin-specific CSS.
+
 **Common mistake:** Assuming chargen-custom files don't exist and creating them as plugin files.
 Instead, verify they're standard Ares files by checking the target webportal for their
 presence. If absent, provide clear instructions for creating them manually, not auto-install.
@@ -1052,9 +1061,28 @@ is a visual accent or grouping, not an actual color-coded meaning:
   `bg-light`), use semantic Bootstrap classes (`.text-secondary`, `.text-dark`)
   rather than custom color assignments, since they're designed to work in both
   dark and light contexts.
+- **Don't apply `.text-muted` to semantic text that should inherit normal
+  theme color.** Name fields, message counts, regular paragraph text, and other
+  non-secondary content should inherit the parent element's already-correct
+  theme text color. `.text-muted` is for genuinely de-emphasized content
+  (timestamps, helper text, disabled items), not for avoiding an explicit color
+  assignment on text that's meant to be primary.
 - Always test with the installation's actual theme colors, not defaults. A
   game's primary color might be a light blue on a dark background, or
   vice versa.
+
+### Form Labels Next to Inputs
+
+When placing a label beside an input (not above it), use a plain `<label class="form-label mb-0">` in a flexbox row, never `input-group-text`. The `input-group-text` Bootstrap component carries its own background and border that don't reliably follow all Ares themes, producing unreadable text on dark-themed installs. A plain label has no background and inherits the correct theme text color:
+
+```hbs
+<div class="d-flex align-items-center gap-2 mb-3 w-100">
+  <label for="field-title" class="form-label mb-0">Title</label>
+  {{input id="field-title" type="text" class="form-control" ...}}
+</div>
+```
+
+Add `w-100` to the flex container to ensure the row and its input stretch to full width, matching any textarea below it.
 
 ### CSS Installation
 
