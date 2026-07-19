@@ -66,17 +66,17 @@
             {{/if}}
             {{#unless (eq inkling.character_id this.viewerId)}}
               {{#if inkling.character_name}}
-                <span class="small">for {{inkling.character_name}}</span>
+                <span>for {{inkling.character_name}}</span>
               {{/if}}
             {{/unless}}
             {{#if inkling.player_unread}}
               <span class="badge text-bg-warning">unread</span>
             {{/if}}
-            <span class="small">
+            <span>
               {{inkling.message_count}} message{{if (eq inkling.message_count 1) "" "s"}}
               {{#if inkling.player_unread}}<span class="text-warning fw-bold">*</span>{{/if}}
             </span>
-            <span class="text-secondary small">{{local-date inkling.created_at 'MMM D, YYYY h:mm A'}}</span>
+            <span class="text-secondary">{{local-date inkling.created_at 'MMM D, YYYY h:mm A'}}</span>
             {{#if inkling.linked_job}}
               <span class="badge text-bg-secondary">Job #{{inkling.linked_job.id}} ({{inkling.linked_job.status}})</span>
             {{/if}}
