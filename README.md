@@ -213,10 +213,10 @@ The chargen drafts (Secrets and Goals) are validated during character approval a
 4. Save the file
 5. Restart the server by running `sudo reboot` on the server.
 
-**What this does:** When a character is submitted for approval, the app review screen will show:
-- **RED error** (if `chargen_required: true`): Separate checks for each missing field — blocks approval until filled
-- **YELLOW warning** (if `chargen_required: false`): Separate checks for each missing field — alerts staff but doesn't block approval
-- **GREEN OK**: All chargen fields are filled in with text — shows a green status line confirming completion
+**What this does:** When a character is submitted for approval, the app review screen shows one line per chargen field:
+- **RED error** (if `chargen_required: true` and field is empty): "Checking for X Inklings. < Oops! Missing X >" — blocks approval until filled
+- **YELLOW warning** (if `chargen_required: false` and field is empty): "Checking for X Inklings. < Are you sure? Missing X >" — alerts staff but doesn't block approval
+- **GREEN OK** (if field has text): "Checking for X Inklings. < OK! >" — shows completion
 
 **Step 3d: (OPTIONAL) Add a MUSH Chargen Stage**
 
@@ -293,18 +293,18 @@ the draft to a real Inkling. There is no workaround; the types must exist.
 
 **Approval behavior:**
 
-The app-review screen shows the status of Secrets and Goals during character approval:
+The app-review screen shows one status line per field during character approval:
 
-- **`chargen_required: true` (default)** — Shows a RED (blocking) error if either Secret or 
-  Goal draft is missing or blank. The character cannot be approved until both are filled in 
-  with meaningful text. Review message: "Secrets & Goals inkling is missing"
+- **`chargen_required: true` (default)** — Shows RED (blocking) errors for any empty fields. 
+  The character cannot be approved until all are filled in with meaningful text. 
+  Example: "Checking for Secret Inklings. < Oops! Missing Secret >"
 
-- **`chargen_required: false`** — Shows a YELLOW (advisory) warning if either Secret or Goal 
-  draft is missing, but approval can proceed. Useful if you want to encourage chargen drafts 
-  without enforcing them. Review message: "Are you sure? Secrets & Goals inkling is missing"
+- **`chargen_required: false`** — Shows YELLOW (advisory) warnings for any empty fields, but 
+  approval can proceed. Useful if you want to encourage chargen drafts without enforcing them. 
+  Example: "Checking for Secret Inklings. < Are you sure? Missing Secret >"
 
-- **Both complete** — Shows a GREEN OK status line if all chargen fields are filled 
-  with non-blank text.
+- **Completed fields** — Show GREEN OK lines for fields with text. 
+  Example: "Checking for Secret Inklings. < OK! >"
 
 App-review integration requires the manual **Step 3c hook installation** (see Installation above).
 
