@@ -18,9 +18,9 @@
   <div class="tab-pane fade active show" id="chargen-inklings-pane">
     <section class="mb-4">
       <h2>Secret</h2>
-      <div class="input-group mb-3">
-        <span class="input-group-text" id="chargen-secret-title-label">Title</span>
-        {{input id="chargen-secret-title" type="text" class="form-control" value=this.char.custom.inkling_secret_title placeholder="A short name for your secret" aria-describedby="chargen-secret-title-label"}}
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <label for="chargen-secret-title" class="form-label mb-0">Title</label>
+        {{input id="chargen-secret-title" type="text" class="form-control" value=this.char.custom.inkling_secret_title placeholder="A short name for your secret"}}
       </div>
       {{textarea id="chargen-secret-text" class="form-control" value=this.char.custom.inkling_secret_text rows=5 placeholder="Write a secret your character is hiding here. What don't they want others to know?"}}
     </section>
@@ -29,9 +29,9 @@
 
     <section class="mt-4">
       <h2>Goal</h2>
-      <div class="input-group mb-3">
-        <span class="input-group-text" id="chargen-goal-title-label">Title</span>
-        {{input id="chargen-goal-title" type="text" class="form-control" value=this.char.custom.inkling_goal_title placeholder="A short name for your goal" aria-describedby="chargen-goal-title-label"}}
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <label for="chargen-goal-title" class="form-label mb-0">Title</label>
+        {{input id="chargen-goal-title" type="text" class="form-control" value=this.char.custom.inkling_goal_title placeholder="A short name for your goal"}}
       </div>
       {{textarea id="chargen-goal-text" class="form-control" value=this.char.custom.inkling_goal_text rows=5 placeholder="Write a goal your character is working toward here. What do they want to achieve?"}}
     </section>
@@ -46,16 +46,20 @@
   - If you have other custom tabs from other plugins, add their <div class="tab-pane"> here too
 
   LAYOUT:
-  - Each type is an <h2> heading, a "Title" input group (inline label + text
-    box on one line, Bootstrap's standard input-group pattern), and a
-    description <textarea> directly below with placeholder guidance in place
-    of its own label. An <hr> divides Secret from Goal.
-  - Bootstrap 5 classes (input-group, input-group-text, form-control, mb-3)
-    give the standard spacing/appearance used elsewhere in the portal - no
-    custom CSS needed.
-  - aria-describedby ties each title input back to its "Title" input-group-text
-    span for screen readers, matching Bootstrap's own documented pattern for
-    labeling an input via an input-group addon instead of a <label>.
+  - Each type is an <h2> heading, a "Title" label sitting beside its text box
+    (a flex row with a plain <label>, not an input-group), and a description
+    <textarea> directly below with placeholder guidance in place of its own
+    label. An <hr> divides Secret from Goal.
+  - Bootstrap 5 classes (d-flex, align-items-center, gap-2, form-label,
+    form-control, mb-3) give the standard spacing/appearance used elsewhere
+    in the portal - no custom CSS needed.
+  - Deliberately NOT using Bootstrap's input-group/input-group-text pattern
+    here: input-group-text carries its own background and border by design,
+    and that background doesn't reliably follow every Ares theme (confirmed
+    on this project - see ARES_PLUGIN_DEVELOPMENT_GUIDE.md's Web Portal
+    Styling section), producing unreadable text on some games. A plain
+    <label> has no background of its own, so it always inherits the
+    correct, already-working theme text color.
 
   ACTIVE CLASS:
   - The tab-pane has classes "fade active show" so it displays on page load.

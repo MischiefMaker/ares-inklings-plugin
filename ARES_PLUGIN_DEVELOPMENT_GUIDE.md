@@ -987,9 +987,8 @@ problem was that the color reference could never have worked.
 - **Bootstrap's own `--bs-*` custom properties** (`--bs-border-color`,
   `--bs-secondary-bg`, etc.) - these genuinely are real runtime CSS custom
   properties in Bootstrap 5.3+, unlike the Ares theme names above. Prefer
-  reaching them via an existing Bootstrap utility class (`.border-bottom`,
-  `.bg-body-secondary`) over writing a custom rule that references the
-  variable directly.
+  reaching them via an existing Bootstrap utility class over writing a
+  custom rule that references the variable directly.
 - **Never hardcode a hex color** as a substitute - that reintroduces the
   exact "wrong on this game's theme" problem these variables were meant to
   solve, just less discoverable.
@@ -998,6 +997,37 @@ Before assuming any admin-configurable theme name is a real CSS custom
 property, verify it the same way: check with `getComputedStyle` in the
 browser console on a live install, don't assume from the settings-screen
 label.
+
+**Second lesson learned (verified on this project): background-carrying
+Bootstrap classes are not automatically safe either**, even though their
+underlying `--bs-*` variables are real. `.bg-body-secondary` was tried on
+this project for a subtle staff-message highlight and came back unreadable
+(a light/white box) on a dark-themed install. Bootstrap 5.3's color-mode
+variables only swap their light/dark values under a `data-bs-theme="dark"`
+attribute on an ancestor element - and Ares' own theme system (recompiled
+Sass per game, see above) has no reason to ever set that attribute, so
+Bootstrap background utilities can silently stay locked to their light
+default regardless of the game's actual theme. The same risk applies to
+any Bootstrap class that carries a background as part of its design, not
+just utility classes - `.input-group-text` was also tried for a form-field
+label prefix and had the identical problem (unreadable label text against
+its own baked-in background).
+
+The practical rule this project settled on: **prefer classes/elements that
+never set a background at all** over ones that do, whenever the only goal
+is a visual accent or grouping, not an actual color-coded meaning:
+- A **border** (`.border`, `.border-start`, `.border-bottom`) only sets
+  `border-color`, never touches text or background color, so it can't
+  create a contrast problem - use this instead of a background tint for
+  "highlight this block."
+- A **plain `<label>`** (or any element with no Bootstrap component class
+  applied) has no background of its own and simply inherits the correct,
+  already-working theme text color - use this instead of
+  `.input-group-text` when you want a label sitting next to a field with no
+  visual box around it.
+- If a background is genuinely necessary, don't assume any Bootstrap
+  utility that has one is theme-safe just because its variable is real -
+  actually test it against a dark-themed install before trusting it.
 
 ### Contrast and Backgrounds
 
