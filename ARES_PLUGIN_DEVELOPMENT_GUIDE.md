@@ -309,6 +309,32 @@ Two things worth calling out explicitly because they're easy to get wrong:
   Computing a permission-filtered value once, server-side, in the hook is
   strictly better than shipping the unfiltered value and re-deriving the
   filter in Ember.
+- **A custom character field has to be DECLARED before the hooks can touch
+  it.** `char.my_field` / `char.update(my_field: ...)` only exist if some
+  loaded file reopens `AresMUSH::Character` and calls `attribute :my_field`
+  (see the char-fields and db-field tutorials). Ship that declaration as a
+  plugin-owned model file — `plugin/models/<something>.rb` reopening
+  `class Character` — since everything under a plugin's `models/` is
+  auto-loaded. Skipping this produces a runtime `undefined method
+  'my_field' for an instance of AresMUSH::Character` on **every** profile
+  and chargen page load (it takes down the whole page, not just your field).
+  Debugging note: the error's line number points at `custom_char_fields.rb`,
+  which misleads you into rewriting the hook over and over — but the real
+  fix is the missing `attribute` declaration, not the hook body. There is no
+  `char.custom_field(...)` / `char.custom['...']` accessor on Character;
+  those were dead ends. Custom fields are plain declared attributes.
+- **The save hooks receive form data under a `'custom'` key, not as symbol
+  args.** The exact contract from the stock file is
+  `save_fields_from_chargen(char, chargen_data)` and
+  `save_fields_from_profile_edit2(char, enactor, char_data)`, and your fields
+  arrive as `chargen_data['custom']['my_field']` (string key). Reading
+  `args[:my_field]` compiles fine and silently saves nothing — the classic
+  "it says saved but the value never appears" symptom. Persist with
+  `char.update(my_field: Website.format_input_for_mush(data['my_field'].to_s))`
+  and return `[]` (an array of error strings; empty means success).
+- Format text for its destination: `format_input_for_html` for the
+  chargen/edit *form* fields, `format_markdown_for_html` for the read-only
+  *view*, and `format_input_for_mush` when *storing* what the form sent back.
 
 ### Helpers
 

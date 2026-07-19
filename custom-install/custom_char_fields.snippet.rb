@@ -1,239 +1,102 @@
-# CUSTOM CHARACTER FIELDS SNIPPET - CHARGEN-REQUIRED TYPES + TYPE PICKER DATA
+# CUSTOM CHARACTER FIELDS SNIPPET - CHARGEN-REQUIRED INKLING DRAFT FIELDS
 #
-# FILE: aresmush/plugins/profile/custom_char_fields.rb (in the aresmush folder, not ares-webportal)
-# NOTE: This is a SHARED HOOK FILE used by multiple plugins.
-#       You will ADD CODE to existing methods, not replace the whole file.
+# FILE: aresmush/plugins/profile/custom_char_fields.rb  (in the aresmush
+#       folder, NOT ares-webportal, and NOT the inklings plugin folder)
 #
-# PURPOSE:
-# This snippet integrates two things via the standard Ares custom-character-fields
-# hooks (https://aresmush.com/tutorials/code/hooks/char-fields.html):
-# 1. The CHARGEN-REQUIRED inkling types (as defined in game/config/inklings.yml
-#    chargen_required_types) as editable custom character fields on the profile page.
-# 2. The inkling TYPE LIST used by the {{inklings-tab}} component's "New Inkling"
-#    type picker (char.custom.inkling_types) - embedded on the character payload
-#    the profile page already loads, so the web portal component never needs a
-#    separate request just to populate a dropdown. This is the same pattern other
-#    Ares plugins use for profile-tab reference data (e.g. the RPG plugin's
-#    char.rpg.sheet), rather than the component fetching it itself.
+# NOTE: This is a SHARED HOOK FILE. On a stock Ares install every method
+#       below is present but returns {} or []. You are REPLACING the bodies
+#       of five methods with the versions below. If other plugins already
+#       added code to these methods, MERGE - keep their lines and add yours.
 #
-# IMPORTANT - TWO SEPARATE INTEGRATIONS:
-# 1. THIS SNIPPET (custom_char_fields) - Chargen-required fields, AND the type
-#    list the inklings-tab component's "New Inkling" picker depends on.
-#    Skipping this snippet means the "New Inkling" type dropdown will be empty.
-# 2. PROFILE-CUSTOM.SNIPPET.HBS (inklings-tab) - Shows ALL inklings for the character
-#    Players see the full Inklings browser here (all types, all features)
+# ---------------------------------------------------------------------------
+# HOW IT WORKS (read this - it's why earlier versions silently failed)
+# ---------------------------------------------------------------------------
+# 1. The custom fields must be DECLARED on the Character model first. That is
+#    done by the Inklings plugin itself in:
+#        aresmush/plugins/inklings/models/character_inkling_fields.rb
+#    which declares:  attribute :inkling_secret_title  (etc).
+#    Without those declarations, char.inkling_secret_title raises
+#    "undefined method". This snippet ASSUMES that plugin file is installed.
+#    (It ships with the plugin - no action needed beyond installing the plugin.)
 #
-# Do not confuse these - they serve different purposes:
-# - custom_char_fields: Chargen-required fields + inklings-tab's type-picker data
-# - inklings-tab: Full inkling management interface (shows all inklings)
+# 2. On SAVE, Ares hands your custom fields to you inside a hash under the
+#    'custom' key - chargen_data['custom']['inkling_secret_title'] - NOT as
+#    keyword args. Reading the wrong place is why saving appeared to do
+#    nothing. Store them with char.update(...).
+#
+# 3. On READ, format text for the context: format_input_for_html for the
+#    chargen/edit forms, format_markdown_for_html for read-only viewing.
+#
+# 4. These fields hold DRAFT text only. On character approval the Inklings
+#    plugin (Inklings.character_approved) converts each populated draft into
+#    a real Inkling and clears the draft field.
 #
 # CONFIGURATION:
-# If you change chargen_required_types in game/config/inklings.yml, you MUST also update:
-# - chargen-custom.snippet.hbs (the form fields)
-# - chargen-custom.snippet.js (the field names sent to server)
-# This snippet will automatically handle any configured types.
+# If you change chargen_required_types in game/config/inklings.yml you MUST
+# also, for each new kind:
+#   - add an attribute pair in character_inkling_fields.rb
+#     (attribute :inkling_<kind>_title / :inkling_<kind>_text)
+#   - add the form fields in chargen-custom.snippet.hbs
+#   - add the field names in chargen-custom.snippet.js
+# The loops below then pick the new kind up automatically.
 #
-# This snippet has 6 steps. Follow them in order. Each step is a separate copy-paste.
-#
-# IF YOU ALREADY INSTALLED AN EARLIER VERSION OF THIS SNIPPET:
-# Steps 2 and 3 below use "**build_inkling_fields(...)" (double splat, needed to
-# merge a Hash's keys into a surrounding hash literal). An earlier version of this
-# snippet used a single "*" there, which is invalid Ruby in that position and would
-# raise an error on every profile page load. If your live custom_char_fields.rb has
-# a single "*" on those lines, change it to "**".
+# ===========================================================================
+# Replace the five methods so they read:
+# ===========================================================================
 
-# ============================================================================
-# STEP 1: Add fields to get_fields_for_chargen
-# ============================================================================
-#
-# FILE: aresmush/plugins/profile/custom_char_fields.rb
-# METHOD: def self.get_fields_for_chargen(char)
-#
-# This retrieves draft chargen-inkling data from char.custom storage.
-# If player navigates away and returns to chargen, these fields repopulate the form.
-#
-# 1. Find the method "def self.get_fields_for_chargen(char)"
-# 2. Replace the entire method with this:
-#
-# ---START COPY HERE---
-      # Return draft chargen-inkling data from char.custom
-      fields = {}
-      Inklings.chargen_required_types.each do |kind|
-        title_key = "inkling_#{kind}_title".to_sym
-        text_key = "inkling_#{kind}_text".to_sym
-        fields[title_key] = char.custom_field("inkling_#{kind}_title")
-        fields[text_key] = char.custom_field("inkling_#{kind}_text")
-      end
-      fields
-# ---END COPY---
-
-# ============================================================================
-# STEP 2: Add fields to get_fields_for_viewing
-# ============================================================================
-#
-# FILE: aresmush/plugins/profile/custom_char_fields.rb
-# METHOD: def self.get_fields_for_viewing(char, viewer)
-#
-# This displays the chargen-required inkling types as read-only fields on the
-# profile, AND embeds the inkling type list the {{inklings-tab}} component's
-# "New Inkling" picker needs (char.custom.inkling_types) - already filtered to
-# what this viewer may create (get_fields_for_viewing receives viewer for
-# exactly this kind of permission-aware field).
-#
-# 1. Find the method "def self.get_fields_for_viewing(char, viewer)"
-# 2. Find the line with "return {" or the opening "{"
-# 3. Find the closing "}" of that hash
-# 4. Copy and paste these lines BEFORE the closing "}":
-#
-# ---START COPY HERE---
-        # Chargen-required inklings (displayed as custom fields)
-        **build_inkling_fields(char, viewer, for_editing: false),
-        # Type list for the inklings-tab component's "New Inkling" picker
-        inkling_types: (Inklings::InklingApi.creatable_type_options(viewer) rescue (AresMUSH::Coder.log_error("Error getting creatable_type_options for char #{char.id}, viewer #{viewer.id}"); []))
-# ---END COPY---
-
-# ============================================================================
-# STEP 3: Add fields to get_fields_for_editing
-# ============================================================================
-#
-# FILE: aresmush/plugins/profile/custom_char_fields.rb
-# METHOD: def self.get_fields_for_editing(char, viewer)
-#
-# This displays the chargen-required inkling types as editable fields on the profile.
-#
-# 1. Find the method "def self.get_fields_for_editing(char, viewer)"
-# 2. Find the line with "return {" or the opening "{"
-# 3. Find the closing "}" of that hash
-# 4. Copy and paste these lines BEFORE the closing "}":
-#
-# ---START COPY HERE---
-        # Chargen-required inklings (displayed as custom fields)
-        **build_inkling_fields(char, viewer, for_editing: true)
-# ---END COPY---
-
-# ============================================================================
-# STEP 4: Add code to save profile edits
-# ============================================================================
-#
-# FILE: aresmush/plugins/profile/custom_char_fields.rb
-# METHOD: def self.save_fields_from_profile_edit2(char, viewer, args)
-#
-# IMPORTANT: Use save_fields_from_profile_edit2, NOT save_fields_from_profile_edit
-#            (save_fields_from_profile_edit is deprecated)
-#
-# 1. Find the method "def self.save_fields_from_profile_edit2(char, viewer, args)"
-#    - It should look like: def self.save_fields_from_profile_edit2(char, viewer, args)
-#    - NOT: def self.save_fields_from_profile_edit(char, char_data) (that's deprecated)
-# 2. Find the line just before the "end" of that method
-# 3. Copy and paste these lines BEFORE the "end":
-#
-# ---START COPY HERE---
-      # Save chargen-required inklings from profile edit
-      Inklings.chargen_required_types.each do |kind|
-        title_key = "inkling_#{kind}_title".to_sym
-        text_key = "inkling_#{kind}_text".to_sym
-        save_inkling_from_args(char, viewer, kind, args[title_key], args[text_key])
-      end
-# ---END COPY---
-
-# ============================================================================
-# STEP 5: Add code to save chargen data
-# ============================================================================
-#
-# FILE: aresmush/plugins/profile/custom_char_fields.rb
-# METHOD: def self.save_fields_from_chargen(char, args)
-#
-# This saves draft inkling data to char.custom storage (not creating actual inklings yet).
-# On character approval, an approval hook converts these drafts to actual Inklings.
-#
-# 1. Find the method "def self.save_fields_from_chargen(char, args)"
-# 2. Replace the entire method with this:
-#
-# ---START COPY HERE---
-      # Save draft chargen-inkling data to char.custom
-      Inklings.chargen_required_types.each do |kind|
-        title_key_str = "inkling_#{kind}_title"
-        text_key_str = "inkling_#{kind}_text"
-
-        title = args[title_key_str] || args[title_key_str.to_sym]
-        text = args[text_key_str] || args[text_key_str.to_sym]
-
-        char.set_custom_field("inkling_#{kind}_title", title)
-        char.set_custom_field("inkling_#{kind}_text", text)
-      end
-      char.save
-# ---END COPY---
-
-# ============================================================================
-# STEP 6: Add the helper methods
-# ============================================================================
-#
-# FILE: aresmush/plugins/profile/custom_char_fields.rb
-# LOCATION: At the end of the CustomCharFields class (before the final "end")
-#
-# 1. Go to the end of the CustomCharFields class/module definition
-# 2. Find the final "end" that closes it
-# 3. Copy and paste these entire methods BEFORE that final "end":
-#
-# ---START COPY HERE---
-    def self.build_inkling_fields(char, viewer, for_editing: false)
-      fields = {}
-      begin
+      # --- chargen form: repopulate on return to chargen ---
+      def self.get_fields_for_chargen(char)
+        fields = {}
         Inklings.chargen_required_types.each do |kind|
-          inkling = Inkling.find(character_id: char.id, kind: kind).first
-          title_key = "inkling_#{kind}_title".to_sym
-          text_key = "inkling_#{kind}_text".to_sym
-
-          if for_editing
-            fields[title_key] = inkling&.title
-            fields[text_key] = inkling&.messages&.to_a&.first&.text
-          else
-            fields[title_key] = inkling&.title
-            fields[text_key] = inkling ? Website.format_markdown_for_html(inkling.messages.to_a.first&.text) : nil
-          end
+          fields["inkling_#{kind}_title".to_sym] = Website.format_input_for_html(char.send("inkling_#{kind}_title"))
+          fields["inkling_#{kind}_text".to_sym]  = Website.format_input_for_html(char.send("inkling_#{kind}_text"))
         end
-      rescue => e
-        AresMUSH::Coder.log_error "Error in build_inkling_fields for char #{char.id}: #{e.message}", e
+        fields
       end
-      fields
-    end
 
-    def self.save_inkling_from_args(char, viewer, kind, title, text)
-      return if title.to_s.blank? && text.to_s.blank?
-
-      existing = Inkling.find(character_id: char.id, kind: kind).first
-      if existing
-        Inklings::InklingApi.reply_to_inkling(char.id, existing.id, viewer.id, text)
-      else
-        Inklings::InklingApi.create_inkling(char.id, viewer.id, kind, text, title)
+      # --- read-only profile view ---
+      def self.get_fields_for_viewing(char, viewer)
+        fields = {}
+        Inklings.chargen_required_types.each do |kind|
+          fields["inkling_#{kind}_title".to_sym] = Website.format_markdown_for_html(char.send("inkling_#{kind}_title"))
+          fields["inkling_#{kind}_text".to_sym]  = Website.format_markdown_for_html(char.send("inkling_#{kind}_text"))
+        end
+        fields
       end
-    end
-# ---END COPY---
 
-# ============================================================================
-# ADDITIONAL SETUP: Approval Hook
-# ============================================================================
-#
-# FILE: plugins/inklings/events/character_approved.rb (in the Inklings plugin)
-#
-# The Inklings plugin should provide a character approval hook that converts
-# draft chargen-inkling data (stored in char.custom) into actual Inkling records.
-#
-# This is provided by the plugin automatically - no user configuration needed.
+      # --- profile editor form ---
+      def self.get_fields_for_editing(char, viewer)
+        fields = {}
+        Inklings.chargen_required_types.each do |kind|
+          fields["inkling_#{kind}_title".to_sym] = Website.format_input_for_html(char.send("inkling_#{kind}_title"))
+          fields["inkling_#{kind}_text".to_sym]  = Website.format_input_for_html(char.send("inkling_#{kind}_text"))
+        end
+        fields
+      end
 
-# ============================================================================
+      # --- save from chargen ---
+      def self.save_fields_from_chargen(char, chargen_data)
+        data = chargen_data['custom'] || {}
+        Inklings.chargen_required_types.each do |kind|
+          char.update("inkling_#{kind}_title".to_sym => Website.format_input_for_mush(data["inkling_#{kind}_title"].to_s))
+          char.update("inkling_#{kind}_text".to_sym  => Website.format_input_for_mush(data["inkling_#{kind}_text"].to_s))
+        end
+        []
+      end
+
+      # --- save from profile edit (use ...edit2, NOT the deprecated edit) ---
+      def self.save_fields_from_profile_edit2(char, enactor, char_data)
+        data = char_data['custom'] || {}
+        Inklings.chargen_required_types.each do |kind|
+          char.update("inkling_#{kind}_title".to_sym => Website.format_input_for_mush(data["inkling_#{kind}_title"].to_s))
+          char.update("inkling_#{kind}_text".to_sym  => Website.format_input_for_mush(data["inkling_#{kind}_text"].to_s))
+        end
+        []
+      end
+
+# ===========================================================================
 # DONE!
-# ============================================================================
-#
-# You have successfully integrated chargen-required inkling types into:
-# - Character profile viewing (read-only display)
-# - Character profile editing (editable fields)
-# - Character generation (required chargen fields)
-#
-# Players can now create and edit their chargen-required inklings (secret, goal, etc.)
-# through both the chargen process and their character profile page.
-#
-# FOR VIEWING ALL INKLINGS:
-# Also integrate profile-custom.snippet.hbs which includes the {{inklings-tab}} component.
-# This shows the full Inklings browser with all inkling types and all features.
-# The {{inklings-tab}} is visible only to the logged-in player and staff on their profile.
+# ===========================================================================
+# After editing this file, restart the game. A full restart is the reliable
+# way to pick up changes to the profile plugin AND the new Character model
+# attribute declaration in the inklings plugin.

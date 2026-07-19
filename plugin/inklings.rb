@@ -798,20 +798,27 @@ module AresMUSH
       nil
     end
 
-    # Hook called when a character is approved. Converts draft chargen-inkling
-    # data (stored in char.custom) to actual Inkling records.
+    # Hook called when a character is approved. Converts the draft
+    # chargen-inkling data (stored on the character as declared custom
+    # fields - see plugin/models/character_inkling_fields.rb) into actual
+    # Inkling records, then clears the draft fields so they don't linger
+    # or get re-converted on a later re-approval.
     def self.character_approved(char, enactor)
       return unless char
 
       Inklings.chargen_required_types.each do |kind|
-        title = char.custom_field("inkling_#{kind}_title")
-        text = char.custom_field("inkling_#{kind}_text")
+        title = char.send("inkling_#{kind}_title")
+        text = char.send("inkling_#{kind}_text")
 
         # Only create if draft data exists
         next if title.to_s.blank? && text.to_s.blank?
 
         begin
-          InklingApi.create_inkling(char.id, char.id, kind, text, title)
+          # viewer is the character itself (create_inkling reads viewer.id),
+          # since this is the player's own chargen submission being approved.
+          InklingApi.create_inkling(char.id, char, kind, text, title)
+          char.update("inkling_#{kind}_title".to_sym => nil)
+          char.update("inkling_#{kind}_text".to_sym => nil)
         rescue => e
           AresMUSH::Coder.log_error "Error creating approved inkling for #{char.name} (#{kind}): #{e.message}", e
         end
