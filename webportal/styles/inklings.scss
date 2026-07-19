@@ -1,29 +1,36 @@
 // Inklings plugin styles - minimal, theme-aware
 // Inherits Bootstrap 5 and AresMUSH theme styling wherever possible
 
+// Theme-aware text color
+.text-primary-words {
+  color: var(--primary-words-colour);
+}
+
+// Secondary text with reduced opacity
+.text-primary-words-secondary {
+  color: var(--primary-words-colour);
+  opacity: 0.7;
+}
+
+// Scrollable messages container with fixed height
+.messages-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+// Pre-formatted message text - preserve whitespace and line breaks
+.message-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+// Share input group width constraint
+.share-input-group {
+  max-width: 300px;
+}
+
 .inklings-tab {
-  // List items use theme background and text colors for proper contrast
-  .list-group-item {
-    background-color: var(--background-color);
-    color: var(--primary-words-colour);
-
-    &:hover {
-      background-color: var(--background-color);
-      color: var(--primary-words-colour);
-    }
-
-    // Text secondary styling within list items
-    .text-secondary {
-      color: var(--primary-words-colour);
-      opacity: 0.7;
-    }
-  }
-
-  // Modal content uses theme colors
   .modal-content {
-    background-color: var(--background-color);
-    color: var(--primary-words-colour);
-
     .btn-close {
       filter: invert(1);
 
@@ -31,28 +38,5 @@
         filter: invert(1) brightness(1.2);
       }
     }
-
-    // Text secondary styling within modal
-    .text-secondary {
-      color: var(--primary-words-colour);
-      opacity: 0.7;
-    }
-  }
-
-  // Scrollable messages container with fixed height
-  .messages-scroll {
-    max-height: 400px;
-    overflow-y: auto;
-  }
-
-  // Pre-formatted message text - preserve whitespace and line breaks
-  .message-text {
-    white-space: pre-wrap;
-    word-break: break-word;
-  }
-
-  // Share input group width constraint
-  .share-input-group {
-    max-width: 300px;
   }
 }
