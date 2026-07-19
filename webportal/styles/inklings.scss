@@ -9,27 +9,23 @@
     margin: 0;
   }
 
-  // Individual inkling item
+  // Individual inkling item - divider comes from Bootstrap's border-bottom
+  // utility class on the <li> itself (real --bs-border-color). This rule
+  // only adds what Bootstrap has no utility for: pointer affordance and a
+  // hover highlight. The highlight is a tint of currentColor rather than a
+  // hardcoded color, so it's correct in whatever the inherited text color
+  // already is for the active theme.
   .inkling-item {
-    list-style: none;
-    border-bottom: 1px solid var(--border-color);
     padding: 0.75rem;
-    cursor: pointer !important;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    cursor: pointer;
 
     &:hover,
     &:focus {
-      background-color: var(--primary-words-color) !important;
-      color: var(--background-color) !important;
-
-      .badge {
-        background-color: var(--background-color) !important;
-        color: var(--primary-words-color) !important;
-      }
+      background-color: color-mix(in srgb, currentColor 10%, transparent);
     }
 
     &:last-child {
-      border-bottom: none;
+      border-bottom: 0 !important;
     }
   }
 

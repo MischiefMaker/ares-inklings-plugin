@@ -50,7 +50,7 @@
   {{else}}
     <ul class="inklings-list">
       {{#each this.inklings as |inkling|}}
-        <li class="inkling-item" {{action "openDetail" inkling.id}}>
+        <li class="inkling-item border-bottom" {{action "openDetail" inkling.id}}>
           <div class="inkling-header">
             <h4 class="inkling-title">#{{inkling.id}} {{inkling.title}}</h4>
             <span class="badge text-bg-{{inkling.kind_color}}">{{inkling.kind_label}}</span>
