@@ -2,6 +2,8 @@
 title: Manage Inklings
 ---
 
+> Permission Required: These commands require the Admin role or the permission: manage_jobs
+
 # Manage Inklings
 
 Inklings are player-initiated threads for tracking character development, plot requests, and collaborative storytelling. Use these commands to review submissions, provide feedback, and manage the approval workflow.

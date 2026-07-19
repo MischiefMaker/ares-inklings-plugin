@@ -2,6 +2,8 @@
 title: Manage Chargen
 ---
 
+> Permission Required: These commands require the Admin role or the permission: manage_jobs
+
 # Manage Chargen
 
 The Inklings plugin integrates with AresMUSH's character generation process to collect Secret and Goal information as players create new characters.
