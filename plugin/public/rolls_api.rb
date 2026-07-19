@@ -4,11 +4,18 @@ module AresMUSH
       # Add a roll to an inkling
       # roll_type: "player" (roll for own character), "npc" (roll for NPC), "static" (just a number)
       # roll_spec: skill/attribute name for player/npc, description for static
-      # result: the result string (e.g. "8", "Good (7)")
+      # result: the result string (e.g. "8", "Good (7)"). For player rolls, the frontend
+      #   calls character_luck_reroll to get the actual FS3 result, then passes it here.
       # result_value: numeric value for sorting
       # npc_char_id: optional character ID for the NPC target, if it's tied to an actual Character record (npc rolls only)
       # npc_name: optional free-text NPC name for display, for NPCs with no Character record (npc rolls only)
       # is_private: whether only player and staff can see this
+      #
+      # Note: The frontend calls the character_luck_reroll web handler to perform FS3
+      # rolls for player characters (since that's the available AresMUSH API that
+      # returns an FS3 roll result). This aligns with the AresMUSH pattern where rolling
+      # APIs handle the skill roll calculation and return the result, which is then
+      # stored by application-specific code (like this plugin).
       #
       # viewer is the already-authenticated Character object (request.enactor
       # from the web handler), not a raw ID - matches the convention used
