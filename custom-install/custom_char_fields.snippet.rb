@@ -93,6 +93,12 @@
         # what this viewer may create. Passed to the web portal component as
         # typeInfo so it can populate the dropdown without a separate request.
         fields[:inkling_types] = Inklings::InklingApi.creatable_type_options(viewer)
+        # Staff override flag for the Inklings tab's "Add Inkling" button -
+        # computed server-side via the plugin's own permission check rather
+        # than trusting an assumed web-portal viewer property (there is no
+        # standard "isStaff" field on the Ares viewer payload). Passed to the
+        # web portal component as isStaff.
+        fields[:can_manage_inklings] = Inklings.can_manage_inklings?(viewer)
         fields
       end
 

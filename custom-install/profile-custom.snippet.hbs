@@ -17,7 +17,7 @@
 
   ---START COPY HERE---
   <div class="tab-pane fade" id="inklings-tab-pane">
-    {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff isApproved=this.char.is_approved isSelf=(eq this.char.id this.viewer.id) typeInfo=this.char.custom.inkling_types}}
+    {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.char.custom.can_manage_inklings isApproved=this.char.is_approved isSelf=(eq this.char.id this.viewer.id) typeInfo=this.char.custom.inkling_types}}
   </div>
   ---END COPY---
 
@@ -28,16 +28,30 @@
   - Do NOT change this value
 
   PROPERTY NAMES:
-  - The component uses: characterId, viewerId, isStaff, and typeInfo
-  - These are passed from: this.char.id, this.viewer.id, this.viewer.isStaff, and this.char.custom.inkling_types
+  - The component uses: characterId, viewerId, isStaff, isApproved, isSelf, and typeInfo
+  - These are passed from: this.char.id, this.viewer.id, this.char.custom.can_manage_inklings,
+    this.char.is_approved, (eq this.char.id this.viewer.id), and this.char.custom.inkling_types
   - If your profile-custom.hbs uses different property names, update them here
   - Common alternatives: character instead of char, user instead of viewer, etc.
   - Check the rest of your profile-custom.hbs to see what names are used
 
-  TYPE PICKER DATA (typeInfo):
-  - char.custom.inkling_types is populated by custom_char_fields.snippet.rb's
-    get_fields_for_viewing hook, NOT fetched by the component itself - this must
-    be installed too, or the "New Inkling" type dropdown will be empty.
+  WHY isStaff READS FROM char.custom.can_manage_inklings, NOT viewer.isStaff:
+  - There is no standard "isStaff" field on the Ares web portal's viewer
+    object. An earlier version of this snippet assumed one existed
+    (viewer.isStaff) and the "+ New Inkling" button silently never showed
+    for staff as a result - it was reading an undefined property.
+  - can_manage_inklings is computed server-side via the plugin's own
+    Inklings.can_manage_inklings? permission check (the same check the
+    create-inkling API enforces), exposed through get_fields_for_viewing
+    exactly like inkling_types below. This guarantees the client-side value
+    always matches the server's real permission decision.
+
+  TYPE PICKER DATA (typeInfo) AND STAFF OVERRIDE (isStaff):
+  - Both char.custom.inkling_types and char.custom.can_manage_inklings are
+    populated by custom_char_fields.snippet.rb's get_fields_for_viewing hook,
+    NOT fetched by the component itself - this must be installed too, or the
+    "New Inkling" type dropdown will be empty AND staff won't get their
+    approval override.
   - See custom-install/custom_char_fields.snippet.rb, Step 2.
 
   ABOUT THE COMPONENT:
