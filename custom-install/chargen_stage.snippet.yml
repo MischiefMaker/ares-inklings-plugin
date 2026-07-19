@@ -3,11 +3,10 @@
 # FILE: game/config/chargen.yml (in your game folder, NOT the plugin folder)
 #
 # PURPOSE:
-# Adds a "Secrets & Goals" stage to your game's chargen process, allowing players
-# to fill in their character's Secret and Goal during character creation. These are
-# saved as drafts and convert to real Inklings when the character is approved.
-#
-# This complements the web portal "Secret & Goal" tab but allows MUSH chargen flow.
+# Adds an optional "Secrets & Goals" information stage to your chargen process.
+# Players can fill in their character's Secret and Goal during character creation
+# using the MUSH commands, which saves them as drafts and converts them to real
+# Inklings when the character is approved.
 #
 # ===========================================================================
 # INSTALLATION STEPS
@@ -15,71 +14,27 @@
 #
 # STEP 1: Open game/config/chargen.yml in your game folder
 #
-# STEP 2: Find the "stages:" section that lists chargen stages like:
+# STEP 2: Find the "stages:" section. It looks like:
 #
 #         stages:
-#           - key: background
-#             ...
-#           - key: hooks
-#             ...
-#           - key: finish
-#             ...
+#           sheet:
+#             help: sheets
+#           demographics:
+#             help: demographics
+#           ...
+#           review:
+#             title: App Submission
+#             text: ...
 #
-# STEP 3: Add this new stage BEFORE the "finish" stage:
+# STEP 3: Add this new stage BEFORE the "review" stage:
 
-- key: secrets_goals
-  name: Secrets & Goals
+secrets_goals:
+  title: Secrets & Goals
   help: inklings
-  fields:
-    - name: inkling_secret_title
-      type: text
-      label: Secret Title
-      help: "A short title for your character's secret."
-      allow_blank: true
-    - name: inkling_secret_text
-      type: textarea
-      label: Secret Description
-      help: "Describe your character's secret. This is saved as a draft and becomes an Inkling when approved."
-      allow_blank: true
-    - name: inkling_goal_title
-      type: text
-      label: Goal Title
-      help: "A short title for your character's goal."
-      allow_blank: true
-    - name: inkling_goal_text
-      type: textarea
-      label: Goal Description
-      help: "Describe your character's goal. This is saved as a draft and becomes an Inkling when approved."
-      allow_blank: true
+  text: During character creation, you can optionally set your character's secret
+    and long-term goal using the commands below. These are saved as drafts and become
+    real Inklings when your character is approved.%R%RUse these MUSH commands to fill
+    them in:%R%xc+inkling/secret <title>/<description>%xn%R%xc+inkling/goal <title>/<description>%xn%R%RYou can edit these later from your profile or using +inkling/secret and +inkling/goal
+    commands. Both are optional.
 
 # STEP 4: Log in to your server and run `sudo reboot` to restart it.
-#
-# ===========================================================================
-# FIELD TYPES REFERENCE
-# ===========================================================================
-#
-# type: text          - Single-line text input (good for titles)
-# type: textarea      - Multi-line text input (good for descriptions)
-# allow_blank: true   - Field is optional; player can leave it empty
-# allow_blank: false  - Field is required; player must fill it in
-#
-# Note: We use allow_blank: true for Secrets & Goals because:
-#   - App review warnings/errors handle the "required" validation
-#   - Players might want one without the other
-#   - Provides flexibility for games with different rules
-#
-# ===========================================================================
-# CUSTOMIZE THE LABELS & HELP
-# ===========================================================================
-#
-# Change "Secret" and "Goal" to match your game's terminology if needed.
-# For example, if your game calls them "Motivations" and "Drives":
-#   - Change label: Secret Title → label: Motivation Title
-#   - Change label: Goal Title → label: Drive Title
-#   - Optionally change name: "Secrets & Goals" to "Motivations & Drives"
-#
-# The internal field names (inkling_secret_title, etc.) should NOT change,
-# as the Inklings plugin expects those exact names.
-#
-# The help: inklings setting points to the Inklings plugin's help file
-# in the help/ folder and does not need to be changed.
