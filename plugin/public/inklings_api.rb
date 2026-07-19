@@ -27,7 +27,9 @@ module AresMUSH
           return { error: "Not authorized" }
         end
 
-        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved?
+        # Unapproved players can view their own chargen drafts; others must be
+        # approved or staff to view any inklings.
+        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved? || viewer.id == char.id
           return { error: "Your character must be approved to access inklings." }
         end
 
