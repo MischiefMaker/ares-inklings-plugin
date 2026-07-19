@@ -707,6 +707,29 @@ Each of these happened on this project — concretely, not hypothetically.
    chasing render-transaction/timing theories - it's the cheaper thing to
    rule out first.
 
+10. **A `public/*_api.rb` method re-deriving a viewer it was already given.**
+    `RollsApi.add_roll` and `RollsApi.reroll_with_luck` took `viewer_id` and
+    did `Character[viewer_id]` to resolve it — but their only caller (a web
+    handler) passes `request.enactor`, which is *already* a resolved
+    `Character` object, matching the convention every other method in the
+    plugin's own `InklingApi` class uses (`viewer` is accepted and used
+    directly; only `char_id`-shaped params get looked up via `Character[]`).
+    `Character[<a Character object>]` doesn't raise — it just returns `nil`,
+    so every call returned `{ error: "Viewer not found" }`. Compounding it,
+    the web component's action handlers uniformly do
+    `if (response.error) { return; }` with no flash message on failure (see
+    item 5 above on that same pattern being *correct* for expected
+    validation errors) — so the bug surfaced as "the button does nothing,"
+    not a visible error, and took much longer to find than a raised
+    exception would have. *Avoid it*: when a new `public/*_api.rb` method
+    takes a "viewer" or "enactor" parameter, check how its actual caller
+    resolves that value before deciding whether the method should look it
+    up (`Character[id]`) or use it directly (already an object) — don't
+    default to re-deriving what the caller already has. And when a
+    fire-and-forget web action seems to do nothing, check the Ruby side's
+    return value before assuming the JS or the template is broken — a
+    silently swallowed `{ error: ... }` looks identical to "nothing happened."
+
 ---
 
 ## 9. Plugin Review Checklist
