@@ -214,9 +214,9 @@ The chargen drafts (Secrets and Goals) are validated during character approval a
 5. Restart the server by running `sudo reboot` on the server.
 
 **What this does:** When a character is submitted for approval, the app review screen will show:
-- **RED error** (if `chargen_required: true`): Shows separate checks for each missing field (Secret, Goal) — blocks approval until filled
-- **YELLOW warning** (if `chargen_required: false`): Shows separate checks for each missing field — alerts staff but doesn't block approval
-- **GREEN checkmark**: All chargen fields are filled in — no warning shown
+- **RED error** (if `chargen_required: true`): Separate checks for each missing field — blocks approval until filled
+- **YELLOW warning** (if `chargen_required: false`): Separate checks for each missing field — alerts staff but doesn't block approval
+- **GREEN OK**: All chargen fields are filled in with text — shows a green status line confirming completion
 
 **Step 3d: (OPTIONAL) Add a MUSH Chargen Stage**
 
@@ -303,7 +303,7 @@ The app-review screen shows the status of Secrets and Goals during character app
   draft is missing, but approval can proceed. Useful if you want to encourage chargen drafts 
   without enforcing them. Review message: "Are you sure? Secrets & Goals inkling is missing"
 
-- **Both complete** — Shows a GREEN checkmark (no warning) if all chargen fields are filled 
+- **Both complete** — Shows a GREEN OK status line if all chargen fields are filled 
   with non-blank text.
 
 App-review integration requires the manual **Step 3c hook installation** (see Installation above).
