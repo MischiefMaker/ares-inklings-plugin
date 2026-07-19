@@ -128,25 +128,39 @@ for a real bug.
 
 ### Chargen Extension Components
 
-When a plugin needs to add form fields to the chargen process, implement it as an
-auto-installed component, not as manual-paste snippets:
+When a plugin needs to add form fields to the chargen process, use copy-paste snippets,
+NOT auto-installed components. This is a critical distinction from profile tabs.
 
-**Pattern:** Create `chargen-custom.js` and `chargen-custom.hbs` in `webportal/components/`
-and `webportal/templates/components/` respectively. The component's `onUpdate()` callback
-is invoked by the chargen framework when that step completes, and should return a hash of
-field values to save.
+**Pattern:** Provide merge snippets under `custom-install/` for:
+- `chargen-custom-tabs.snippet.hbs` — paste into game's `chargen-custom-tabs.hbs`
+- `chargen-custom.snippet.hbs` — paste into game's `chargen-custom.hbs`
+- `chargen-custom.snippet.js` — paste into game's `chargen-custom.js`
 
-**Why:** The chargen form is a standard Ares extension point (like profile tabs), but
-unlike profile tabs, the chargen-custom component doesn't self-fetch data—it works with
-data from `custom_char_fields.rb`'s `get_fields_for_chargen()` hook. This means:
-- The component is inert until the backend hook is pasted (safe to auto-install)
-- Players never see a broken chargen step if the backend half is missing
-- The form rendering is version-controlled in the plugin, not duplicated across game
-  installations via error-prone manual snippets
+**Critical:** Do NOT auto-install `chargen-custom.js` or `chargen-custom.hbs` as plugin files.
 
-Keep chargen-custom component logic generic—dynamically collect whatever `inkling_*`
-fields the backend provides, rather than hardcoding specific type names. This lets
-admins change `chargen_required_types` in config without needing plugin updates.
+**Why:** These are shared game customization files, not plugin-owned extension points:
+- `chargen-custom.js` and `.hbs` already exist in standard AresMUSH webportal installations
+- The game owner or other plugins may have customized them
+- Auto-installing plugin replacements at these paths **overwrites existing game code**
+- This breaks the game owner's chargen setup and interferes with other plugin integrations
+
+**Correct pattern:**
+1. Backend hook (auto-install): `chargen_finalize` in plugin validates required types exist
+2. Custom fields hook (manual paste): `custom_char_fields.rb` snippet defines `get_fields_for_chargen`
+3. Frontend hook (manual paste): `chargen-custom.snippet.*` files guide user to paste field
+   definitions into existing game-owned files
+
+**Integration flow:**
+- `get_fields_for_chargen` returns `{ inkling_secret_title: ..., inkling_goal_title: ..., ... }`
+- These appear on char as `char.custom.inkling_*`
+- Game's `chargen-custom.hbs` renders form fields bound to these values
+- Game's `chargen-custom.js`'s `onUpdate()` collects them and returns to chargen framework
+- Chargen framework calls `save_fields_from_chargen` with the collected values
+- Plugin's `save_fields_from_chargen` (via manual snippet) creates/updates inklings
+
+**Common mistake:** Assuming chargen-custom files don't exist and creating them as plugin files.
+Instead, verify they're standard Ares files by checking the target webportal for their
+presence. If absent, provide clear instructions for creating them manually, not auto-install.
 
 ### The three shapes a screen can take
 
@@ -729,7 +743,19 @@ Each of these happened on this project — concretely, not hypothetically.
    chasing render-transaction/timing theories - it's the cheaper thing to
    rule out first.
 
-10. **A `public/*_api.rb` method re-deriving a viewer it was already given.**
+10. **Auto-installing files at shared customization points.** This plugin initially
+    tried to auto-install `chargen-custom.js` and `chargen-custom.hbs` as plugin
+    files, assuming they were plugin-owned. These are actually shared game
+    customization files that already exist in standard AresMUSH installations and
+    may contain other plugins' or the game owner's customizations. Auto-installing
+    replacements breaks the existing chargen setup. *Avoid it*: distinguish between
+    plugin-owned files (uniquely named components, plugin config, plugin styles)
+    and shared game files (chargen-custom, profile-custom, custom_char_fields.rb).
+    Shared files require manual-paste snippets only. Auto-installing template stubs
+    is acceptable only if they're clearly named as stubs for users to customize, not
+    as replacements for existing files.
+
+11. **A `public/*_api.rb` method re-deriving a viewer it was already given.**
     `RollsApi.add_roll` and `RollsApi.reroll_with_luck` took `viewer_id` and
     did `Character[viewer_id]` to resolve it — but their only caller (a web
     handler) passes `request.enactor`, which is *already* a resolved
