@@ -30,6 +30,6 @@
 
 secrets_goals:
   title: Secrets & Goals
-  help: inklings_chargen
+  help: secret_goal
 
 # STEP 4: Log in to your server and run `sudo reboot` to restart it.
