@@ -198,6 +198,26 @@ The chargen form requires manual integration into your game's webportal chargen 
 - Do not overwrite the entire file — only add the specific lines at the marked locations
 - Do not simply append to the end of files — follow the location comments in each snippet
 
+**Step 3c: Application Review Hook (Required if using chargen):**
+
+The chargen drafts (Secrets and Goals) are validated during character approval and displayed on the app review screen. This requires a single line in your game's shared app-review hook:
+
+1. Open `custom-install/custom_app_review.snippet.rb` in this plugin
+2. Open `plugins/profile/custom_app_review.rb` in your **aresmush** folder (not ares-webportal)
+3. Follow the instructions in the snippet file:
+   - If the `custom_app_review` method is empty, replace it with the code in the snippet
+   - If it already has other checks (from other plugins), add this line before the final `messages` return:
+     ```ruby
+     messages.concat(Inklings.get_app_review_issues(char))
+     ```
+4. Save the file
+5. Restart the game with `@restart`
+
+**What this does:** When a character is submitted for approval, the app review screen will show:
+- **RED error** (if `chargen_required: true`): "Secrets & Goals inkling is missing" — blocks approval until filled
+- **YELLOW warning** (if `chargen_required: false`): "Are you sure? Secrets & Goals inkling is missing" — alerts staff but doesn't block approval
+- **GREEN checkmark**: All chargen fields are filled in — no warning shown
+
 ### Step 4: Post-Installation Setup
 
 **In-game:**
@@ -261,11 +281,20 @@ the draft to a real Inkling. There is no workaround; the types must exist.
 
 **Approval behavior:**
 
-- **`chargen_required: true` (default)** — App review throws a RED (blocking) warning if 
-  either Secret or Goal draft is missing. The character cannot be approved until both are filled in.
-- **`chargen_required: false`** — App review throws a YELLOW (advisory) warning if either 
-  is missing, but approval can proceed. Useful if you want to encourage chargen drafts without 
-  enforcing them.
+The app-review screen shows the status of Secrets and Goals during character approval:
+
+- **`chargen_required: true` (default)** — Shows a RED (blocking) error if either Secret or 
+  Goal draft is missing or blank. The character cannot be approved until both are filled in 
+  with meaningful text. Review message: "Secrets & Goals inkling is missing"
+
+- **`chargen_required: false`** — Shows a YELLOW (advisory) warning if either Secret or Goal 
+  draft is missing, but approval can proceed. Useful if you want to encourage chargen drafts 
+  without enforcing them. Review message: "Are you sure? Secrets & Goals inkling is missing"
+
+- **Both complete** — Shows a GREEN checkmark (no warning) if all chargen fields are filled 
+  with non-blank text.
+
+App-review integration requires the manual **Step 3c hook installation** (see Installation above).
 
 **To disable chargen**, simply set `chargen_enabled: false`. When disabled, the feature
 goes fully dormant: no chargen tab, no draft fields, no approval warnings, and the
@@ -379,6 +408,8 @@ Staff can award rewards during or after review.
 - **Chargen requires both secret and goal types** — If you enable chargen (`chargen_enabled: true`), you must have both `secret` and `goal` type definitions in `types:`. If either is missing when a character is approved, approval will fail. Disable chargen with `chargen_enabled: false` if you don't need this feature, rather than deleting one of these type definitions.
 
 - **Requires manual chargen snippet merging** — Chargen integration requires copying snippet code into your game's shared chargen files, since other plugins may also extend chargen. This cannot be automated without risk of breaking other plugins.
+
+- **Requires manual app-review hook merging** — If you enable chargen, app-review validation (showing Red/Yellow/Green status for Secrets & Goals during character approval) requires a one-line merge into your game's shared `custom_app_review.rb` hook file. See Step 3c in Installation.
 
 - **Reference numbers (`seq`) aren't backfilled** — Threads created before this update won't have sequence numbers. If upgrading an existing game, you can run a migration to backfill them (ask a developer for help if needed).
 
