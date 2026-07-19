@@ -41,6 +41,22 @@
 # The loops below then pick the new kind up automatically.
 #
 # ===========================================================================
+# INSTALLATION STEPS
+# ===========================================================================
+#
+# STEP 1: Copy the five method bodies below into your aresmush
+# plugins/profile/custom_char_fields.rb file. Find the marked sections and
+# paste the corresponding method bodies - replace what's there with what's
+# below.
+#
+# STEP 2: If you want the Inklings tab to show on character profiles (strongly
+# recommended), the type-picker data MUST be included in get_fields_for_viewing.
+# The code below already includes it: the line `fields[:inkling_types] = ...`
+# passes the list of types the viewer may create to the web portal component,
+# so the "New Inkling" dropdown populates correctly. If your game has customized
+# get_fields_for_viewing elsewhere, make sure this line is preserved.
+#
+# ===========================================================================
 # Replace the five methods so they read:
 # ===========================================================================
 #
@@ -73,6 +89,10 @@
           fields["inkling_#{kind}_title".to_sym] = Website.format_markdown_for_html(char.send("inkling_#{kind}_title"))
           fields["inkling_#{kind}_text".to_sym]  = Website.format_markdown_for_html(char.send("inkling_#{kind}_text"))
         end
+        # Type list for the Inklings tab's "New Inkling" picker - filtered to
+        # what this viewer may create. Passed to the web portal component as
+        # typeInfo so it can populate the dropdown without a separate request.
+        fields[:inkling_types] = Inklings::InklingApi.creatable_type_options(viewer)
         fields
       end
 
