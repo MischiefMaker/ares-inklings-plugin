@@ -82,11 +82,6 @@
                 {{#if roll.luck_cost}} (cost: {{roll.luck_cost}} luck){{/if}}
               </div>
             {{/if}}
-            {{#if (and (eq roll.roll_type "player") (eq roll.character_id roll.creator_id) (eq this.detail.status "open"))}}
-              <button type="button" class="btn btn-sm btn-secondary mt-1" {{action "rerollWithLuck" roll.id}}>
-                Reroll with Luck
-              </button>
-            {{/if}}
           </div>
         {{/each}}
       {{/if}}

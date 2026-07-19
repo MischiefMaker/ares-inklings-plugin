@@ -302,29 +302,21 @@ export default Component.extend({
       };
 
       if (this.rollType === 'player') {
-        // For player rolls, perform an FS3 roll first to get the actual result
-        this.gameApi.requestOne('character_luck_reroll', {
-          char_id: this.characterId
-        }, null).then((rollData) => {
-          if (rollData.error) {
-            this.flashMessages.danger('Failed to perform roll');
+        // For player rolls, let the backend perform the FS3 roll
+        // Just pass the roll spec and character info, backend does the rolling
+        this.gameApi.requestOne('inklings_add_roll', args, null).then((response) => {
+          if (response.error) {
+            this.flashMessages.danger(response.error);
             return;
           }
-          args.result = rollData.result;
-          args.result_value = rollData.result_value;
-          this.gameApi.requestOne('inklings_add_roll', args, null).then((response) => {
-            if (response.error) {
-              return;
-            }
-            this.setProperties({
-              rollSpec: '',
-              npcName: '',
-              rollResult: '',
-              rollIsPrivate: false,
-              showRollForm: false
-            });
-            this.loadDetail();
+          this.setProperties({
+            rollSpec: '',
+            npcName: '',
+            rollResult: '',
+            rollIsPrivate: false,
+            showRollForm: false
           });
+          this.loadDetail();
         });
       } else {
         args.result = this.rollResult;
@@ -348,27 +340,6 @@ export default Component.extend({
       }
     },
 
-    rerollWithLuck(rollId) {
-      this.gameApi.requestOne('character_luck_reroll', {
-        char_id: this.characterId
-      }, null).then((rollData) => {
-        if (rollData.error) {
-          return;
-        }
-        this.gameApi.requestOne('inklings_reroll_with_luck', {
-          inkling_id: this.inklingId,
-          roll_id: rollId,
-          new_result: rollData.result,
-          new_result_value: rollData.result_value,
-          luck_cost: rollData.luck_cost || 1
-        }, null).then((response) => {
-          if (response.error) {
-            return;
-          }
-          this.loadDetail();
-        });
-      });
-    },
 
     submitInkling() {
       this.gameApi.requestOne('inklings_submit_inkling', {
