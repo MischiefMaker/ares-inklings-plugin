@@ -5,21 +5,24 @@
 
   FILE: ares-webportal/app/components/chargen-custom-tabs.hbs
 
-  IMPORTANT: This file contains the other chargen step tabs (Demographics, Groups, Abilities, etc.)
-  Your job is to add the Secrets & Goals tab to the existing list.
+  This file outputs ONLY the <li> tab elements for custom chargen fields.
+  These get injected into the main chargen tab list.
 
   STEP 1: Open your game's ares-webportal/app/components/chargen-custom-tabs.hbs
 
-  STEP 2: Find the existing <ul class="nav nav-tabs"> with other <li> tab entries
-  (you should see Demographics, Groups, Abilities, Background, RP Hooks, Profile Icon, etc.)
-
-  STEP 3: Copy the <li> below and paste it at the END of that <ul>, right before </ul>:
+  STEP 2: Copy everything below (between the markers) - this is the ENTIRE contents
+  of chargen-custom-tabs.hbs for Inklings:
 
   ---START COPY HERE---
   <li role="presentation" class="nav-item"><a href="#chargen-inklings-pane" aria-controls="chargen-inklings-pane" role="tab" data-bs-toggle="tab" class="nav-link">Secret &amp; Goal</a></li>
   ---END COPY---
 
   IMPORTANT DETAILS:
+
+  FILE STRUCTURE:
+  - This file contains ONLY <li> elements, no wrapper <ul>
+  - The <li> gets inserted into the main chargen tab list
+  - If you have other custom tabs from other plugins, add their <li> here too
 
   BOOTSTRAP VERSION:
   - Use data-bs-toggle="tab" (Bootstrap 5)
@@ -29,20 +32,15 @@
   - The href="#chargen-inklings-pane" MUST match the id="chargen-inklings-pane" in chargen-custom.snippet.hbs
   - Do NOT change this value
 
-  PLACEMENT:
-  - This <li> must go INSIDE the existing <ul class="nav nav-tabs">
-  - Do NOT create a separate <ul> for this tab
-  - It should be on the same level as Demographics, Groups, Abilities, etc.
-
   IF YOU CUSTOMIZED chargen_required_types:
   If your game uses different inkling types, change the tab label to match.
   Example: if chargen_required_types: [hooks], change "Secret &amp; Goal" to "Hooks"
 
   BEFORE (secret and goal):
-    <a href="#chargen-inklings-pane" ... class="nav-link">Secret &amp; Goal</a>
+    <a href="#chargen-inklings-pane" ... >Secret &amp; Goal</a>
 
   AFTER (hooks):
-    <a href="#chargen-inklings-pane" ... class="nav-link">Hooks</a>
+    <a href="#chargen-inklings-pane" ... >Hooks</a>
 
   Note: Keep href="#chargen-inklings-pane" and id="chargen-inklings-pane" the same,
         only change the display label to match your configured types.

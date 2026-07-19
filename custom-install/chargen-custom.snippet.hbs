@@ -5,13 +5,14 @@
 
   FILE: ares-webportal/app/components/chargen-custom.hbs
 
+  This file outputs ONLY the <div class="tab-pane"> elements for custom chargen fields.
+  These get injected into the main chargen tab-content container.
+
   STEP 1: Open your game's ares-webportal/app/components/chargen-custom.hbs
 
-  STEP 2: Find the <div class="tab-content"> that contains the other tab panes
-  (you should see Demographics, Groups, Abilities, Background, etc. as <div class="tab-pane">)
+  STEP 2: Find the closing </div> tag for the <div class="tab-content"> container
 
-  STEP 3: Copy the <div class="tab-pane"> block below and paste it at the END,
-  just before the closing </div> tag of tab-content:
+  STEP 3: Copy the block below and paste it just BEFORE that closing </div>:
 
   ---START COPY HERE---
   <div class="tab-pane fade active show" id="chargen-inklings-pane">
@@ -37,6 +38,11 @@
 
   IMPORTANT DETAILS:
 
+  FILE STRUCTURE:
+  - This file contains ONLY <div class="tab-pane"> elements, no wrapper tab-content
+  - The <div class="tab-pane"> gets inserted into the main chargen tab-content container
+  - If you have other custom tabs from other plugins, add their <div class="tab-pane"> here too
+
   ACTIVE CLASS:
   - The tab-pane has classes="fade active show" so it displays on page load
   - If you want it to NOT be the active tab on load, remove "active show"
@@ -44,11 +50,6 @@
   ID MATCHING:
   - The id="chargen-inklings-pane" MUST match the href in chargen-custom-tabs.snippet.hbs
   - Do NOT change this value
-
-  PLACEMENT:
-  - This <div class="tab-pane"> must go INSIDE the <div class="tab-content">
-  - It should be at the same level as Demographics, Groups, Abilities, etc.
-  - Paste it at the END, just before </div> closes the tab-content
 
   FORM FIELDS:
   - This creates 4 fields: secret title, secret text, goal title, goal text
