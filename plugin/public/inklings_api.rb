@@ -49,7 +49,11 @@ module AresMUSH
         end
 
         {
-          inklings: inklings.sort_by { |i| Inklings.time_value(i.created_at) }.reverse.map { |i| format_inkling_summary(i, viewer) }
+          inklings: inklings.sort_by { |i| Inklings.time_value(i.created_at) }.reverse.map { |i| format_inkling_summary(i, viewer) },
+          # Only ever non-empty for an unapproved character, which (given the
+          # approval check above) means only staff ever actually receive
+          # this - see Inklings.chargen_drafts.
+          chargen_drafts: Inklings.chargen_drafts(char)
         }
       end
 

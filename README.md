@@ -61,6 +61,18 @@ The profile tab uses two components: `inklings-tab` (the list and "New Inkling" 
 `inkling-detail-modal` (the full thread view, opened by clicking a row). Both install 
 automatically via `plugin/install` and are styled entirely with Bootstrap 5.
 
+"New Inkling" only appears when the viewer could actually create something — it's hidden
+for an unapproved character viewing their own tab, since they have no real Inklings to
+create yet (see Chargen Integration below). Staff viewing an unapproved character's tab
+still see it, since staff can always create any type.
+
+If that character has unsubmitted chargen draft text (from the "Secret & Goal" chargen
+tab or the MUSH `+inkling/secret` / `+inkling/goal` commands - see Chargen Integration),
+staff see it in a highlighted "Chargen Drafts (not yet approved)" section at the top of
+the tab, clearly marked with a **DRAFT** badge and separate from the real inkling list -
+it isn't a real Inkling yet and isn't clickable. It disappears automatically once the
+character is approved and the draft becomes a real Inkling.
+
 ### Chargen Integration
 
 During character generation, players see a **"Secret & Goal"** tab with two sections —

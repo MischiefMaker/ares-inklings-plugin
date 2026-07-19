@@ -35,6 +35,13 @@ export default Component.extend({
 
   // --- Internal state ---
   inklings: null,
+  // In-progress chargen draft(s) (secret/goal text saved before the
+  // character is approved - see Inklings.chargen_drafts). Only ever
+  // populated for an unapproved character, which in practice means only
+  // staff viewing that character's tab receive anything here - see the
+  // comment on InklingApi.get_inklings. Rendered as a visually distinct
+  // "not yet approved" section, never as ordinary inklings-list rows.
+  chargenDrafts: null,
   loading: true,
   statusFilter: 'open',
 
@@ -48,6 +55,7 @@ export default Component.extend({
   init() {
     this._super(...arguments);
     this.set('inklings', A());
+    this.set('chargenDrafts', A());
   },
 
   didInsertElement() {
@@ -70,6 +78,7 @@ export default Component.extend({
           return;
         }
         this.set('inklings', A(response.inklings || []));
+        this.set('chargenDrafts', A(response.chargen_drafts || []));
       })
       .finally(() => {
         this.set('loading', false);

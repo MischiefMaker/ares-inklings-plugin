@@ -141,19 +141,59 @@ module AresMUSH
       ["secret", "goal"]
     end
 
+    # The character's in-progress chargen draft(s) - see
+    # plugin/models/character_inkling_fields.rb - as display-ready hashes,
+    # one per chargen-required kind with non-blank draft text. Used to
+    # surface these to staff on the web portal Inklings tab before the
+    # character is approved, since they aren't real Inkling records yet
+    # and don't otherwise show up anywhere in that list. Once the character
+    # is approved, Inklings.character_approved converts each into a real
+    # Inkling and clears the draft field, so this naturally returns nothing
+    # for an approved character - no separate "is this stale" check needed.
+    def self.chargen_drafts(char)
+      return [] unless char
+      drafts = []
+      chargen_required_types.each do |kind|
+        next unless char.respond_to?("inkling_#{kind}_title")
+        title = char.send("inkling_#{kind}_title")
+        text = char.send("inkling_#{kind}_text")
+        next if title.to_s.blank? && text.to_s.blank?
+
+        drafts << {
+          kind: kind,
+          label: kind_label(kind),
+          color: (type_config[kind] || {})["color"] || "secondary",
+          title: title,
+          # Raw, not run through format_markdown_for_html - matches how
+          # inkling message text is already handled elsewhere (see
+          # format_inkling_summary / inkling-detail-modal.hbs's
+          # {{msg.text}}): plain text, escaped by the template on render.
+          text: text
+        }
+      end
+      drafts
+    end
+
     def self.valid_kind?(kind)
       type_config.key?(kind.to_s)
     end
 
     # Kinds this viewer is allowed to create (via +inkling/new or the
-    # web portal's "New Inkling" picker). Staff can create any type;
-    # everyone else is limited to player/shared kinds. Mirrors the
-    # authorization check in InklingApi.create_inkling - kept as a
-    # single source of truth here rather than duplicated client-side,
-    # since this exists purely to build user-facing type lists like
-    # the web portal's create-inkling dropdown.
+    # web portal's "New Inkling" picker). Staff can create any type.
+    # An unapproved, non-staff viewer can only create kinds explicitly
+    # flagged chargen: true in config (none, by default - see
+    # chargen_required_types, which uses its own separate draft
+    # mechanism instead of this path); everyone else is limited to
+    # player/shared kinds. Mirrors the authorization check in
+    # InklingApi.create_inkling - kept as a single source of truth here
+    # rather than duplicated client-side, since this exists purely to
+    # build user-facing type lists like the web portal's
+    # create-inkling dropdown. Getting this right also matters for
+    # hiding "+ New Inkling" entirely in the web portal when it would
+    # be empty - see webportal/templates/components/inklings-tab.hbs.
     def self.creatable_kinds(viewer)
       return all_kinds if can_manage_inklings?(viewer)
+      return chargen_kinds - staff_kinds if viewer && !viewer.is_approved?
       player_kinds + shared_kinds
     end
 

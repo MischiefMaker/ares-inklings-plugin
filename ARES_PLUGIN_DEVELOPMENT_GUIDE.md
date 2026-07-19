@@ -350,6 +350,20 @@ Two things worth calling out explicitly because they're easy to get wrong:
   backed by a draft, not just the save/read hooks — approval gates and
   completion checks are easy to miss because they don't look like part of
   "the chargen form."
+- **A comment claiming "mirrors the permission check in X" is a claim, not a
+  guarantee — verify it.** `Inklings.creatable_kinds` (feeds the web portal's
+  "New Inkling" type dropdown) had a docstring saying it mirrored
+  `InklingApi.create_inkling`'s authorization logic, but never actually
+  checked approval at all - an unapproved character got the full type list
+  with nothing they could actually submit, a dropdown full of dead ends
+  (caught because the reported symptom was "the dropdown is blank" for a
+  *different*, unrelated reason - a missing install step - which is what
+  prompted a closer look at the method itself). A permission-adjacent
+  "what can this viewer do" list-building helper is exactly the kind of code
+  that silently drifts from the real enforcement point it's supposed to
+  reflect, since nothing breaks loudly when they diverge - the UI just
+  offers choices the backend will reject. When you see a comment asserting
+  two code paths are kept in sync, read both and check.
 
 ### Helpers
 
