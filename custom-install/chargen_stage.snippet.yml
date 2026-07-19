@@ -28,8 +28,8 @@
 #
 # STEP 3: Add this new stage BEFORE the "review" stage:
 
-secrets_goals:
-  title: Secrets & Goals
+secret_goal:
+  title: Secret & Goal
   help: secret_goal
 
 # STEP 4: Log in to your server and run `sudo reboot` to restart it.
