@@ -52,20 +52,24 @@
       help: "Describe your character's goal. This is saved as a draft and becomes an Inkling when approved."
       allow_blank: true
 #
-# STEP 4: (OPTIONAL) Add a help topic in game/config/help.yml to explain the stage:
-
-secrets_goals: |
-  %xh%xcSecrets & Goals%xn
-
-  During character creation, you can optionally fill in:
-
-  %xh%xySecret:%xn A personal secret your character holds, which can be shared
-  with other players once approved.
-
-  %xh%xyGoal:%xn A long-term goal your character is working toward.
-
-  Both are optional and can be filled in later via +inkling/secret and
-  +inkling/goal commands, or edited on your character profile.
+# STEP 4: (OPTIONAL) Add a help topic in game/config/help.yml
+#
+# Open game/config/help.yml and add this under the 'help:' section (at the same
+# level as 'shortcuts:'):
+#
+#   chargen:
+#     secrets_goals: |
+#       %xh%xcSecrets & Goals%xn
+#
+#       During character creation, you can optionally fill in:
+#
+#       %xh%xySecret:%xn A personal secret your character holds, which can be shared
+#       with other players once approved.
+#
+#       %xh%xyGoal:%xn A long-term goal your character is working toward.
+#
+#       Both are optional and can be filled in later via +inkling/secret and
+#       +inkling/goal commands, or edited on your character profile.
 #
 # STEP 5: Log in to your server and run `sudo reboot` to restart it.
 #
