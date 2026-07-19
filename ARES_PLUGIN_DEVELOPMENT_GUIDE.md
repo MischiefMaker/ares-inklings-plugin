@@ -126,6 +126,28 @@ for a real bug.
 
 ## 3. Web Portal Conventions
 
+### Chargen Extension Components
+
+When a plugin needs to add form fields to the chargen process, implement it as an
+auto-installed component, not as manual-paste snippets:
+
+**Pattern:** Create `chargen-custom.js` and `chargen-custom.hbs` in `webportal/components/`
+and `webportal/templates/components/` respectively. The component's `onUpdate()` callback
+is invoked by the chargen framework when that step completes, and should return a hash of
+field values to save.
+
+**Why:** The chargen form is a standard Ares extension point (like profile tabs), but
+unlike profile tabs, the chargen-custom component doesn't self-fetch data—it works with
+data from `custom_char_fields.rb`'s `get_fields_for_chargen()` hook. This means:
+- The component is inert until the backend hook is pasted (safe to auto-install)
+- Players never see a broken chargen step if the backend half is missing
+- The form rendering is version-controlled in the plugin, not duplicated across game
+  installations via error-prone manual snippets
+
+Keep chargen-custom component logic generic—dynamically collect whatever `inkling_*`
+fields the backend provides, rather than hardcoding specific type names. This lets
+admins change `chargen_required_types` in config without needing plugin updates.
+
 ### The three shapes a screen can take
 
 - **Full page** — its own URL, its own Route + Controller + Template. Route's

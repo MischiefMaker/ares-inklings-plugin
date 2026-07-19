@@ -44,6 +44,10 @@ Inklings gives staff a structured approval workflow for character development su
 
 ## Web Portal
 
+The plugin provides web portal integration for both character profiles and chargen:
+
+### Profile Tab
+
 The Inklings tab provides a modern web interface for:
 
 - **Browsing your threads** — Full thread view with all messages, rolls, and sharing information
@@ -53,13 +57,16 @@ The Inklings tab provides a modern web interface for:
 - **Submitting for review** — Submit your complete thread to staff with one action
 - **Staff reviews** — View submitted threads, approve/request changes, add GM notes, and grant rewards
 
-The web portal integration is two components: `inklings-tab` (the list and
-"New Inkling" form) and `inkling-detail-modal` (the full thread view, opened
-by clicking a row). Both install automatically via `plugin/install` (see
-Installation below) and are styled entirely with Bootstrap 5 - no plugin
-stylesheet to import. The detail view uses `ember-bootstrap`'s `{{bs-modal}}`
-component, which ships with `ares-webportal` by default; if your checkout has
-removed that dependency, the modal won't render.
+The profile tab uses two components: `inklings-tab` (the list and "New Inkling" form) and 
+`inkling-detail-modal` (the full thread view, opened by clicking a row). Both install 
+automatically via `plugin/install` and are styled entirely with Bootstrap 5.
+
+### Chargen Integration
+
+During character generation, players see a "Secrets & Goals" tab where they create
+inkling entries for the types configured in `chargen_required_types` (typically secret 
+and goal). The chargen form auto-installs with the plugin and requires no manual web 
+portal setup—only the backend hook (Step 3 in Installation).
 
 ## Installation
 
@@ -109,24 +116,29 @@ file for its other steps - Step 2 here can be done now regardless.)
 
 ### Step 3: Configure Character Generation (Optional)
 
-If you want players to create required Inklings during character generation, merge the chargen snippets:
+If you want players to create required Inklings during character generation:
 
 **Backend Hook (Required if using chargen):**
+
+The Chargen form fields auto-install with the plugin, but the backend integration requires a manual code merge:
 
 1. Open `custom-install/custom_char_fields.snippet.rb` in this plugin
 2. Open `plugins/profile/custom_char_fields.rb` in your **aresmush** folder (not ares-webportal)
 3. Follow Steps 1, 3, 4, 5, and 6 in the snippet file and paste the code at the marked locations
-   (Step 2 is shared with the profile tab's type picker - see Step 2b above; if you
-   already did that, just add the chargen-required-fields line to the same hash)
+   (Step 2 is shared with the profile tab's type picker - see Step 2b above; if you already did that, 
+   just add the chargen-required-fields line to the same hash)
 4. Save the file
+5. Restart the game with `@restart`
 
-**Web Portal Form Fields (Optional, only if you want chargen fields on the web portal):**
+**Web Portal Customization (Optional):**
 
-1. Open `custom-install/chargen-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom-tabs.hbs` at the location marked in the snippet
-2. Open `custom-install/chargen-custom.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom.hbs` at the marked location
-3. Open `custom-install/chargen-custom.snippet.js` and paste into `ares-webportal/app/components/chargen-custom.js` at the marked location
+The chargen form fields automatically appear during character generation. If you want to customize the form labels or placeholders:
 
-**Important:** Each snippet file includes a comment showing exactly where to paste its code. Do not simply append to the end of files.
+1. Open `custom-install/chargen-custom.snippet.hbs` to see how to customize the form field labels and descriptions
+2. Edit `ares-webportal/app/templates/components/chargen-custom.hbs` directly if you want to change the form
+3. To add a tab label in the chargen step list, open `custom-install/chargen-custom-tabs.snippet.hbs` for instructions
+
+**Important:** The snippet files include detailed instructions showing exactly where to make changes. Do not simply copy the entire snippet into your files.
 
 ### Step 4: Post-Installation Setup
 
@@ -150,6 +162,8 @@ If you followed any of the optional manual Steps 2 or 3 above, restart the web p
 ```
 website/deploy
 ```
+
+**Note:** The chargen form fields auto-install with the plugin (Step 1), but the backend integration (Step 3's Backend Hook) requires a game restart with `@restart` for the custom_char_fields changes to take effect.
 
 ## Configuration
 

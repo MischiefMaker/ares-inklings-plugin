@@ -55,11 +55,14 @@ The Inklings plugin is a complete character development system for AresMUSH feat
 
 ## Outstanding / Areas for Tweaking
 
+### Fixed Issues
+
+**Chargen Tab Loading** — The chargen form fields now auto-install with the plugin as Ember components (`chargen-custom.js` and `chargen-custom.hbs`), following the same pattern as the profile tab components. Previously, the chargen tab required manual file creation via error-prone snippets. Users still need to paste the backend `custom_char_fields.rb` hook to wire up the data, but the form rendering is now automatic and compatible with any `chargen_required_types` configuration without modification.
+
 ### Known Limitations
 1. **Reroll with Luck** - Temporarily disabled (was causing complexity). Can be re-implemented if needed using `character_luck_reroll` API.
 2. **Rolls don't capture skill modifier context** - Roll result shows success level but not the specific skill rolled. Consider if more detail needed.
 3. **Personal entries** - Still new feature; behavior on transfers/roster changes may need review.
-4. **Chargen required types** - Currently hardcoded in config; users need to update snippet if they change config values.
 
 ### Potential UX Tweaks
 - Roll display could show more detail (skill name, dice rolled, successes breakdown)
