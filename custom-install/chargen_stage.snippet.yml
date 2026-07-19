@@ -32,4 +32,4 @@ secret_goal:
   title: Secret & Goal
   help: secret_goal
 
-# STEP 4: Log in to your server and run `sudo reboot` to restart it.
+# STEP 4: Run `load chargen` in-game to reload the chargen plugin and pick up the new stage.
