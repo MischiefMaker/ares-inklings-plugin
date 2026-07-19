@@ -1,6 +1,13 @@
 // Inklings plugin styles - minimal, theme-aware
 // Inherits Bootstrap 5 and AresMUSH theme styling wherever possible
 
+.inklings-tab {
+  // Override Bootstrap's list-group-item-action color to inherit theme default
+  .list-group-item-action {
+    color: inherit;
+  }
+}
+
 // Scrollable messages container with fixed height
 .messages-scroll {
   max-height: 400px;
