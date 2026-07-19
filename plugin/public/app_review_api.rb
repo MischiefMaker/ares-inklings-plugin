@@ -3,7 +3,7 @@ module AresMUSH
     class AppReviewApi
       # Formats chargen draft status for inclusion in the character's app-review
       # screen. Returns an array of review status lines (one per incomplete field),
-      # or an empty array when the feature is disabled or all checks pass.
+      # or a GREEN OK line when all checks pass.
       #
       # Status logic:
       # - If chargen is disabled: returns [] (no review lines shown)
@@ -11,7 +11,7 @@ module AresMUSH
       #   returns [RED error line] "Checking for X Inklings. < Oops! Missing X >"
       # - If chargen is optional and a field is incomplete:
       #   returns [YELLOW warning line] "Checking for X Inklings. < Are you sure? X >"
-      # - If all configured fields are complete: returns [] (GREEN OK, no lines)
+      # - If all configured fields are complete: returns [GREEN OK line]
       #
       # Evaluates character's inkling_<kind>_text draft fields (secret and goal by default).
       # Creates one review line per incomplete field. Blank strings, whitespace-only, nil,
@@ -27,7 +27,7 @@ module AresMUSH
 
         message_key = chargen_required ? 'inklings.chargen_oops_missing' : 'inklings.chargen_are_you_sure'
 
-        # Create one review line per incomplete field
+        # Check for incomplete fields
         review_lines = []
         Inklings.chargen_required_types.each do |kind|
           next unless char.respond_to?("inkling_#{kind}_text")
@@ -37,6 +37,12 @@ module AresMUSH
           field_label = Inklings.kind_label(kind)
           check_label = t('inklings.chargen_checking_inklings', types: field_label)
           review_lines << Chargen.format_review_status(check_label, t(message_key, missing: field_label))
+        end
+
+        # If no incomplete fields found, show green OK
+        if review_lines.empty?
+          check_label = t('inklings.chargen_checking_inklings', types: t('inklings.secret_and_goal'))
+          review_lines << Chargen.format_review_status(check_label, t('chargen.ok'))
         end
 
         review_lines
