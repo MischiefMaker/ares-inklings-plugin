@@ -2,14 +2,13 @@
 // Inherits Bootstrap 5 and AresMUSH theme styling wherever possible
 
 // Theme-aware text color
-.text-primary-words {
-  color: var(--primary-words-colour);
+.primary-words-color {
+  color: var(--primary-words-color);
 }
 
 // Secondary text with reduced opacity
-.text-primary-words-secondary {
-  color: var(--primary-words-colour);
-  opacity: 0.7;
+.secondary-words-color {
+  color: var(--secondary-words-color);
 }
 
 // Scrollable messages container with fixed height
