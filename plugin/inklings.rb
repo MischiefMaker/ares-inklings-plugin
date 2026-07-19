@@ -798,6 +798,26 @@ module AresMUSH
       nil
     end
 
+    # Hook called when a character is approved. Converts draft chargen-inkling
+    # data (stored in char.custom) to actual Inkling records.
+    def self.character_approved(char, enactor)
+      return unless char
+
+      Inklings.chargen_required_types.each do |kind|
+        title = char.custom_field("inkling_#{kind}_title")
+        text = char.custom_field("inkling_#{kind}_text")
+
+        # Only create if draft data exists
+        next if title.to_s.blank? && text.to_s.blank?
+
+        begin
+          InklingApi.create_inkling(char.id, char.id, kind, text, title)
+        rescue => e
+          AresMUSH::Coder.log_error "Error creating approved inkling for #{char.name} (#{kind}): #{e.message}", e
+        end
+      end
+    end
+
     # Per https://www.aresmush.com/tutorials/code/plugins.html and
     # https://www.aresmush.com/tutorials/code/web-debug.html - web
     # portal requests are dispatched by cmd name to a handler class
