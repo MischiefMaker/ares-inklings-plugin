@@ -11,6 +11,7 @@
 
   // Individual inkling item
   .inkling-item {
+    list-style: none;
     border-bottom: 1px solid var(--border-color);
     padding: 0.75rem;
     cursor: pointer !important;
@@ -32,7 +33,7 @@
     }
   }
 
-  // Inkling item header row - ID, title, badges
+  // Inkling item header row - title (with #id), badges
   .inkling-header {
     display: flex;
     align-items: center;
@@ -41,14 +42,7 @@
     margin-bottom: 0.5rem;
   }
 
-  // Inkling ID
-  .inkling-id {
-    font-weight: 600;
-    font-size: 0.875rem;
-    opacity: 0.8;
-  }
-
-  // Inkling item title - h4 heading
+  // Inkling item title - h4 heading, includes #id
   .inkling-title {
     margin: 0;
     font-size: 1rem;
@@ -56,19 +50,13 @@
     flex: 1;
   }
 
-  // Inkling item metadata row - indented, spaced apart
+  // Inkling item metadata row - indented under the title, items spaced apart
   .inkling-meta {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-left: 2rem;
+    gap: 1.5rem;
+    padding-left: 2rem;
     font-size: 0.875rem;
-  }
-
-  // Inkling date - push to right
-  .inkling-date {
-    margin-left: auto;
   }
 }
 

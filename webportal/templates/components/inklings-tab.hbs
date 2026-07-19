@@ -52,8 +52,7 @@
       {{#each this.inklings as |inkling|}}
         <li class="inkling-item" {{action "openDetail" inkling.id}}>
           <div class="inkling-header">
-            <span class="inkling-id">#{{inkling.id}}</span>
-            <h4 class="inkling-title">{{inkling.title}}</h4>
+            <h4 class="inkling-title">#{{inkling.id}} {{inkling.title}}</h4>
             <span class="badge text-bg-{{inkling.kind_color}}">{{inkling.kind_label}}</span>
             <span class="badge {{if (eq inkling.status "open") "text-bg-success" "text-bg-danger"}}">{{inkling.status}}</span>
             {{#if inkling.locked}}
@@ -71,7 +70,7 @@
             {{#if inkling.linked_job}}
               <span class="badge text-bg-secondary">Job #{{inkling.linked_job.id}}</span>
             {{/if}}
-            <span class="inkling-date">{{local-date inkling.created_at 'MMM D, YYYY h:mm A'}}</span>
+            <span>{{local-date inkling.created_at 'MMM D, YYYY h:mm A'}}</span>
           </div>
         </li>
       {{/each}}
