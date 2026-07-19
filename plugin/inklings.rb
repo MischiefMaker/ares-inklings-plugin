@@ -789,6 +789,20 @@ module AresMUSH
         elsif cmd.switch_is?("untag")
           return InklingUntagCmd
         elsif all_kinds.any? { |k| cmd.switch_is?(k) }
+          kind = all_kinds.find { |k| cmd.switch_is?(k) }
+          # Self-targeted (no "=" - a target means staff acting on someone
+          # else's behalf, which always goes through InklingStartCmd, whose
+          # own permission check lets staff bypass the approval requirement)
+          # use of a chargen-required kind by an unapproved character is the
+          # MUSH-side draft flow, not real Inkling creation. See
+          # InklingChargenDraftCmd for the full explanation. Once the
+          # character is approved, or chargen is disabled
+          # (chargen_required_types is then empty), this condition is never
+          # true and the kind switch behaves normally via InklingStartCmd.
+          self_targeted = !cmd.args.to_s.include?("=")
+          if self_targeted && !enactor.is_approved? && Inklings.chargen_required_types.include?(kind)
+            return InklingChargenDraftCmd
+          end
           return InklingStartCmd
         end
 

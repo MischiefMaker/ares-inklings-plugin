@@ -6,7 +6,7 @@ title: Inklings
 
 Inklings are a system for tracking character development, plot threads, and important notes about your character. They're private conversations between you and staff, or between you and other players in a shared thread.
 
-> **Note:** Most inkling commands require an approved character. During chargen, the same exception applies to goal and secret inklings.
+> **Note:** Most inkling commands require an approved character. Before you're approved, `+inkling/goal` and `+inkling/secret` instead save draft text (the same thing the web chargen "Secret & Goal" tab does) - it becomes a real inkling automatically once your character is approved. After approval, those two commands work like any other inkling command.
 
 > **Staff won't see your inkling until you submit it.** You can freely add updates, private notes, and rolls to build up a thread on your own time - none of that reaches staff by itself. When you're ready for staff input, run `+inkling/submit <id>`. That locks the thread and sends everything in it to staff as a single request. The thread stays locked (you can't add more) until a staff member makes a decision: they can approve it (ending the review), or send it back with feedback for you to revise and resubmit.
 

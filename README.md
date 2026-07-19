@@ -69,6 +69,13 @@ is saved as a draft on the character, survives navigating away and coming back, 
 be edited later from their profile. When the character is approved, each filled-in draft
 is converted into a real Inkling automatically.
 
+Players who prefer the MUSH client over the web portal can fill in the same draft with
+`+inkling/secret <title>/<text>` and `+inkling/goal <title>/<text>` — before approval,
+these two commands write to the same draft used by the web form (not a real Inkling).
+After approval they behave like any other inkling command. Unapproved characters have
+no real Inklings for these two types at any point; only the draft exists until
+approval converts it.
+
 Chargen is limited to these **two fixed types (secret and goal)** — it is not a
 general, configurable list. It can be turned on or off with a single setting,
 `chargen_enabled` (see [Configuration](#required-types-for-chargen)); when off, the

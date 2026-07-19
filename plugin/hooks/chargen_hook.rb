@@ -8,14 +8,19 @@ module AresMUSH
       # Inklings.chargen_required_types) if they haven't already. Does
       # nothing when chargen is disabled (chargen_enabled: false), since the
       # type list is empty then.
+      #
+      # Checks the DRAFT attributes (char.inkling_<kind>_text), not real
+      # Inkling records - an unapproved character never has a real Inkling
+      # for these kinds (see plugin/commands/inkling_chargen_draft_cmd.rb),
+      # only draft text waiting to be converted on approval.
       def self.chargen_finalize(char)
         required_types = Inklings.chargen_required_types
         return true if required_types.empty?
 
         missing_types = []
         required_types.each do |kind|
-          existing = Inkling.find(character_id: char.id, kind: kind).first
-          missing_types << kind if !existing
+          text = char.respond_to?("inkling_#{kind}_text") ? char.send("inkling_#{kind}_text") : nil
+          missing_types << kind if text.to_s.blank?
         end
 
         if missing_types.any?

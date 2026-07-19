@@ -335,6 +335,21 @@ Two things worth calling out explicitly because they're easy to get wrong:
 - Format text for its destination: `format_input_for_html` for the
   chargen/edit *form* fields, `format_markdown_for_html` for the read-only
   *view*, and `format_input_for_mush` when *storing* what the form sent back.
+- **A pre-approval "draft" feature needs every consumer re-audited to read
+  the draft, not the finished record.** Building a chargen draft-then-convert
+  flow (fields saved on the character, turned into a real DB record only on
+  approval) is easy to get half-right: it's natural to write the save/convert
+  path correctly and then leave *other*, pre-existing code — a chargen
+  "is this done yet?" gate, an app-review completeness check — still querying
+  for the finished record, because that's what it did before the draft
+  concept existed. Those checks then silently pass for a genuinely-empty
+  field (nothing to find pre-approval) or block a genuinely-filled one
+  (looking in the wrong place), and both failure modes are invisible in
+  testing unless someone specifically tries the gate before approving. Grep
+  for every place that used to query the finished record for something now
+  backed by a draft, not just the save/read hooks — approval gates and
+  completion checks are easy to miss because they don't look like part of
+  "the chargen form."
 
 ### Helpers
 

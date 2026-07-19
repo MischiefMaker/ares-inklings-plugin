@@ -39,9 +39,15 @@ inklings:
   #   description - Short description shown in +inkling/types and
   #                 pulled into the help files.
   #   chargen     - Optional, defaults to false. If true, unapproved
-  #                 characters can create this type during character
-  #                 creation (used by goal/secret today, for the
-  #                 chargen hook that prompts for both).
+  #                 characters can use +inkling/<kind> to create a REAL
+  #                 Inkling of this type immediately, bypassing the normal
+  #                 approval requirement. NOT used by goal/secret - those
+  #                 are handled by the separate chargen-draft mechanism
+  #                 (chargen_enabled in this file's top section), which
+  #                 saves draft text and only creates the real Inkling on
+  #                 approval. Leave this unset for any custom type unless
+  #                 you specifically want unapproved characters creating
+  #                 permanent records right away.
   #   color       - Optional color for the type badge in the web portal
   #                 (hex code or Bootstrap color name: primary, success,
   #                 danger, warning, info, secondary, dark, light).
@@ -91,13 +97,11 @@ inklings:
       category: player
       name: Goal
       description: A long-term goal your character is working toward.
-      chargen: true
       color: success
     secret:
       category: shared
       name: Secret
       description: An IC secret your character holds, shareable with other players.
-      chargen: true
       color: info
     progress:
       category: player
