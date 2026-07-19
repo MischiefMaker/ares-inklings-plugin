@@ -29,7 +29,7 @@
 
 - key: secrets_goals
   name: Secrets & Goals
-  help_topic: secrets_goals
+  help: inklings
   fields:
     - name: inkling_secret_title
       type: text
@@ -51,27 +51,8 @@
       label: Goal Description
       help: "Describe your character's goal. This is saved as a draft and becomes an Inkling when approved."
       allow_blank: true
-#
-# STEP 4: (OPTIONAL) Add a help topic in game/config/help.yml
-#
-# Open game/config/help.yml and add this under the 'help:' section (at the same
-# level as 'shortcuts:'):
-#
-#   chargen:
-#     secrets_goals: |
-#       %xh%xcSecrets & Goals%xn
-#
-#       During character creation, you can optionally fill in:
-#
-#       %xh%xySecret:%xn A personal secret your character holds, which can be shared
-#       with other players once approved.
-#
-#       %xh%xyGoal:%xn A long-term goal your character is working toward.
-#
-#       Both are optional and can be filled in later via +inkling/secret and
-#       +inkling/goal commands, or edited on your character profile.
-#
-# STEP 5: Log in to your server and run `sudo reboot` to restart it.
+
+# STEP 4: Log in to your server and run `sudo reboot` to restart it.
 #
 # ===========================================================================
 # FIELD TYPES REFERENCE
@@ -92,12 +73,13 @@
 # ===========================================================================
 #
 # Change "Secret" and "Goal" to match your game's terminology if needed.
-# Update the help topics to describe what your game considers a secret or goal.
-#
 # For example, if your game calls them "Motivations" and "Drives":
 #   - Change label: Secret Title → label: Motivation Title
 #   - Change label: Goal Title → label: Drive Title
-#   - Update help text and help_topic to match
+#   - Optionally change name: "Secrets & Goals" to "Motivations & Drives"
 #
 # The internal field names (inkling_secret_title, etc.) should NOT change,
 # as the Inklings plugin expects those exact names.
+#
+# The help: inklings setting points to the Inklings plugin's help file
+# in the help/ folder and does not need to be changed.
