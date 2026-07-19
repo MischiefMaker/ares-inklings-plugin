@@ -3,7 +3,7 @@ toc: Managing the Game
 summary: Managing inklings and player plot threads.
 ---
 
-# Managing Inklings
+# Manage Inklings
 
 Inklings are player-initiated threads for tracking character development, plot requests, and collaborative storytelling. Staff can create inklings for players, respond to player submissions, and manage the threads.
 
