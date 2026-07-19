@@ -302,29 +302,50 @@ export default Component.extend({
       };
 
       if (this.rollType === 'player') {
-        args.result = '';
-        args.result_value = 0;
+        // For player rolls, perform an FS3 roll first to get the actual result
+        this.gameApi.requestOne('character_luck_reroll', {
+          char_id: this.characterId
+        }, null).then((rollData) => {
+          if (rollData.error) {
+            this.flashMessages.danger('Failed to perform roll');
+            return;
+          }
+          args.result = rollData.result;
+          args.result_value = rollData.result_value;
+          this.gameApi.requestOne('inklings_add_roll', args, null).then((response) => {
+            if (response.error) {
+              return;
+            }
+            this.setProperties({
+              rollSpec: '',
+              npcName: '',
+              rollResult: '',
+              rollIsPrivate: false,
+              showRollForm: false
+            });
+            this.loadDetail();
+          });
+        });
       } else {
         args.result = this.rollResult;
         args.result_value = parseInt(this.rollResult, 10) || 0;
         if (this.rollType === 'npc') {
           args.npc_name = this.npcName || null;
         }
-      }
-
-      this.gameApi.requestOne('inklings_add_roll', args, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.setProperties({
-          rollSpec: '',
-          npcName: '',
-          rollResult: '',
-          rollIsPrivate: false,
-          showRollForm: false
+        this.gameApi.requestOne('inklings_add_roll', args, null).then((response) => {
+          if (response.error) {
+            return;
+          }
+          this.setProperties({
+            rollSpec: '',
+            npcName: '',
+            rollResult: '',
+            rollIsPrivate: false,
+            showRollForm: false
+          });
+          this.loadDetail();
         });
-        this.loadDetail();
-      });
+      }
     },
 
     rerollWithLuck(rollId) {
