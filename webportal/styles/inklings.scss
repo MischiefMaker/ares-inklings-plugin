@@ -54,6 +54,11 @@
     padding-left: 2rem;
     font-size: 0.875rem;
   }
+
+  // Push the date to the far right, under the header row's badges
+  .inkling-date {
+    margin-left: auto;
+  }
 }
 
 // Scrollable messages container with fixed height
