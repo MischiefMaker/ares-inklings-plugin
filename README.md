@@ -39,7 +39,7 @@ Inklings gives staff a structured approval workflow for character development su
 - **Message visibility tiers** — Public (all participants), private (selected participants + staff), or GM-only notes
 - **Web portal integration** — Full Ember component for browsing, managing, and rolling in-game without command syntax
 - **Optional bonus XP** — Automatically award XP to characters who create designated inkling types (e.g., Progress entries), via scheduled Cron job
-- **Chargen & approval integration** — Require secret and goal inklings before a character can be approved
+- **Optional chargen integration** — During character creation, players can optionally fill in Secret and Goal drafts that convert to real Inklings on approval; can be disabled if not needed
 - **Structured rewards** — Award XP, FS3 skills, or custom rewards with configurable visibility
 
 ## Web Portal
@@ -88,10 +88,18 @@ After approval they behave like any other inkling command. Unapproved characters
 no real Inklings for these two types at any point; only the draft exists until
 approval converts it.
 
-Chargen is limited to these **two fixed types (secret and goal)** — it is not a
-general, configurable list. It can be turned on or off with a single setting,
-`chargen_enabled` (see [Configuration](#required-types-for-chargen)); when off, the
-feature goes completely dormant and nothing else in the plugin is affected.
+**Chargen is completely optional.** It can be turned on or off with a single setting,
+`chargen_enabled` (defaults to on, see [Configuration](#chargen-integration-on-off));
+when off, the feature goes completely dormant and nothing else in the plugin is affected.
+Staff viewing an unapproved player's profile see chargen drafts in a distinct section
+marked "DRAFT", and in the MUSH `+inkling/list`, drafts appear before the list of real
+Inklings. The drafts disappear automatically once the character is approved.
+
+**Important:** Chargen is limited to these **two fixed types (secret and goal)** — it is not
+a general, configurable list. **If you enable chargen, you MUST define both `secret` and
+`goal` type definitions in your `inklings.yml` configuration.** If either type is missing,
+character approval will fail. If you do not need chargen, disable it with `chargen_enabled: false`
+rather than deleting one of these types.
 
 Unlike the profile components, the chargen form does **not** fully auto-install: its
 markup lives in shared web-portal files that other plugins may also extend, so it is
@@ -161,7 +169,10 @@ scrollable message pane.
 
 ### Step 3: Configure Character Generation (Optional)
 
-If you want players to create required Inklings during character generation, complete both the backend and web portal integration steps below.
+If you want players to create Secret and Goal Inklings as part of character generation,
+complete both the backend and web portal integration steps below. Chargen is disabled by
+default (or enable it explicitly with `chargen_enabled: true` in `game/config/inklings.yml`);
+if you don't need this feature, skip this entire step.
 
 **Step 3a: Backend Hook (Required if using chargen):**
 
@@ -232,23 +243,29 @@ types:
 - **staff** — Only staff can create these
 - **shared** — Both can create these
 
-### Chargen Integration (On/Off)
+### Chargen Integration (Optional, On/Off)
 
-Chargen is fixed to two types — **secret** and **goal** — and is turned on or off with
-a single boolean. It defaults to on if the setting is omitted:
+Chargen is completely optional and is turned on or off with a single boolean. It defaults to on if the setting is omitted:
 
 ```yaml
 chargen_enabled: true   # set to false to disable the chargen Secret & Goal feature
 ```
 
-When `chargen_enabled` is `false`, the feature goes fully dormant: no chargen prompt,
-no approval requirement, no draft-to-Inkling conversion on approval, and the
+**Requirements for chargen:**
+
+If `chargen_enabled: true`, **you must have both `secret` and `goal` types defined** in your
+`types:` list. If either is missing, character approval will fail when trying to convert
+the draft to a real Inkling. There is no workaround; the types must exist.
+
+**To disable chargen**, simply set `chargen_enabled: false`. When disabled, the feature
+goes fully dormant: no chargen tab, no draft fields, no approval requirement, and the
 profile/chargen custom fields return nothing. The rest of the plugin (commands, staff
-threads, rewards, the profile Inklings browser) is unaffected either way.
+threads, rewards, the profile Inklings browser) is unaffected.
 
 The set of chargen types is intentionally **not** configurable — the web form and the
-character draft fields are built specifically for secret and goal. Turning the feature
-off is the supported way to opt out.
+character draft fields are built specifically for secret and goal. This keeps the design
+simple and prevents configuration errors. If you need different chargen behavior, disable
+chargen and let players create those Inklings normally after approval.
 
 ### Job Category
 
@@ -344,6 +361,8 @@ Staff can award rewards during or after review.
 - **Luck point rerolls require `char.luck`** — If your game doesn't track luck points on the Character model, the web portal's reroll button won't work (the rest of rolls work fine).
 
 - **FS3 rolling is optional** — `+inkling/roll` reports rolling unavailable if FS3Skills isn't installed; other features work normally without it.
+
+- **Chargen requires both secret and goal types** — If you enable chargen (`chargen_enabled: true`), you must have both `secret` and `goal` type definitions in `types:`. If either is missing when a character is approved, approval will fail. Disable chargen with `chargen_enabled: false` if you don't need this feature, rather than deleting one of these type definitions.
 
 - **Requires manual chargen snippet merging** — Chargen integration requires copying snippet code into your game's shared chargen files, since other plugins may also extend chargen. This cannot be automated without risk of breaking other plugins.
 
