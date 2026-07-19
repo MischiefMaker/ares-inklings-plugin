@@ -51,9 +51,9 @@
     <ul class="inklings-list">
       {{#each this.inklings as |inkling|}}
         <li class="inkling-item" {{action "openDetail" inkling.id}}>
-          <div class="d-flex align-items-center gap-2 flex-wrap">
+          <div class="inkling-header">
             <span class="badge text-bg-{{inkling.kind_color}}">{{inkling.kind_label}}</span>
-            <span class="fw-bold">{{inkling.title}}</span>
+            <span class="inkling-title">{{inkling.title}}</span>
             <span class="badge {{if (eq inkling.status "open") "text-bg-success" "text-bg-danger"}}">{{inkling.status}}</span>
             {{#if inkling.locked}}
               {{#if (eq inkling.approval_state "approved")}}
@@ -64,22 +64,13 @@
                 <span class="badge text-bg-secondary">LOCKED</span>
               {{/if}}
             {{/if}}
-            {{#unless (eq inkling.character_id this.viewerId)}}
-              {{#if inkling.character_name}}
-                <span>for {{inkling.character_name}}</span>
-              {{/if}}
-            {{/unless}}
-            {{#if inkling.player_unread}}
-              <span class="badge text-bg-warning">unread</span>
-            {{/if}}
-            <span>
-              {{inkling.message_count}} message{{if (eq inkling.message_count 1) "" "s"}}
-              {{#if inkling.player_unread}}<span class="text-warning fw-bold">*</span>{{/if}}
-            </span>
-            <span class="small">{{local-date inkling.created_at 'MMM D, YYYY h:mm A'}}</span>
+          </div>
+          <div class="inkling-meta">
+            <span>{{inkling.message_count}} message{{if (eq inkling.message_count 1) "" "s"}}{{#if inkling.player_unread}} <span class="text-warning fw-bold">*</span>{{/if}}</span>
             {{#if inkling.linked_job}}
-              <span class="badge text-bg-secondary">Job #{{inkling.linked_job.id}} ({{inkling.linked_job.status}})</span>
+              <span class="badge text-bg-secondary">Job #{{inkling.linked_job.id}}</span>
             {{/if}}
+            <span class="small">{{local-date inkling.created_at 'MMM D, YYYY h:mm A'}}</span>
           </div>
         </li>
       {{/each}}

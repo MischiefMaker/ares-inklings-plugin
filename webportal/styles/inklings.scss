@@ -14,14 +14,40 @@
     border-bottom: 1px solid var(--border-color);
     padding: 0.75rem;
     cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
 
     &:hover {
-      background-color: var(--box-background-color);
+      background-color: var(--primary-words-color);
+      color: var(--background-color);
     }
 
     &:last-child {
       border-bottom: none;
     }
+  }
+
+  // Inkling item header row - badges and title
+  .inkling-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+
+  // Inkling item title
+  .inkling-title {
+    font-weight: 600;
+    flex: 1;
+  }
+
+  // Inkling item metadata row
+  .inkling-meta {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    font-size: 0.875rem;
   }
 }
 
