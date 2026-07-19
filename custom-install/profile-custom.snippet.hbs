@@ -17,7 +17,7 @@
 
   ---START COPY HERE---
   <div class="tab-pane fade" id="inklings-tab-pane">
-    {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff typeInfo=this.char.custom.inkling_types}}
+    {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.viewer.isStaff isApproved=this.char.is_approved isSelf=(eq this.char.id this.viewer.id) typeInfo=this.char.custom.inkling_types}}
   </div>
   ---END COPY---
 

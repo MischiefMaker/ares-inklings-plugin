@@ -65,7 +65,9 @@ module AresMUSH
           return { error: "Not authorized" }
         end
 
-        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved? || Inklings.chargen_kinds.include?(kind)
+        # Permission: staff can always create; non-staff can only create for
+        # their own approved character.
+        unless Inklings.can_manage_inklings?(viewer) || (viewer.id == char.id && char.is_approved?)
           return { error: "Your character must be approved to create inklings." }
         end
 

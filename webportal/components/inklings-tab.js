@@ -22,6 +22,8 @@ export default Component.extend({
   characterId: null,
   viewerId: null,
   isStaff: false,
+  isApproved: false,
+  isSelf: false,
   // Array of { kind, name, color } this viewer may create, e.g.
   // typeInfo=this.char.custom.inkling_types - see
   // custom-install/custom_char_fields.snippet.rb. Supplied by the
@@ -56,6 +58,9 @@ export default Component.extend({
     this._super(...arguments);
     this.set('inklings', A());
     this.set('chargenDrafts', A());
+    // Permission check: staff can always create, others only if viewing
+    // their own approved profile.
+    this.set('canCreateInkling', this.isStaff || (this.isSelf && this.isApproved));
   },
 
   didInsertElement() {
