@@ -2,6 +2,12 @@
 // Inherits Bootstrap 5 and AresMUSH theme styling wherever possible
 
 .inklings-tab {
+  // In the tab list (dark background), text-muted is too dark.
+  // Use lighter text color for legibility on dark backgrounds.
+  .text-muted {
+    color: var(--faded-text-color);
+  }
+
   // Modal close button needs inversion for visibility on dark modal backgrounds
   .modal-content {
     .btn-close {
@@ -10,6 +16,12 @@
       &:hover {
         filter: invert(1) brightness(1.2);
       }
+    }
+
+    // In the modal (light background), text-secondary is too light.
+    // Use darker text color for legibility on light backgrounds.
+    .text-secondary {
+      color: var(--text-color);
     }
   }
 }
