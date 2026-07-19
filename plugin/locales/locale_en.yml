@@ -69,3 +69,7 @@ en:
     tag_removed: "Tag '%{tag}' removed."
     chargen_draft_saved: "Your %{label} has been saved. It'll become an inkling once your character is approved."
     chargen_draft_unavailable: "That's not available right now - chargen inklings may be disabled, or your character may already be approved."
+    chargen_checking_inklings: "Checking for %{types} Inklings."
+    chargen_oops_missing: "%xr< Missing %{missing} >%xn"
+    chargen_are_you_sure: "%xy< Missing %{missing} >%xn"
+    secret_and_goal: "Secret & Goal"
