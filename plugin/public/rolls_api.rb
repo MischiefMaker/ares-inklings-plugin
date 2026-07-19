@@ -39,17 +39,6 @@ module AresMUSH
         case roll_type
         when "player"
           target = viewer
-          # Perform FS3 roll for the given skill
-          if !result || result.blank?
-            roll_data = Global.dispatcher.call_request_handler('character_luck_reroll',
-              { char_id: viewer.id })
-            if roll_data.is_a?(Hash) && roll_data[:result]
-              result = roll_data[:result]
-              result_value = roll_data[:result_value].to_i
-            else
-              return { error: "Failed to perform FS3 roll" }
-            end
-          end
 
         when "npc", "static"
           unless Inklings.can_manage_inklings?(viewer)

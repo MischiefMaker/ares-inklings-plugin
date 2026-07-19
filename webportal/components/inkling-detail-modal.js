@@ -302,21 +302,30 @@ export default Component.extend({
       };
 
       if (this.rollType === 'player') {
-        // For player rolls, let the backend perform the FS3 roll
-        // Just pass the roll spec and character info, backend does the rolling
-        this.gameApi.requestOne('inklings_add_roll', args, null).then((response) => {
-          if (response.error) {
-            this.flashMessages.danger(response.error);
+        // For player rolls, get the FS3 result first
+        this.gameApi.requestOne('character_luck_reroll', {
+          char_id: this.characterId
+        }, null).then((rollData) => {
+          if (rollData.error) {
+            this.flashMessages.danger('Failed to perform roll');
             return;
           }
-          this.setProperties({
-            rollSpec: '',
-            npcName: '',
-            rollResult: '',
-            rollIsPrivate: false,
-            showRollForm: false
+          args.result = rollData.result;
+          args.result_value = rollData.result_value;
+          this.gameApi.requestOne('inklings_add_roll', args, null).then((response) => {
+            if (response.error) {
+              this.flashMessages.danger(response.error);
+              return;
+            }
+            this.setProperties({
+              rollSpec: '',
+              npcName: '',
+              rollResult: '',
+              rollIsPrivate: false,
+              showRollForm: false
+            });
+            this.loadDetail();
           });
-          this.loadDetail();
         });
       } else {
         args.result = this.rollResult;
