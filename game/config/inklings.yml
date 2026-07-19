@@ -10,9 +10,9 @@ inklings:
 
   # Job category used for jobs Inklings creates to notify staff of
   # player activity (new threads, replies, deletions). Create this
-  # category in-game with: job/createcategory INKLINGS
-  # and set access roles with: job/categoryroles INKLINGS=<roles>
-  job_category: INKLINGS
+  # category in-game with: job/createcategory Plots
+  # and set access roles with: job/categoryroles Plots=<roles>
+  job_category: Plots
 
   # Turns the chargen-inkling integration on or off. The chargen feature is
   # fixed to two types - secret and goal - which players fill in on the

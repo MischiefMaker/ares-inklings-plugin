@@ -203,9 +203,10 @@ The chargen form requires manual integration into your game's webportal chargen 
 **In-game:**
 
 ```
-job/createcategory INKLINGS
-job/categoryroles INKLINGS=<staff roles that should see inkling jobs>
+job/categoryroles Plots=<staff roles that should see inkling jobs>
 ```
+
+(The `Plots` job category typically already exists in Ares. If it doesn't, create it first with `job/createcategory Plots`.)
 
 **Verify permissions:**
 
@@ -281,7 +282,7 @@ chargen and let players create those Inklings normally after approval.
 The job category Inklings uses for submitted threads:
 
 ```yaml
-job_category: INKLINGS
+job_category: Plots
 ```
 
 ### Bonus XP (Optional)
