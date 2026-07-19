@@ -31,7 +31,5 @@
 secrets_goals:
   title: Secrets & Goals
   help: inklings_chargen
-  text: During character creation, you can optionally set your character's secret
-    and long-term goal. Type `help secrets_goals` to see the commands.
 
 # STEP 4: Log in to your server and run `sudo reboot` to restart it.
