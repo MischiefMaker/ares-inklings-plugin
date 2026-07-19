@@ -30,12 +30,26 @@ module AresMUSH
             .sort_by { |i| Inklings.time_value(i.created_at) }.reverse
           inklings.each { |i| Inklings.sync_job_replies(i) }
 
-          if inklings.empty?
+          drafts = model.is_approved? ? [] : Inklings.chargen_drafts(model)
+
+          if inklings.empty? && drafts.empty?
             client.emit_success t('inklings.no_inklings_for', :name => model.name)
             return
           end
 
-          list = inklings.map do |i|
+          list = []
+
+          # Show chargen drafts first if any exist (unapproved characters only)
+          if drafts.any?
+            list << "%xh%cy--- CHARGEN DRAFTS (not yet approved) ---%xn"
+            drafts.each do |d|
+              list << "  [#{Inklings.color_type(d[:kind].upcase)}] #{Inklings.color_title(d[:title].to_s.blank? ? d[:label] : d[:title])} %xh%cy(DRAFT)%xn"
+            end
+            list << nil  # Blank line separator
+          end
+
+          # Show real inklings
+          inkling_lines = inklings.map do |i|
             job_ref = i.job ? "job ##{i.job.id} [#{i.job.status}]" : t('inklings.no_linked_job')
             title = i.title.to_s.blank? ? Inklings.kind_label(i.kind) : i.title
             unread = i.player_unread == "true"
@@ -43,6 +57,7 @@ module AresMUSH
             lock_text = i.locked == "true" ? " %xh%crLOCKED%xn" : ""
             "##{i.id} [#{Inklings.color_type(i.kind.upcase)}] #{Inklings.color_title(title)} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} #{job_ref} - #{count_text}#{lock_text}"
           end
+          list.concat(inkling_lines)
 
           template = BorderedPagedListTemplate.new list, cmd.page, 25,
             t('inklings.inklings_title_for', :name => model.name)
