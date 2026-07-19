@@ -88,7 +88,7 @@
 
       <div class="messages-scroll mb-3">
         {{#each this.detail.messages as |msg|}}
-          <div class="border-bottom pb-2 mb-2 {{if msg.is_staff "bg-body-secondary rounded p-2"}} {{if msg.is_private "border-start border-info border-3 ps-2"}}">
+          <div class="border-bottom pb-2 mb-2 {{if msg.is_staff "border rounded p-2"}} {{if msg.is_private "border-start border-info border-3 ps-2"}}">
             <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
               <span class="small font-monospace">#{{msg.ref}}</span>
               <strong>{{msg.author}}</strong>
