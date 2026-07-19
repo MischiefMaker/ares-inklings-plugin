@@ -2,14 +2,40 @@
 // Inherits Bootstrap 5 and AresMUSH theme styling wherever possible
 
 .inklings-tab {
-  // Modal close button needs inversion for visibility on dark modal backgrounds
+  // List items use theme background and text colors for proper contrast
+  .list-group-item {
+    background-color: var(--background-color);
+    color: var(--primary-words-colour);
+
+    &:hover {
+      background-color: var(--background-color);
+      color: var(--primary-words-colour);
+    }
+
+    // Text secondary styling within list items
+    .text-secondary {
+      color: var(--primary-words-colour);
+      opacity: 0.7;
+    }
+  }
+
+  // Modal content uses theme colors
   .modal-content {
+    background-color: var(--background-color);
+    color: var(--primary-words-colour);
+
     .btn-close {
       filter: invert(1);
 
       &:hover {
         filter: invert(1) brightness(1.2);
       }
+    }
+
+    // Text secondary styling within modal
+    .text-secondary {
+      color: var(--primary-words-colour);
+      opacity: 0.7;
     }
   }
 
