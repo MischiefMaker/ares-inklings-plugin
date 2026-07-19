@@ -245,10 +245,11 @@ types:
 
 ### Chargen Integration (Optional, On/Off)
 
-Chargen is completely optional and is turned on or off with a single boolean. It defaults to on if the setting is omitted:
+Chargen is completely optional and is turned on or off with two settings:
 
 ```yaml
-chargen_enabled: true   # set to false to disable the chargen Secret & Goal feature
+chargen_enabled: true       # Enable/disable the feature (default: true)
+chargen_required: true      # Whether drafts are required for approval (default: true)
 ```
 
 **Requirements for chargen:**
@@ -257,8 +258,16 @@ If `chargen_enabled: true`, **you must have both `secret` and `goal` types defin
 `types:` list. If either is missing, character approval will fail when trying to convert
 the draft to a real Inkling. There is no workaround; the types must exist.
 
+**Approval behavior:**
+
+- **`chargen_required: true` (default)** — App review throws a RED (blocking) warning if 
+  either Secret or Goal draft is missing. The character cannot be approved until both are filled in.
+- **`chargen_required: false`** — App review throws a YELLOW (advisory) warning if either 
+  is missing, but approval can proceed. Useful if you want to encourage chargen drafts without 
+  enforcing them.
+
 **To disable chargen**, simply set `chargen_enabled: false`. When disabled, the feature
-goes fully dormant: no chargen tab, no draft fields, no approval requirement, and the
+goes fully dormant: no chargen tab, no draft fields, no approval warnings, and the
 profile/chargen custom fields return nothing. The rest of the plugin (commands, staff
 threads, rewards, the profile Inklings browser) is unaffected.
 
