@@ -98,9 +98,9 @@ plugin/install https://github.com/MischiefMaker/ares-inklings-plugin
 This automatically:
 - Installs plugin code to `plugins/inklings/`
 - Merges configuration into `game/config/inklings.yml`
-- Installs web portal components to `ares-webportal/app/` (components and templates - styled entirely with Bootstrap 5, already loaded by `ares-webportal`, so there's no plugin stylesheet to import)
+- Installs web portal components to `ares-webportal/app/` (components, templates, and `webportal/styles/inklings.scss`, copied to `ares-webportal/app/styles/`)
 
-**Result:** MUSH commands and web portal components are ready. The Inklings tab will appear on character profiles once you complete the optional Step 2 below.
+**Result:** MUSH commands and web portal components are ready. The Inklings tab will appear on character profiles once you complete the optional Step 2 below - **including Step 2c**, or the tab will render with broken layout (bullets, unstyled hover, missing spacing) despite Bootstrap 5 handling most of the styling.
 
 **If `plugin/install` is unavailable**, manually copy the `plugin/` folder to `plugins/inklings/` and copy `game/config/inklings.yml` to `game/config/`, then restart with `@restart`.
 
@@ -130,6 +130,22 @@ RPG plugin's `char.rpg.sheet`). Without this step the dropdown will be empty:
 
 (If you're also setting up chargen in Step 3 below, you'll come back to this same
 file for its other steps - Step 2 here can be done now regardless.)
+
+**Step 2c: Import the Inklings stylesheet (Required)**
+
+`plugin/install` copies `inklings.scss` into `ares-webportal/app/styles/`, but a
+copied `.scss` file is inert until something actually imports it - Ember's Sass
+build only compiles files that `app.scss` references. Without this step, the
+Inklings tab and modal will render using Bootstrap defaults only: no bullet
+removal on the list, no hover highlight, no header/metadata layout, no
+scrollable message pane.
+
+1. Open `ares-webportal/app/styles/app.scss`
+2. Add this line alongside the other `@use` lines already at the top of the file:
+   ```scss
+   @use "inklings";
+   ```
+3. Rebuild/restart the web portal (see "Restart the Web Portal" below)
 
 ### Step 3: Configure Character Generation (Optional)
 

@@ -950,42 +950,54 @@ Some systems (like luck rerolls) may have additional approval checks.
 
 ## 9b. Web Portal Styling
 
-When styling web portal components, use AresMUSH theme color CSS variables
-instead of hardcoded colors. This ensures your plugin respects each game's
-skin and color scheme.
+**Lesson learned (verified on this project, corrects earlier guidance below):**
+An AresMUSH admin's theme color setup screen lists names like
+`primary-words-color`, `box-background-color`, `border-color`, etc., and it's
+natural to assume these are available to plugin CSS as runtime custom
+properties (`var(--primary-words-color)`). **They are not.** They're Sass
+variables (`$primary-words-color: #ebebeb;`) substituted directly into
+specific compiled selectors (`h1`, `th`, `.list-group-item`, ...) at
+theme-build time, on the *game's* build, not the plugin's. Confirmed via
+browser devtools on a live install:
 
-### Theme Color Variables
-
-Every AresMUSH installation defines these CSS variables (in admin setup):
-- `--primary-color` / `--primary-words-color` — main theme color and its text
-- `--secondary-color` / `--secondary-words-color` — secondary accents
-- `--background-color` — page background
-- `--box-background-color` — card/modal backgrounds
-- `--text-color` — main text
-- `--border-color` — borders
-- `--faded-text-color` — muted/secondary text (avoid for small text on dark bg)
-
-**Correct approach:**
-
-```scss
-.my-component {
-  background-color: var(--box-background-color);
-  border-color: var(--border-color);
-  color: var(--text-color);
-
-  .header {
-    background-color: var(--primary-color);
-    color: var(--primary-words-color);
-  }
-
-  // For muted/secondary text, use Bootstrap's .text-secondary class
-  // instead of custom CSS, as it works on both light and dark backgrounds
-  .timestamp {
-    // DON'T: color: var(--faded-text-color);  // Too dim on dark bg
-    // DO: use <span class="text-secondary">
-  }
-}
+```js
+getComputedStyle(document.documentElement).getPropertyValue('--primary-words-color')
+// => "" (empty - the property does not exist)
 ```
+
+Any plugin CSS rule written as `var(--primary-words-color)` (or any of the
+other names below) silently resolves to nothing - no error, no fallback,
+just as if the property/value were never set. This produced a long series of
+"still doesn't look right" bugs on this project (wrong hover color, wrong
+background) that each looked like a small tuning mistake, when the real
+problem was that the color reference could never have worked.
+
+**What to use instead:**
+
+- **Don't set a color at all when possible.** Letting an element inherit is
+  the most reliable way to pick up the game's real theme color, since the
+  game's own compiled CSS already sets it correctly on ancestor elements
+  (`body`, `.modal-content`, etc.) via the same Sass variables. This is the
+  approach this plugin settled on for the Inklings list/modal text.
+- **`currentColor` and `color-mix()`** for anything relative (a subtle hover
+  highlight, a divider) - `currentColor` always reflects whatever the real,
+  correctly-inherited text color is for the active theme, so
+  `color-mix(in srgb, currentColor 10%, transparent)` adapts automatically to
+  light or dark themes without ever needing to know the actual hex value.
+- **Bootstrap's own `--bs-*` custom properties** (`--bs-border-color`,
+  `--bs-secondary-bg`, etc.) - these genuinely are real runtime CSS custom
+  properties in Bootstrap 5.3+, unlike the Ares theme names above. Prefer
+  reaching them via an existing Bootstrap utility class (`.border-bottom`,
+  `.bg-body-secondary`) over writing a custom rule that references the
+  variable directly.
+- **Never hardcode a hex color** as a substitute - that reintroduces the
+  exact "wrong on this game's theme" problem these variables were meant to
+  solve, just less discoverable.
+
+Before assuming any admin-configurable theme name is a real CSS custom
+property, verify it the same way: check with `getComputedStyle` in the
+browser console on a live install, don't assume from the settings-screen
+label.
 
 ### Contrast and Backgrounds
 
@@ -1003,16 +1015,53 @@ Every AresMUSH installation defines these CSS variables (in admin setup):
 ### CSS Installation
 
 New CSS files in `webportal/styles/` need to be copied to the ares-webportal
-installation and the webportal needs to be rebuilt:
+installation, **imported into `app.scss`**, and the webportal needs to be
+rebuilt. All three steps are required - missing any one leaves the plugin's
+styles completely inert with no error or warning:
 
 ```bash
 cp /path/to/plugin/webportal/styles/mycomponent.scss /path/to/ares-webportal/app/styles/
+```
+
+Then add an `@use` line to `ares-webportal/app/styles/app.scss` (alongside its
+existing `@use` lines for other partials like `advanced-colors`):
+
+```scss
+@use "mycomponent";
+```
+
+Then rebuild:
+
+```bash
 cd /path/to/ares-webportal
 npm run build  # or npm start for development
 ```
 
-If using `.ares-manifest.yml` to install the plugin, include the `webportal/styles/`
-directory in the install paths so CSS is copied automatically.
+**Lesson learned (verified on this project):** copying the file into
+`app/styles/` is *not* sufficient by itself, even after a rebuild - Ember's
+Sass build only compiles files `app.scss` actually references via `@use`/
+`@import`. A plugin can auto-copy its `.scss` into place (that part is safe,
+inert-until-referenced), but the `app.scss` edit is a manual step against a
+file the game already owns, and it's easy to never notice it's missing:
+Bootstrap classes referenced directly in your templates (`.badge`,
+`.border-bottom`, etc.) will render correctly regardless, since they come
+from the separately-loaded global Bootstrap CSS - only rules that live in
+your own uncompiled `.scss` file silently do nothing. On this project, that
+produced a long string of "still not working" reports (no hover, no bullet
+removal, no flex layout, not even a bare `cursor: pointer`) that looked like
+a series of small CSS mistakes, when the actual cause was that the whole
+stylesheet was never being compiled in at all. If a plugin's own CSS doesn't
+seem to be having *any* effect - not even trivial layout properties -
+suspect this before debugging individual rules. **This plugin's own README**
+originally claimed "no plugin stylesheet to import," written before
+`inklings.scss` existed and never updated - always double check that kind of
+claim against what's actually in `webportal/styles/` before trusting it.
+
+If using `.ares-manifest.yml` to install the plugin, include the
+`webportal/styles/` directory in the install paths so the file is copied
+automatically - but still document the required `app.scss` import as a
+manual README step, since the installer cannot safely edit a file the game
+owns.
 
 ---
 
