@@ -1,0 +1,114 @@
+# CHARGEN STAGE SNIPPET - SECRETS & GOALS STAGE
+#
+# FILE: game/config/chargen.yml (in your game folder, NOT the plugin folder)
+#
+# PURPOSE:
+# Adds a "Secrets & Goals" stage to your game's chargen process, allowing players
+# to fill in their character's Secret and Goal during character creation. These are
+# saved as drafts and convert to real Inklings when the character is approved.
+#
+# This complements the web portal "Secret & Goal" tab but allows MUSH chargen flow.
+#
+# ===========================================================================
+# INSTALLATION STEPS
+# ===========================================================================
+#
+# STEP 1: Open game/config/chargen.yml in your game folder
+#
+# STEP 2: Find the "stages:" section that lists chargen stages like:
+#
+#         stages:
+#           - key: background
+#             ...
+#           - key: hooks
+#             ...
+#           - key: finish
+#             ...
+#
+# STEP 3: Add this new stage BEFORE the "finish" stage:
+#
+#         - key: secrets_goals
+#           name: Secrets & Goals
+#           help_topic: secrets_goals
+#           fields:
+#             - name: inkling_secret_title
+#               type: text
+#               label: Secret Title
+#               help: "A short title for your character's secret."
+#               allow_blank: true
+#             - name: inkling_secret_text
+#               type: textarea
+#               label: Secret Description
+#               help: "Describe your character's secret. This is saved as a draft and becomes an Inkling when approved."
+#               allow_blank: true
+#             - name: inkling_goal_title
+#               type: text
+#               label: Goal Title
+#               help: "A short title for your character's goal."
+#               allow_blank: true
+#             - name: inkling_goal_text
+#               type: textarea
+#               label: Goal Description
+#               help: "Describe your character's goal. This is saved as a draft and becomes an Inkling when approved."
+#               allow_blank: true
+#
+# STEP 4: (OPTIONAL) Add a help topic in game/config/help.yml to explain the stage:
+#
+#         secrets_goals: |
+#           %xh%xcSecrets & Goals%xn
+#
+#           During character creation, you can optionally fill in:
+#
+#           %xh%xySecret:%xn A personal secret your character holds, which can be shared
+#           with other players once approved.
+#
+#           %xh%xyGoal:%xn A long-term goal your character is working toward.
+#
+#           Both are optional and can be filled in later via +inkling/secret and
+#           +inkling/goal commands, or edited on your character profile.
+#
+# STEP 5: Restart your game with @restart
+#
+# ===========================================================================
+# HOW IT WORKS
+# ===========================================================================
+#
+# When chargen_enabled: true in game/config/inklings.yml:
+#   - The stage appears in chargen flow
+#   - Players can enter/edit Secret and Goal text
+#   - Fields are saved as drafts on the character
+#   - During app review, incomplete drafts show a warning/error (depending on chargen_required)
+#   - When character is approved, drafts convert to real Inklings
+#
+# When chargen_enabled: false:
+#   - The stage should not appear (though it won't cause errors)
+#   - Players can still use +inkling/secret and +inkling/goal commands if available
+#
+# ===========================================================================
+# FIELD TYPES REFERENCE
+# ===========================================================================
+#
+# type: text          - Single-line text input (good for titles)
+# type: textarea      - Multi-line text input (good for descriptions)
+# allow_blank: true   - Field is optional; player can leave it empty
+# allow_blank: false  - Field is required; player must fill it in
+#
+# Note: We use allow_blank: true for Secrets & Goals because:
+#   - App review warnings/errors handle the "required" validation
+#   - Players might want one without the other
+#   - Provides flexibility for games with different rules
+#
+# ===========================================================================
+# CUSTOMIZE THE LABELS & HELP
+# ===========================================================================
+#
+# Change "Secret" and "Goal" to match your game's terminology if needed.
+# Update the help topics to describe what your game considers a secret or goal.
+#
+# For example, if your game calls them "Motivations" and "Drives":
+#   - Change label: Secret Title → label: Motivation Title
+#   - Change label: Goal Title → label: Drive Title
+#   - Update help text and help_topic to match
+#
+# The internal field names (inkling_secret_title, etc.) should NOT change,
+# as the Inklings plugin expects those exact names.
