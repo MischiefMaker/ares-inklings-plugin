@@ -43,11 +43,22 @@
 # ===========================================================================
 # Replace the five methods so they read:
 # ===========================================================================
+#
+# NOTE ON THE `char.respond_to?` GUARDS:
+# Each configured kind needs a matching `attribute :inkling_<kind>_title/_text`
+# declaration on the Character model (see the inklings plugin's
+# models/character_inkling_fields.rb). If chargen_required_types ever lists a
+# kind with no such declaration, char.send(...) would raise "undefined method"
+# and take down the ENTIRE profile/chargen page. The guard degrades that to
+# "this one field is skipped" instead, so a config/declaration drift can't
+# 500 the page. When everything is in sync (the normal case) the guard is a
+# no-op.
 
       # --- chargen form: repopulate on return to chargen ---
       def self.get_fields_for_chargen(char)
         fields = {}
         Inklings.chargen_required_types.each do |kind|
+          next unless char.respond_to?("inkling_#{kind}_title")
           fields["inkling_#{kind}_title".to_sym] = Website.format_input_for_html(char.send("inkling_#{kind}_title"))
           fields["inkling_#{kind}_text".to_sym]  = Website.format_input_for_html(char.send("inkling_#{kind}_text"))
         end
@@ -58,6 +69,7 @@
       def self.get_fields_for_viewing(char, viewer)
         fields = {}
         Inklings.chargen_required_types.each do |kind|
+          next unless char.respond_to?("inkling_#{kind}_title")
           fields["inkling_#{kind}_title".to_sym] = Website.format_markdown_for_html(char.send("inkling_#{kind}_title"))
           fields["inkling_#{kind}_text".to_sym]  = Website.format_markdown_for_html(char.send("inkling_#{kind}_text"))
         end
@@ -68,6 +80,7 @@
       def self.get_fields_for_editing(char, viewer)
         fields = {}
         Inklings.chargen_required_types.each do |kind|
+          next unless char.respond_to?("inkling_#{kind}_title")
           fields["inkling_#{kind}_title".to_sym] = Website.format_input_for_html(char.send("inkling_#{kind}_title"))
           fields["inkling_#{kind}_text".to_sym]  = Website.format_input_for_html(char.send("inkling_#{kind}_text"))
         end
@@ -78,6 +91,7 @@
       def self.save_fields_from_chargen(char, chargen_data)
         data = chargen_data['custom'] || {}
         Inklings.chargen_required_types.each do |kind|
+          next unless char.respond_to?("inkling_#{kind}_title=")
           char.update("inkling_#{kind}_title".to_sym => Website.format_input_for_mush(data["inkling_#{kind}_title"].to_s))
           char.update("inkling_#{kind}_text".to_sym  => Website.format_input_for_mush(data["inkling_#{kind}_text"].to_s))
         end
@@ -88,6 +102,7 @@
       def self.save_fields_from_profile_edit2(char, enactor, char_data)
         data = char_data['custom'] || {}
         Inklings.chargen_required_types.each do |kind|
+          next unless char.respond_to?("inkling_#{kind}_title=")
           char.update("inkling_#{kind}_title".to_sym => Website.format_input_for_mush(data["inkling_#{kind}_title"].to_s))
           char.update("inkling_#{kind}_text".to_sym  => Website.format_input_for_mush(data["inkling_#{kind}_text"].to_s))
         end

@@ -807,6 +807,10 @@ module AresMUSH
       return unless char
 
       Inklings.chargen_required_types.each do |kind|
+        # Skip any configured kind that has no declared Character attribute
+        # (see plugin/models/character_inkling_fields.rb) rather than raising.
+        next unless char.respond_to?("inkling_#{kind}_title")
+
         title = char.send("inkling_#{kind}_title")
         text = char.send("inkling_#{kind}_text")
 
