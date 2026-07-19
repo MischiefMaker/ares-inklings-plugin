@@ -41,6 +41,19 @@
 #   • No review line appears at all.
 #
 # ===========================================================================
+# ⚠️  CRITICAL: DO NOT PASTE ONLY THE ONE-LINE INTEGRATION ⚠️
+# ===========================================================================
+#
+# If you choose to merge into an existing method (Step 3, second option),
+# you MUST keep the full method structure including:
+#   - def self.custom_app_review(char)
+#   - messages = []
+#   - messages (at the end)
+#
+# Pasting ONLY "messages.concat(...)" without these lines will cause the
+# error: "undefined local variable or method `messages'"
+#
+# ===========================================================================
 # INTEGRATION STEPS
 # ===========================================================================
 #
@@ -57,14 +70,18 @@
 #
 # STEP 3: Choose your approach based on the current state:
 #
-#   IF EMPTY (just returns []):
-#     Replace the entire method body with the code in the COPY section above.
+#   IF THE METHOD BODY IS EMPTY OR ONLY HAS "messages = []" and "messages":
+#     Replace the ENTIRE method definition (including def/end) with the
+#     code in the COPY section above.
 #
-#   IF HAS OTHER CHECKS (from this plugin or others):
-#     DO NOT replace the method. Instead, add just this line inside,
-#     BEFORE the final "messages" return statement:
+#   IF THE METHOD ALREADY HAS OTHER CHECKS (from this or other plugins):
+#     Keep the entire method structure. Add ONLY this line:
 #
-#     messages.concat(Inklings.get_app_review_issues(char) || [])
+#       messages.concat(Inklings.get_app_review_issues(char) || [])
+#
+#     Add it BEFORE the final "messages" return statement, but AFTER
+#     the "messages = []" initialization. Do NOT move or remove any
+#     existing code.
 #
 # STEP 4: Restart the game for the changes to take effect.
 #
