@@ -253,8 +253,9 @@
   }
 
   // Text utilities
+  // Use text-color for muted text on dark backgrounds - faded-text-color is too dim
   .text-muted {
-    color: var(--inklings-faded-text-color) !important;
+    color: #b0b0b0 !important;
   }
 
   .text-start {
