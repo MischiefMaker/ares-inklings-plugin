@@ -116,11 +116,9 @@ file for its other steps - Step 2 here can be done now regardless.)
 
 ### Step 3: Configure Character Generation (Optional)
 
-If you want players to create required Inklings during character generation:
+If you want players to create required Inklings during character generation, complete both the backend and web portal integration steps below.
 
-**Backend Hook (Required if using chargen):**
-
-The Chargen form fields auto-install with the plugin, but the backend integration requires a manual code merge:
+**Step 3a: Backend Hook (Required if using chargen):**
 
 1. Open `custom-install/custom_char_fields.snippet.rb` in this plugin
 2. Open `plugins/profile/custom_char_fields.rb` in your **aresmush** folder (not ares-webportal)
@@ -130,15 +128,19 @@ The Chargen form fields auto-install with the plugin, but the backend integratio
 4. Save the file
 5. Restart the game with `@restart`
 
-**Web Portal Customization (Optional):**
+**Step 3b: Web Portal Form (Required if using chargen):**
 
-The chargen form fields automatically appear during character generation. If you want to customize the form labels or placeholders:
+The chargen form requires manual integration into your game's webportal chargen files:
 
-1. Open `custom-install/chargen-custom.snippet.hbs` to see how to customize the form field labels and descriptions
-2. Edit `ares-webportal/app/templates/components/chargen-custom.hbs` directly if you want to change the form
-3. To add a tab label in the chargen step list, open `custom-install/chargen-custom-tabs.snippet.hbs` for instructions
+1. Open `custom-install/chargen-custom-tabs.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom-tabs.hbs` at the marked location
+2. Open `custom-install/chargen-custom.snippet.hbs` and paste into `ares-webportal/app/components/chargen-custom.hbs` at the marked location
+3. Open `custom-install/chargen-custom.snippet.js` and paste into `ares-webportal/app/components/chargen-custom.js` at the marked location
 
-**Important:** The snippet files include detailed instructions showing exactly where to make changes. Do not simply copy the entire snippet into your files.
+**Important:** These are game-owned customization files, not plugin files:
+- `chargen-custom-tabs.hbs`, `chargen-custom.hbs`, and `chargen-custom.js` already exist in your webportal
+- Each snippet file includes detailed instructions showing exactly where to paste its code
+- Do not overwrite the entire file — only add the specific lines at the marked locations
+- Do not simply append to the end of files — follow the location comments in each snippet
 
 ### Step 4: Post-Installation Setup
 
@@ -157,13 +159,13 @@ Confirm that your Coder role has the `manage_game` permission (used by the `+ink
 
 ### Restart the Web Portal
 
-If you followed any of the optional manual Steps 2 or 3 above, restart the web portal once:
+After completing any manual Steps 2 or 3 above, restart the web portal:
 
 ```
 website/deploy
 ```
 
-**Note:** The chargen form fields auto-install with the plugin (Step 1), but the backend integration (Step 3's Backend Hook) requires a game restart with `@restart` for the custom_char_fields changes to take effect.
+**Note:** If you completed Step 3 (chargen integration), the game must also be restarted with `@restart` for the backend custom_char_fields changes to take effect.
 
 ## Configuration
 
