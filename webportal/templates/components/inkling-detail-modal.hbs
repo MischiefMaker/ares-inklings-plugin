@@ -40,7 +40,7 @@
             <span class="badge text-bg-secondary">
               {{tag}}
               {{#if (or this.isStaff (eq this.detail.character_id this.viewerId))}}
-                <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.6rem;" {{action "removeTag" tag}} aria-label="Remove tag"></button>
+                <button type="button" class="btn-close btn-close-white ms-1" {{action "removeTag" tag}} aria-label="Remove tag"></button>
               {{/if}}
             </span>
           {{/each}}
@@ -86,7 +86,7 @@
         {{/each}}
       {{/if}}
 
-      <div class="mb-3" style="max-height: 400px; overflow-y: auto;">
+      <div class="messages-scroll mb-3">
         {{#each this.detail.messages as |msg|}}
           <div class="border-bottom pb-2 mb-2 {{if msg.is_staff "bg-light rounded p-2"}} {{if msg.is_private "border-start border-info border-3 ps-2"}}">
             <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
@@ -112,7 +112,7 @@
               {{/if}}
               <span class="text-secondary small ms-auto">{{local-date msg.created_at 'MMM D, YYYY h:mm A'}}</span>
             </div>
-            <div style="white-space: pre-wrap; word-break: break-word;">{{msg.text}}</div>
+            <div class="message-text">{{msg.text}}</div>
           </div>
         {{/each}}
       </div>
@@ -242,7 +242,7 @@
       {{#if (and (eq this.detail.status "open") (or this.isStaff (eq this.detail.character_id this.viewerId)))}}
         <hr>
         <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
-          <div class="input-group" style="max-width: 300px;">
+          <div class="input-group share-input-group">
             {{input class="form-control" type="text" value=this.shareTarget placeholder="Share with character(s)..."}}
             <button type="button" class="btn btn-secondary" {{action "shareInkling"}}>Share</button>
           </div>
