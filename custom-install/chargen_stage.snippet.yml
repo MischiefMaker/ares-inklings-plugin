@@ -30,11 +30,8 @@
 
 secrets_goals:
   title: Secrets & Goals
-  help: inklings
+  help: inklings_chargen
   text: During character creation, you can optionally set your character's secret
-    and long-term goal using the commands below. These are saved as drafts and become
-    real Inklings when your character is approved.%R%RUse these MUSH commands to fill
-    them in:%R%xc+inkling/secret <title>/<description>%xn%R%xc+inkling/goal <title>/<description>%xn%R%RYou can edit these later from your profile or using +inkling/secret and +inkling/goal
-    commands. Both are optional.
+    and long-term goal. Type `help secrets_goals` to see the commands.
 
 # STEP 4: Log in to your server and run `sudo reboot` to restart it.
