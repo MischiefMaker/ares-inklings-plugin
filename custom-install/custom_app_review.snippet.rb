@@ -19,8 +19,9 @@
 #   messages = []
 #   # Inklings chargen integration - validates Secret and Goal drafts
 #   # if chargen is enabled and required for approval
-#   messages.concat(Inklings.get_app_review_issues(char) || [])
-#   messages
+#   inkling_review = Inklings.get_app_review_issues(char)
+#   messages << inkling_review unless inkling_review.blank?
+#   return messages.join("\n")
 # end
 #
 # ---END COPY---
@@ -77,11 +78,18 @@
 #   IF THE METHOD ALREADY HAS OTHER CHECKS (from this or other plugins):
 #     Keep the entire method structure. Add ONLY this line:
 #
-#       messages.concat(Inklings.get_app_review_issues(char) || [])
+#       inkling_review = Inklings.get_app_review_issues(char)
+#       messages << inkling_review unless inkling_review.blank?
 #
-#     Add it BEFORE the final "messages" return statement, but AFTER
+#     Add it BEFORE the final "return messages.join("\n")" statement, but AFTER
 #     the "messages = []" initialization. Do NOT move or remove any
 #     existing code.
+#
+#   IMPORTANT: Make sure the method ends with:
+#     return messages.join("\n")
+#
+#     NOT just:
+#     messages
 #
 # STEP 4: Restart the game for the changes to take effect.
 #
@@ -92,10 +100,10 @@
 # def self.custom_app_review(char)
 #   messages = []
 #   # Some other plugin's check
-#   messages.concat(SomePlugin.check_something(char) || [])
-#   # Inklings chargen validation
-#   messages.concat(Inklings.get_app_review_issues(char) || [])
-#   messages
+#   inkling_review = Inklings.get_app_review_issues(char)
+#   messages << inkling_review unless inkling_review.blank?
+#   # ... other checks ...
+#   return messages.join("\n")
 # end
 #
 # ===========================================================================
