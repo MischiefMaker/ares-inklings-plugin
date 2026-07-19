@@ -114,26 +114,6 @@ module AresMUSH
         }
       end
 
-      # Get all rolls for an inkling (respecting visibility)
-      def self.get_rolls(inkling_id, viewer_id)
-        inkling = Inklings.find_inkling(inkling_id)
-        return { error: "Inkling not found" } if !inkling
-
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
-
-        unless Inklings.can_manage_inklings?(viewer) || Inklings.is_participant?(inkling, viewer)
-          return { error: "Not authorized" }
-        end
-
-        rolls = InklingRoll.find(inkling_id: inkling.id).to_a.sort_by { |r| Inklings.time_value(r.created_at) }
-        visible_rolls = rolls.select { |r| Inklings.can_see_roll?(r, viewer) }
-
-        {
-          rolls: visible_rolls.map { |r| format_roll(r) }
-        }
-      end
-
       private
 
       def self.format_roll(roll)
