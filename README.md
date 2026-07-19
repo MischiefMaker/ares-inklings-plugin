@@ -214,9 +214,21 @@ The chargen drafts (Secrets and Goals) are validated during character approval a
 5. Restart the game with `@restart`
 
 **What this does:** When a character is submitted for approval, the app review screen will show:
-- **RED error** (if `chargen_required: true`): "Secrets & Goals inkling is missing" — blocks approval until filled
-- **YELLOW warning** (if `chargen_required: false`): "Are you sure? Secrets & Goals inkling is missing" — alerts staff but doesn't block approval
+- **RED error** (if `chargen_required: true`): Shows separate checks for each missing field (Secret, Goal) — blocks approval until filled
+- **YELLOW warning** (if `chargen_required: false`): Shows separate checks for each missing field — alerts staff but doesn't block approval
 - **GREEN checkmark**: All chargen fields are filled in — no warning shown
+
+**Step 3d: (OPTIONAL) Add a MUSH Chargen Stage**
+
+By default, players fill in their Secrets & Goals via the web portal chargen form. If you want to also provide a dedicated stage in your MUSH chargen flow, you can add one:
+
+1. Open `custom-install/chargen_stage.snippet.yml` in this plugin
+2. Open `game/config/chargen.yml` in your **game** folder
+3. Follow the instructions in the snippet file to add the `secrets_goals` stage to your chargen stages list
+4. (Optional) Add a help topic for the stage in `game/config/help.yml` (see the snippet for an example)
+5. Restart the game with `@restart`
+
+**What this does:** Players can now fill in their Secret and Goal as part of the MUSH chargen flow, in addition to the web portal form. Either method (MUSH or web portal) saves to the same draft field, so players can start on one and finish on the other.
 
 ### Step 4: Post-Installation Setup
 
