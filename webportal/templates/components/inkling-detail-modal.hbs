@@ -66,18 +66,18 @@
         {{#each this.detail.rolls as |roll|}}
           <div class="border rounded p-2 mb-2 {{if roll.private "border-info border-2"}}">
             <div class="d-flex align-items-center gap-2 flex-wrap">
-              <span class="text-muted small font-monospace">#{{roll.ref}}</span>
+              <span class="text-secondary small font-monospace">#{{roll.ref}}</span>
               <span class="badge text-bg-info">ROLL</span>
               <strong>{{roll.roll_spec}}</strong>
               {{#if (and (not (eq roll.roll_type "player")) roll.target_character)}}
-                <span class="text-muted small fst-italic">for {{roll.target_character}}</span>
+                <span class="text-secondary small fst-italic">for {{roll.target_character}}</span>
               {{/if}}
               {{#if roll.private}}<span class="badge text-bg-info text-uppercase">PRIVATE</span>{{/if}}
               <span class="fw-bold">{{roll.result}}</span>
-              <span class="text-muted small ms-auto">by {{roll.creator}}</span>
+              <span class="text-secondary small ms-auto">by {{roll.creator}}</span>
             </div>
             {{#if roll.reroll_count}}
-              <div class="text-muted small mt-1">
+              <div class="text-secondary small mt-1">
                 Rerolled {{roll.reroll_count}} time{{if (eq roll.reroll_count 1) "" "s"}}
                 {{#if roll.luck_cost}} (cost: {{roll.luck_cost}} luck){{/if}}
               </div>
@@ -90,7 +90,7 @@
         {{#each this.detail.messages as |msg|}}
           <div class="border-bottom pb-2 mb-2 {{if msg.is_staff "bg-light rounded p-2"}} {{if msg.is_private "border-start border-info border-3 ps-2"}}">
             <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-              <span class="text-muted small font-monospace">#{{msg.ref}}</span>
+              <span class="text-secondary small font-monospace">#{{msg.ref}}</span>
               <strong>{{msg.author}}</strong>
               {{#if (eq msg.message_type "submitted")}}<span class="badge text-bg-info">SUBMITTED</span>{{/if}}
               {{#if (eq msg.message_type "approved")}}<span class="badge text-bg-success">APPROVED</span>{{/if}}
@@ -110,7 +110,7 @@
                   {{/if}}
                 </span>
               {{/if}}
-              <span class="text-muted small ms-auto">{{local-date msg.created_at 'MMM D, YYYY h:mm A'}}</span>
+              <span class="text-secondary small ms-auto">{{local-date msg.created_at 'MMM D, YYYY h:mm A'}}</span>
             </div>
             <div style="white-space: pre-wrap; word-break: break-word;">{{msg.text}}</div>
           </div>
