@@ -11,6 +11,11 @@
   color: var(--secondary-words-color);
 }
 
+// Staff message background - theme-aware
+.bg-staff-message {
+  background-color: var(--box-background-color);
+}
+
 // Scrollable messages container with fixed height
 .messages-scroll {
   max-height: 400px;
