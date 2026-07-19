@@ -801,6 +801,132 @@ Before considering a plugin (or a plugin change) complete:
 
 ---
 
+## 9. FS3 System Integration
+
+When a plugin needs to perform FS3 skill rolls (e.g., attaching rolls to
+character development threads, scene logs, or activity results), use the
+proper AresMUSH FS3 rolling API rather than trying to replicate the system.
+
+### Rolling Skills
+
+**Correct approach:**
+
+```ruby
+# Backend code
+roll_params = AresMUSH::FS3Skills::RollParams.new(skill_name)
+roll_outcome = AresMUSH::FS3Skills.one_shot_roll(character, roll_params)
+# Returns: { success_title: "Good", successes: 3 }
+
+result = "#{roll_outcome[:success_title]} (#{roll_outcome[:successes]})"
+result_value = roll_outcome[:successes]
+```
+
+**Why:**
+- `FS3Skills.one_shot_roll()` handles the full FS3 mechanics: determining
+  dice pool, rolling, computing successes, generating success titles, and
+  logging to game logs.
+- Creating a `RollParams` object allows modifiers and linked attributes to be
+  passed if needed (see source: `plugins/fs3skills/public/fs3skills_api.rb`).
+- Never try to roll FS3 dice directly or implement your own success-counting
+  logic — that will drift out of sync with the core FS3 system's actual
+  behavior.
+
+### Web Portal Rolls
+
+For web portal forms that trigger rolls, don't perform rolls on the frontend.
+Instead:
+
+1. Frontend passes the skill name to backend (`gameApi.requestOne('handler', {skill: 'Spelling'})`).
+2. Backend performs the roll using `FS3Skills.one_shot_roll()`.
+3. Backend stores the result and returns it.
+
+This matches the pattern used by `addSceneRoll` and `addJobRoll` in the core
+engine — separation of concerns between the request layer (frontend) and the
+operation layer (backend).
+
+### Permission Check
+
+Before allowing a player to roll via the web portal, verify their character is
+approved:
+
+```ruby
+unless viewer.is_approved?
+  return { error: "Your character must be approved to roll." }
+end
+```
+
+Some systems (like luck rerolls) may have additional approval checks.
+
+---
+
+## 9b. Web Portal Styling
+
+When styling web portal components, use AresMUSH theme color CSS variables
+instead of hardcoded colors. This ensures your plugin respects each game's
+skin and color scheme.
+
+### Theme Color Variables
+
+Every AresMUSH installation defines these CSS variables (in admin setup):
+- `--primary-color` / `--primary-words-color` — main theme color and its text
+- `--secondary-color` / `--secondary-words-color` — secondary accents
+- `--background-color` — page background
+- `--box-background-color` — card/modal backgrounds
+- `--text-color` — main text
+- `--border-color` — borders
+- `--faded-text-color` — muted/secondary text (avoid for small text on dark bg)
+
+**Correct approach:**
+
+```scss
+.my-component {
+  background-color: var(--box-background-color);
+  border-color: var(--border-color);
+  color: var(--text-color);
+
+  .header {
+    background-color: var(--primary-color);
+    color: var(--primary-words-color);
+  }
+
+  // For muted/secondary text, use Bootstrap's .text-secondary class
+  // instead of custom CSS, as it works on both light and dark backgrounds
+  .timestamp {
+    // DON'T: color: var(--faded-text-color);  // Too dim on dark bg
+    // DO: use <span class="text-secondary">
+  }
+}
+```
+
+### Contrast and Backgrounds
+
+- Light backgrounds with light text = unreadable. Don't apply `.text-muted`
+  (light grey) over `.bg-light` (white). Use Bootstrap's `.text-secondary` or
+  `.text-dark` instead.
+- When a component has conditional backgrounds (e.g., staff messages with
+  `bg-light`), use semantic Bootstrap classes (`.text-secondary`, `.text-dark`)
+  rather than custom color assignments, since they're designed to work in both
+  dark and light contexts.
+- Always test with the installation's actual theme colors, not defaults. A
+  game's primary color might be a light blue on a dark background, or
+  vice versa.
+
+### CSS Installation
+
+New CSS files in `webportal/styles/` need to be copied to the ares-webportal
+installation and the webportal needs to be rebuilt:
+
+```bash
+cp /path/to/plugin/webportal/styles/mycomponent.scss /path/to/ares-webportal/app/styles/
+cd /path/to/ares-webportal
+npm run build  # or npm start for development
+```
+
+If using `.ares-manifest.yml` to install the plugin, include the `webportal/styles/`
+directory in the install paths so CSS is copied automatically.
+
+---
+
 ## 10. References
 
 **Official documentation** (aresmush.com/tutorials/code/) — read for
