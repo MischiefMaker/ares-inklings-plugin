@@ -36,7 +36,7 @@ module AresMUSH
 
         # All required types have incomplete fields - return a single review line
         label = format_field_labels(incomplete_fields)
-        severity = chargen_required ? :error : :warning
+        severity = chargen_required ? "error" : "warning"
         message_key = chargen_required ? 'chargen.oops_missing' : 'chargen.are_you_sure'
 
         [Chargen.format_review_status(severity, t(message_key, missing: label))]
