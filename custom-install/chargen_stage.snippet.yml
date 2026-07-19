@@ -26,48 +26,48 @@
 #             ...
 #
 # STEP 3: Add this new stage BEFORE the "finish" stage:
-#
-#         - key: secrets_goals
-#           name: Secrets & Goals
-#           help_topic: secrets_goals
-#           fields:
-#             - name: inkling_secret_title
-#               type: text
-#               label: Secret Title
-#               help: "A short title for your character's secret."
-#               allow_blank: true
-#             - name: inkling_secret_text
-#               type: textarea
-#               label: Secret Description
-#               help: "Describe your character's secret. This is saved as a draft and becomes an Inkling when approved."
-#               allow_blank: true
-#             - name: inkling_goal_title
-#               type: text
-#               label: Goal Title
-#               help: "A short title for your character's goal."
-#               allow_blank: true
-#             - name: inkling_goal_text
-#               type: textarea
-#               label: Goal Description
-#               help: "Describe your character's goal. This is saved as a draft and becomes an Inkling when approved."
-#               allow_blank: true
+
+- key: secrets_goals
+  name: Secrets & Goals
+  help_topic: secrets_goals
+  fields:
+    - name: inkling_secret_title
+      type: text
+      label: Secret Title
+      help: "A short title for your character's secret."
+      allow_blank: true
+    - name: inkling_secret_text
+      type: textarea
+      label: Secret Description
+      help: "Describe your character's secret. This is saved as a draft and becomes an Inkling when approved."
+      allow_blank: true
+    - name: inkling_goal_title
+      type: text
+      label: Goal Title
+      help: "A short title for your character's goal."
+      allow_blank: true
+    - name: inkling_goal_text
+      type: textarea
+      label: Goal Description
+      help: "Describe your character's goal. This is saved as a draft and becomes an Inkling when approved."
+      allow_blank: true
 #
 # STEP 4: (OPTIONAL) Add a help topic in game/config/help.yml to explain the stage:
+
+secrets_goals: |
+  %xh%xcSecrets & Goals%xn
+
+  During character creation, you can optionally fill in:
+
+  %xh%xySecret:%xn A personal secret your character holds, which can be shared
+  with other players once approved.
+
+  %xh%xyGoal:%xn A long-term goal your character is working toward.
+
+  Both are optional and can be filled in later via +inkling/secret and
+  +inkling/goal commands, or edited on your character profile.
 #
-#         secrets_goals: |
-#           %xh%xcSecrets & Goals%xn
-#
-#           During character creation, you can optionally fill in:
-#
-#           %xh%xySecret:%xn A personal secret your character holds, which can be shared
-#           with other players once approved.
-#
-#           %xh%xyGoal:%xn A long-term goal your character is working toward.
-#
-#           Both are optional and can be filled in later via +inkling/secret and
-#           +inkling/goal commands, or edited on your character profile.
-#
-# STEP 5: Restart your game with @restart
+# STEP 5: Restart the server by running `shutdown` from a staff account and rebooting via your hosting infrastructure.
 #
 # ===========================================================================
 # FIELD TYPES REFERENCE
