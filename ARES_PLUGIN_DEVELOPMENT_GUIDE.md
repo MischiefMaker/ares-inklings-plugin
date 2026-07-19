@@ -562,6 +562,27 @@ anything else."
 
 ## 5. Installation Best Practices
 
+### `plugin/install` pulls from the repo's default branch — always merge fixes to `main`
+
+`plugin/install <url>` clones/fetches the **default branch** (`main` on this
+project), not any feature/dev branch. A fix that only exists on a
+`claude/...` or other working branch is invisible to `plugin/install` and to
+anyone re-running it to pick up an update — the installed code on their
+server won't change even after a successful `plugin/install` run, and the
+failure mode is confusing: no error, just the old method/behavior still
+missing after the "update." **Confirmed the hard way on this project**: an
+app-review integration fix was developed and pushed to a feature branch, the
+user ran `plugin/install` to pick it up, and got `undefined method
+'get_app_review_issues'` — the code was real, tested, and pushed, just not
+on `main` yet. Merging the feature branch into `main` and pushing fixed it
+immediately, no other change required.
+
+**Rule:** any change intended for an end user to receive via `plugin/install`
+(a bug fix, a new hook, anything outside pure in-progress development) must
+be merged into `main` and pushed before telling the user to (re-)run
+`plugin/install`. Landing it only on a feature branch is not enough, even if
+that branch is pushed to GitHub.
+
 ### `plugin/install` expectations
 
 `plugin/install <url>` (or manual copy into `plugins/<name>/`) handles:
@@ -841,6 +862,17 @@ Each of these happened on this project — concretely, not hypothetically.
     fire-and-forget web action seems to do nothing, check the Ruby side's
     return value before assuming the JS or the template is broken — a
     silently swallowed `{ error: ... }` looks identical to "nothing happened."
+
+12. **Telling a user to re-run `plugin/install` before the fix was on `main`.**
+    A real app-review integration bug was fixed, tested, and pushed — but
+    only to a feature branch. The user ran `plugin/install`, which pulls the
+    repo's default branch (`main`), and hit `undefined method
+    'get_app_review_issues'` because the fix wasn't there yet. *Avoid it*:
+    before telling a user to (re-)run `plugin/install` (or any install step
+    that fetches from the repo URL) to pick up a fix, confirm the fix is
+    actually merged into `main` and pushed — check with `git log
+    origin/main..<feature-branch>` to see what's still missing from `main`,
+    not just that it's pushed *somewhere*.
 
 ---
 
