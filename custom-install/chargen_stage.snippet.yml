@@ -70,21 +70,6 @@
 # STEP 5: Restart your game with @restart
 #
 # ===========================================================================
-# HOW IT WORKS
-# ===========================================================================
-#
-# When chargen_enabled: true in game/config/inklings.yml:
-#   - The stage appears in chargen flow
-#   - Players can enter/edit Secret and Goal text
-#   - Fields are saved as drafts on the character
-#   - During app review, incomplete drafts show a warning/error (depending on chargen_required)
-#   - When character is approved, drafts convert to real Inklings
-#
-# When chargen_enabled: false:
-#   - The stage should not appear (though it won't cause errors)
-#   - Players can still use +inkling/secret and +inkling/goal commands if available
-#
-# ===========================================================================
 # FIELD TYPES REFERENCE
 # ===========================================================================
 #

@@ -874,6 +874,20 @@ Each of these happened on this project — concretely, not hypothetically.
     origin/main..<feature-branch>` to see what's still missing from `main`,
     not just that it's pushed *somewhere*.
 
+13. **Confusing `@restart` with a server restart command.** Documentation and
+    instructions said "run `@restart`" to pick up changes, as if it were the
+    restart mechanism. In reality, `@restart` in AresMUSH is a chargen command
+    (unrelated to server startup), not a server restart at all. To actually
+    restart the server, players must use `shutdown` to gracefully stop the
+    server, then the server process itself is rebooted by the hosting
+    environment (systemd, Docker, etc.) or the admin manually restarts it.
+    *Avoid it*: never tell a user to "run `@restart`" to restart the server.
+    Instead, be precise: "The game must be shut down with `shutdown` from a
+    staff account, then rebooted by your hosting infrastructure or admin." If
+    writing installation docs, specify that a restart is needed (for plugin
+    code changes to take effect), but clarify the actual mechanism (shutdown
+    + reboot, not an in-game command).
+
 ---
 
 ## 9. Plugin Review Checklist

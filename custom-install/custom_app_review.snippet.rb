@@ -14,32 +14,18 @@
 # ===========================================================================
 #
 # ---START COPY HERE---
-#
-# def self.custom_app_review(char)
-#   messages = []
-#   # Inklings chargen integration - validates Secret and Goal drafts
-#   # if chargen is enabled and required for approval
-#   inkling_review = Inklings.get_app_review_issues(char)
-#   messages << inkling_review unless inkling_review.blank?
-#   return messages.join("\n")
-# end
-#
+
+def self.custom_app_review(char)
+  messages = []
+  # Inklings chargen integration - validates Secret and Goal drafts
+  # if chargen is enabled and required for approval
+  inkling_review = Inklings.get_app_review_issues(char)
+  messages << inkling_review unless inkling_review.blank?
+  return messages.join("\n")
+end
+
 # ---END COPY---
 #
-# ===========================================================================
-# WHAT THIS DOES
-# ===========================================================================
-#
-# When chargen is ENABLED:
-#   • If chargen is REQUIRED (default) and any configured field (Secret/Goal) is blank:
-#     Shows a RED error that blocks approval. Player must fill in the field.
-#   • If chargen is OPTIONAL and any configured field is blank:
-#     Shows a YELLOW warning that doesn't block approval, but alerts staff.
-#   • If all configured fields are filled in:
-#     Shows GREEN OK and the check passes silently.
-#
-# When chargen is DISABLED:
-#   • No review line appears at all.
 #
 # ===========================================================================
 # ⚠️  CRITICAL: DO NOT PASTE ONLY THE ONE-LINE INTEGRATION ⚠️
