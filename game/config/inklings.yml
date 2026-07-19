@@ -21,6 +21,13 @@ inklings:
   # requirement, nothing converted on approval. Defaults to true if omitted.
   chargen_enabled: true
 
+  # If chargen is enabled, whether the Secret and Goal drafts are REQUIRED
+  # for character approval. When true (default), app review will throw a
+  # RED (blocking) warning if either is missing. When false, it throws a
+  # YELLOW (advisory) warning instead. Only has effect if chargen_enabled
+  # is true; ignored when chargen is disabled.
+  chargen_required: true
+
   # Inkling types (kinds). Add, remove, or edit entries here to
   # customize the game's inkling types - no code changes needed. The
   # key (e.g. "hint") is the internal value stored on the Inkling
