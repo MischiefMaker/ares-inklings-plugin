@@ -19,18 +19,15 @@ module AresMUSH
 
       # Web endpoint: get_inklings
       # viewer is already authenticated (passed by web handler)
+      # No approval gate here - the tab should always render. Permission checks
+      # are applied at creation time (via creatable_kinds) and at visibility
+      # (shared, group, etc). See Inklings.can_view_inkling for detail-level access.
       def self.get_inklings(char_id, viewer, status_filter: "open")
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
         unless viewer.id == char.id || Inklings.can_manage_inklings?(viewer)
           return { error: "Not authorized" }
-        end
-
-        # Unapproved players can view their own chargen drafts; others must be
-        # approved or staff to view any inklings.
-        unless Inklings.can_manage_inklings?(viewer) || viewer.is_approved? || viewer.id == char.id
-          return { error: "Your character must be approved to access inklings." }
         end
 
         # Query explicitly by character_id rather than char.inklings
