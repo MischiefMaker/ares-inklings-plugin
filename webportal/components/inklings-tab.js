@@ -58,8 +58,13 @@ export default Component.extend({
     this._super(...arguments);
     this.set('inklings', A());
     this.set('chargenDrafts', A());
+    this.set('canCreateInkling', false);
+  },
+
+  didReceiveAttrs() {
+    this._super(...arguments);
     // Permission check: staff can always create, others only if viewing
-    // their own approved profile.
+    // their own approved profile. Called here after arguments are bound.
     this.set('canCreateInkling', this.isStaff || (this.isSelf && this.isApproved));
   },
 
