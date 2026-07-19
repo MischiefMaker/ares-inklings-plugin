@@ -19,7 +19,7 @@
 #   messages = []
 #   # Inklings chargen integration - validates Secret and Goal drafts
 #   # if chargen is enabled and required for approval
-#   messages.concat(Inklings.get_app_review_issues(char))
+#   messages.concat(Inklings.get_app_review_issues(char) || [])
 #   messages
 # end
 #
@@ -61,11 +61,10 @@
 #     Replace the entire method body with the code in the COPY section above.
 #
 #   IF HAS OTHER CHECKS (from this plugin or others):
-#     DO NOT replace the method. Instead, add just this line inside:
+#     DO NOT replace the method. Instead, add just this line inside,
+#     BEFORE the final "messages" return statement:
 #
-#     messages.concat(Inklings.get_app_review_issues(char))
-#
-#     Add it BEFORE the final "messages" return statement.
+#     messages.concat(Inklings.get_app_review_issues(char) || [])
 #
 # STEP 4: Restart the game for the changes to take effect.
 #
@@ -76,9 +75,9 @@
 # def self.custom_app_review(char)
 #   messages = []
 #   # Some other plugin's check
-#   messages.concat(SomePlugin.check_something(char))
+#   messages.concat(SomePlugin.check_something(char) || [])
 #   # Inklings chargen validation
-#   messages.concat(Inklings.get_app_review_issues(char))
+#   messages.concat(Inklings.get_app_review_issues(char) || [])
 #   messages
 # end
 #

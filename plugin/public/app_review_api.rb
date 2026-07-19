@@ -2,19 +2,21 @@ module AresMUSH
   module Inklings
     class AppReviewApi
       # Formats chargen draft status for inclusion in the character's app-review
-      # screen. Returns a string suitable for display in Chargen.format_review_status,
-      # or an empty string when the feature is disabled.
+      # screen. Returns an array of review status lines (strings), or an empty array
+      # when the feature is disabled or all checks pass.
       #
       # Status logic:
-      # - If chargen is disabled: returns empty string (no review line shown)
-      # - If chargen is required and any configured field is incomplete: RED error
-      # - If chargen is optional and any configured field is incomplete: YELLOW warning
-      # - If all configured fields are complete: GREEN OK
+      # - If chargen is disabled: returns [] (no review line shown)
+      # - If chargen is required and any configured field is incomplete:
+      #   returns [RED error line] with message "X & Y inkling is missing"
+      # - If chargen is optional and any configured field is incomplete:
+      #   returns [YELLOW warning line] with message "Are you sure? X & Y..."
+      # - If all configured fields are complete: returns [] (GREEN OK, no line)
       #
       # Evaluates character's inkling_<kind>_text draft fields (secret and goal by default).
       # Blank strings, whitespace-only, nil, and missing fields all count as incomplete.
       #
-      # Returns a single formatted review line or empty string.
+      # Returns: Array of formatted review status line strings (always safe to concat)
       def self.app_review_lines(char)
         return [] unless Inklings.chargen_enabled?
         return [] if Inklings.chargen_required_types.empty?
