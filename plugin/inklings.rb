@@ -1096,10 +1096,10 @@ module AresMUSH
 
     # --- AresMUSH Hook: Chargen App Review ---
     # Called by the Chargen plugin during character application review.
-    # Returns an array of formatted review status lines (strings), or an
-    # empty array when the feature is disabled or all checks pass.
+    # Returns a formatted review status string, or an empty string when the
+    # feature is disabled or all checks pass.
     def self.get_app_review_issues(char)
-      Inklings::AppReviewApi.app_review_lines(char)
+      Inklings::AppReviewApi.app_review_lines(char).join("\n")
     end
   end
 end
