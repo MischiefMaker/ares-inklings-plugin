@@ -118,11 +118,27 @@ module AresMUSH
       type_config.select { |_k, v| v["chargen"] }.keys
     end
 
-    # Inkling types required during character generation, configured in
-    # game/config/inklings.yml under chargen_required_types. If none are
-    # configured, returns an empty array (chargen has no inkling requirements).
+    # Whether the chargen-inkling integration is turned on. Controlled by
+    # the "chargen_enabled" setting in game/config/inklings.yml; defaults to
+    # true when the setting is absent. When false, the whole chargen-inkling
+    # feature goes dormant - no chargen prompt, no app-review requirement, no
+    # draft->inkling conversion on approval, and the profile/chargen custom
+    # fields return nothing. Nothing else in the plugin is affected.
+    def self.chargen_enabled?
+      enabled = Global.read_config("inklings", "chargen_enabled")
+      enabled.nil? ? true : enabled
+    end
+
+    # Inkling types offered/required during character generation. These are
+    # intentionally hardcoded to secret and goal - the chargen web form and
+    # the Character draft attributes (see
+    # plugin/models/character_inkling_fields.rb) are built specifically for
+    # these two, so the list is not config-driven. Returns an empty array
+    # when chargen is disabled (see chargen_enabled?), which cleanly turns
+    # the feature off everywhere that consumes this list.
     def self.chargen_required_types
-      Global.read_config("inklings", "chargen_required_types") || []
+      return [] unless chargen_enabled?
+      ["secret", "goal"]
     end
 
     def self.valid_kind?(kind)

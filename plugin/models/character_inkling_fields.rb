@@ -12,13 +12,11 @@ module AresMUSH
   # character approval, Inklings.character_approved converts any populated
   # draft into a real Inkling and clears the draft field.
   #
-  # IMPORTANT - keep in sync with game/config/inklings.yml chargen_required_types:
-  # There must be one <inkling_KIND_title> / <inkling_KIND_text> pair here for
-  # every kind listed in chargen_required_types. The config-driven loops in
-  # custom_char_fields.rb read/write these by name (char.send("inkling_#{kind}_title")),
-  # so a kind with no matching attribute pair below will raise on profile/chargen load.
-  # Default chargen_required_types is [goal, secret]; if you add a kind, add its
-  # two attributes here too.
+  # The chargen feature is intentionally fixed to two types, secret and goal
+  # (see Inklings.chargen_required_types), so these four attributes are the
+  # complete, static set - there is no config list to keep in sync. Turning
+  # chargen off (chargen_enabled: false) simply leaves these fields unused;
+  # they stay declared and harmless.
   class Character
     attribute :inkling_secret_title
     attribute :inkling_secret_text

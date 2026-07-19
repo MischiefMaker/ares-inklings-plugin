@@ -4,9 +4,10 @@ module AresMUSH
     # inklings as part of character approval.
     class AppReviewHook
       # Called during app review. Checks that the character has created
-      # all required inkling types (configured via chargen_required_types
-      # in game/config/inklings.yml) with non-empty text.
-      # Returns an array of issues found, or empty array if all is well.
+      # all required chargen inkling types (secret and goal - see
+      # Inklings.chargen_required_types) with non-empty text. Returns an
+      # empty array when chargen is disabled (chargen_enabled: false) or when
+      # there are no issues, otherwise a list of the problems found.
       def self.app_review_issues(char)
         issues = []
         required_types = Inklings.chargen_required_types

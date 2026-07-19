@@ -14,13 +14,12 @@ inklings:
   # and set access roles with: job/categoryroles INKLINGS=<roles>
   job_category: INKLINGS
 
-  # Inkling types required during character generation. Players must create
-  # at least one of each type listed here before chargen can be completed.
-  # If none are configured, chargen has no inkling requirements.
-  # Each type must exist in the "types" section above.
-  chargen_required_types:
-    - goal
-    - secret
+  # Turns the chargen-inkling integration on or off. The chargen feature is
+  # fixed to two types - secret and goal - which players fill in on the
+  # "Secret & Goal" chargen tab (and can edit on their profile). Set this to
+  # false to disable it entirely: no chargen tab data, no approval
+  # requirement, nothing converted on approval. Defaults to true if omitted.
+  chargen_enabled: true
 
   # Inkling types (kinds). Add, remove, or edit entries here to
   # customize the game's inkling types - no code changes needed. The

@@ -63,10 +63,20 @@ automatically via `plugin/install` and are styled entirely with Bootstrap 5.
 
 ### Chargen Integration
 
-During character generation, players see a "Secrets & Goals" tab where they create
-inkling entries for the types configured in `chargen_required_types` (typically secret 
-and goal). The chargen form auto-installs with the plugin and requires no manual web 
-portal setup—only the backend hook (Step 3 in Installation).
+During character generation, players see a **"Secret & Goal"** tab with two sections —
+one for a Secret, one for a Goal — each with a title and a description. What they enter
+is saved as a draft on the character, survives navigating away and coming back, and can
+be edited later from their profile. When the character is approved, each filled-in draft
+is converted into a real Inkling automatically.
+
+Chargen is limited to these **two fixed types (secret and goal)** — it is not a
+general, configurable list. It can be turned on or off with a single setting,
+`chargen_enabled` (see [Configuration](#required-types-for-chargen)); when off, the
+feature goes completely dormant and nothing else in the plugin is affected.
+
+Unlike the profile components, the chargen form does **not** fully auto-install: its
+markup lives in shared web-portal files that other plugins may also extend, so it is
+provided as manual snippets (Step 3 in Installation).
 
 ## Installation
 
@@ -187,15 +197,23 @@ types:
 - **staff** — Only staff can create these
 - **shared** — Both can create these
 
-### Required Types for Chargen
+### Chargen Integration (On/Off)
 
-Configure which inkling types are required before a character can be approved:
+Chargen is fixed to two types — **secret** and **goal** — and is turned on or off with
+a single boolean. It defaults to on if the setting is omitted:
 
 ```yaml
-chargen_required_types: [goal, secret]
+chargen_enabled: true   # set to false to disable the chargen Secret & Goal feature
 ```
 
-Players will be prompted during chargen to create these types.
+When `chargen_enabled` is `false`, the feature goes fully dormant: no chargen prompt,
+no approval requirement, no draft-to-Inkling conversion on approval, and the
+profile/chargen custom fields return nothing. The rest of the plugin (commands, staff
+threads, rewards, the profile Inklings browser) is unaffected either way.
+
+The set of chargen types is intentionally **not** configurable — the web form and the
+character draft fields are built specifically for secret and goal. Turning the feature
+off is the supported way to opt out.
 
 ### Job Category
 

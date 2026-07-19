@@ -3,9 +3,11 @@ module AresMUSH
     # Chargen hook that prompts players to create secret and goal
     # inklings at the final step of character creation.
     class ChargenHook
-      # Called during the chargen process. Prompts the player to create
-      # the configured required inkling types if they haven't already.
-      # Configured via chargen_required_types in game/config/inklings.yml.
+      # Called during the chargen process. Prompts the player to create the
+      # required chargen inkling types (secret and goal - see
+      # Inklings.chargen_required_types) if they haven't already. Does
+      # nothing when chargen is disabled (chargen_enabled: false), since the
+      # type list is empty then.
       def self.chargen_finalize(char)
         required_types = Inklings.chargen_required_types
         return true if required_types.empty?
