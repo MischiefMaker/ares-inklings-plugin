@@ -2,7 +2,7 @@
 #
 # Adds chargen Secrets & Goals validation to the character app review screen.
 #
-# FILE: aresmush/plugins/profile/custom_app_review.rb
+# FILE: aresmush/plugins/chargen/custom_app_review.rb
 #
 # NOTE: This is a SHARED HOOK FILE. On a stock Ares install, the
 # custom_app_review method is present but returns []. You are MERGING
@@ -44,7 +44,7 @@
 # INTEGRATION STEPS
 # ===========================================================================
 #
-# STEP 1: Open aresmush/plugins/profile/custom_app_review.rb in your game folder
+# STEP 1: Open aresmush/plugins/chargen/custom_app_review.rb in your game folder
 #         (not the plugin folder, and not ares-webportal)
 #
 # STEP 2: Find the custom_app_review method. It will look like:

@@ -203,7 +203,7 @@ The chargen form requires manual integration into your game's webportal chargen 
 The chargen drafts (Secrets and Goals) are validated during character approval and displayed on the app review screen. This requires a single line in your game's shared app-review hook:
 
 1. Open `custom-install/custom_app_review.snippet.rb` in this plugin
-2. Open `plugins/profile/custom_app_review.rb` in your **aresmush** folder (not ares-webportal)
+2. Open `plugins/chargen/custom_app_review.rb` in your **aresmush** folder (not ares-webportal)
 3. Follow the instructions in the snippet file:
    - If the `custom_app_review` method is empty, replace it with the code in the snippet
    - If it already has other checks (from other plugins), add this line before the final `messages` return:
