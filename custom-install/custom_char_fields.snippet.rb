@@ -49,16 +49,22 @@
 # FILE: aresmush/plugins/profile/custom_char_fields.rb
 # METHOD: def self.get_fields_for_chargen(char)
 #
-# This displays the chargen-required inkling types as editable fields during chargen.
+# This retrieves draft chargen-inkling data from char.custom storage.
+# If player navigates away and returns to chargen, these fields repopulate the form.
 #
 # 1. Find the method "def self.get_fields_for_chargen(char)"
-# 2. Find the line with "return {" or the opening "{"
-# 3. Find the closing "}" of that hash
-# 4. Copy and paste these lines BEFORE the closing "}":
+# 2. Replace the entire method with this:
 #
 # ---START COPY HERE---
-        # Chargen-required inklings (displayed as custom fields)
-        **build_inkling_fields(char, char, for_editing: true)
+      # Return draft chargen-inkling data from char.custom
+      fields = {}
+      Inklings.chargen_required_types.each do |kind|
+        title_key = "inkling_#{kind}_title".to_sym
+        text_key = "inkling_#{kind}_text".to_sym
+        fields[title_key] = char.custom_field("inkling_#{kind}_title")
+        fields[text_key] = char.custom_field("inkling_#{kind}_text")
+      end
+      fields
 # ---END COPY---
 
 # ============================================================================
@@ -137,17 +143,25 @@
 # FILE: aresmush/plugins/profile/custom_char_fields.rb
 # METHOD: def self.save_fields_from_chargen(char, args)
 #
+# This saves draft inkling data to char.custom storage (not creating actual inklings yet).
+# On character approval, an approval hook converts these drafts to actual Inklings.
+#
 # 1. Find the method "def self.save_fields_from_chargen(char, args)"
-# 2. Find the line just before the "end" of that method
-# 3. Copy and paste these lines BEFORE the "end":
+# 2. Replace the entire method with this:
 #
 # ---START COPY HERE---
-      # Save chargen-required inklings
+      # Save draft chargen-inkling data to char.custom
       Inklings.chargen_required_types.each do |kind|
-        title_key = "inkling_#{kind}_title".to_sym
-        text_key = "inkling_#{kind}_text".to_sym
-        save_inkling_from_args(char, char, kind, args[title_key], args[text_key])
+        title_key_str = "inkling_#{kind}_title"
+        text_key_str = "inkling_#{kind}_text"
+
+        title = args[title_key_str] || args[title_key_str.to_sym]
+        text = args[text_key_str] || args[text_key_str.to_sym]
+
+        char.set_custom_field("inkling_#{kind}_title", title)
+        char.set_custom_field("inkling_#{kind}_text", text)
       end
+      char.save
 # ---END COPY---
 
 # ============================================================================
@@ -195,6 +209,17 @@
       end
     end
 # ---END COPY---
+
+# ============================================================================
+# ADDITIONAL SETUP: Approval Hook
+# ============================================================================
+#
+# FILE: plugins/inklings/events/character_approved.rb (in the Inklings plugin)
+#
+# The Inklings plugin should provide a character approval hook that converts
+# draft chargen-inkling data (stored in char.custom) into actual Inkling records.
+#
+# This is provided by the plugin automatically - no user configuration needed.
 
 # ============================================================================
 # DONE!
