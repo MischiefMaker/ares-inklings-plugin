@@ -9,12 +9,13 @@ module AresMUSH
       # npc_char_id: optional character ID for the NPC target, if it's tied to an actual Character record (npc rolls only)
       # npc_name: optional free-text NPC name for display, for NPCs with no Character record (npc rolls only)
       # is_private: whether only player and staff can see this
-      def self.add_roll(inkling_id, viewer_id, roll_type, roll_spec, result, result_value, npc_char_id: nil, npc_name: nil, is_private: false)
+      #
+      # viewer is the already-authenticated Character object (request.enactor
+      # from the web handler), not a raw ID - matches the convention used
+      # throughout InklingApi (see e.g. create_inkling/close_inkling).
+      def self.add_roll(inkling_id, viewer, roll_type, roll_spec, result, result_value, npc_char_id: nil, npc_name: nil, is_private: false)
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
-
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
 
         unless Inklings.can_manage_inklings?(viewer) || Inklings.is_participant?(inkling, viewer)
           return { error: "Not authorized" }
@@ -67,12 +68,11 @@ module AresMUSH
       end
 
       # Reroll using luck points
-      def self.reroll_with_luck(inkling_id, roll_id, viewer_id, new_result, new_result_value, luck_cost)
+      # viewer is the already-authenticated Character object, not a raw ID -
+      # see the note on add_roll above.
+      def self.reroll_with_luck(inkling_id, roll_id, viewer, new_result, new_result_value, luck_cost)
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
-
-        viewer = Character[viewer_id]
-        return { error: "Viewer not found" } if !viewer
 
         roll = InklingRoll[roll_id]
         return { error: "Roll not found" } if !roll

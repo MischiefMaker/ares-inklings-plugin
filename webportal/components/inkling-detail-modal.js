@@ -36,6 +36,7 @@ export default Component.extend({
 
   replyText: '',
   replyIsPrivate: false,
+  replyIsPersonal: false,
   tagInput: '',
   shareTarget: '',
 
@@ -81,6 +82,7 @@ export default Component.extend({
     this.setProperties({
       replyText: '',
       replyIsPrivate: false,
+      replyIsPersonal: false,
       tagInput: '',
       shareTarget: '',
       showRollForm: false,
@@ -122,11 +124,37 @@ export default Component.extend({
       }
     },
 
+    // Single entry point for both "reply" and "personal entry" - the two
+    // share one textarea in the template now, distinguished only by the
+    // Personal Entry checkbox (replyIsPersonal). Personal entries are a
+    // stricter visibility level (author only, hidden even from staff) than
+    // a private reply (author + staff), so when Personal is checked it
+    // takes priority over the Private checkbox's value.
     submitReply() {
       if (!this.replyText || !this.replyText.trim()) {
         this.flashMessages.danger('Please enter reply text');
         return;
       }
+
+      if (this.replyIsPersonal) {
+        if (!window.confirm('Personal entries are intended as private notes, but may become visible under game policies (character transfers, roster changes, or administration). Proceed?')) {
+          return;
+        }
+        this.gameApi.requestOne('inklings_reply_to_inkling', {
+          char_id: this.characterId,
+          inkling_id: this.inklingId,
+          text: this.replyText,
+          is_personal: true
+        }, null).then((response) => {
+          if (response.error) {
+            return;
+          }
+          this.setProperties({ replyText: '', replyIsPersonal: false });
+          this.loadDetail();
+        });
+        return;
+      }
+
       this.gameApi.requestOne('inklings_reply_to_inkling', {
         char_id: this.characterId,
         inkling_id: this.inklingId,
@@ -137,28 +165,6 @@ export default Component.extend({
           return;
         }
         this.setProperties({ replyText: '', replyIsPrivate: false });
-        this.loadDetail();
-      });
-    },
-
-    submitPersonalReply() {
-      if (!this.replyText || !this.replyText.trim()) {
-        this.flashMessages.danger('Please enter personal entry text');
-        return;
-      }
-      if (!window.confirm('Personal entries are intended as private notes, but may become visible under game policies (character transfers, roster changes, or administration). Proceed?')) {
-        return;
-      }
-      this.gameApi.requestOne('inklings_reply_to_inkling', {
-        char_id: this.characterId,
-        inkling_id: this.inklingId,
-        text: this.replyText,
-        is_personal: true
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.set('replyText', '');
         this.loadDetail();
       });
     },

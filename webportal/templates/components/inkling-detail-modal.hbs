@@ -185,24 +185,27 @@
           </div>
 
           <div class="mb-3">
+            {{#if this.replyIsPersonal}}
+              <div class="alert alert-info">
+                <strong>Personal Entry:</strong> Private notes visible only to you. These may become visible under game policies (transfers, roster changes, administration). Do not record sensitive out-of-game information.
+              </div>
+            {{/if}}
             {{textarea class="form-control mb-2" value=this.replyText placeholder="Add a reply..." rows="3"}}
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
               <div class="form-check">
                 {{input type="checkbox" class="form-check-input" id="inklings-reply-private" checked=this.replyIsPrivate}}
                 <label class="form-check-label" for="inklings-reply-private">
                   Private (only you and staff can see this)
                 </label>
               </div>
-              <button type="button" class="btn btn-success" {{action "submitReply"}}>Add Reply</button>
+              <div class="form-check">
+                {{input type="checkbox" class="form-check-input" id="inklings-reply-personal" checked=this.replyIsPersonal}}
+                <label class="form-check-label" for="inklings-reply-personal">
+                  Personal Entry (visible only to you)
+                </label>
+              </div>
+              <button type="button" class="btn btn-success" {{action "submitReply"}}>Add Entry</button>
             </div>
-          </div>
-
-          <div class="mb-3">
-            <div class="alert alert-info">
-              <strong>Personal Entry:</strong> Private notes visible only to you. These may become visible under game policies (transfers, roster changes, administration). Do not record sensitive out-of-game information.
-            </div>
-            {{textarea class="form-control mb-2" value=this.replyText placeholder="Add a personal entry (private note)..." rows="3"}}
-            <button type="button" class="btn btn-success" {{action "submitPersonalReply"}}>Add Personal Entry</button>
           </div>
 
           {{#if (or this.isStaff (eq this.detail.character_id this.viewerId))}}
