@@ -40,10 +40,11 @@ module AresMUSH
         when "player"
           target = viewer
           # Use FS3 system to perform the actual roll for the given skill
-          roll_result = FS3Skills.determine_roll_result(viewer, roll_spec)
-          if roll_result.is_a?(Hash) && roll_result[:result]
-            result = roll_result[:result]
-            result_value = roll_result[:result_value]
+          roll_params = AresMUSH::FS3Skills::RollParams.new(roll_spec)
+          roll_outcome = AresMUSH::FS3Skills.one_shot_roll(viewer, roll_params)
+          if roll_outcome
+            result = "#{roll_outcome[:success_title]} (#{roll_outcome[:successes]})"
+            result_value = roll_outcome[:successes]
           else
             return { error: "Failed to perform FS3 roll for #{roll_spec}" }
           end
