@@ -10,7 +10,7 @@ During character creation, you can optionally fill in your character's Secret an
 
 **`+inkling/goal <title>/<description>`** - Set your character's goal (a long-term goal they're working toward)
 
-Both are optional. You can leave either one blank, or fill them in later from your profile.
+Both are optional. You can edit them during chargen, or fill them in later after your character is approved.
 
 When your character is approved, these drafts automatically become real Inklings that you can edit and submit to staff.
 
