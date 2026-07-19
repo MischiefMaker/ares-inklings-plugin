@@ -13,7 +13,7 @@
       <button type="button" class="btn btn-outline-secondary {{if (eq this.statusFilter "closed") "active"}}" {{action "setStatusFilter" "closed"}}>Closed</button>
       <button type="button" class="btn btn-outline-secondary {{if (eq this.statusFilter "all") "active"}}" {{action "setStatusFilter" "all"}}>All</button>
     </div>
-    {{#if this.typeInfo.length}}
+    {{#if (or this.typeInfo.length this.isStaff)}}
       <button type="button" class="btn btn-primary" {{action "toggleNewForm"}}>
         {{if this.showNewForm "Cancel" "+ New Inkling"}}
       </button>
