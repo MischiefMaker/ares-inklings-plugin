@@ -877,16 +877,13 @@ Each of these happened on this project — concretely, not hypothetically.
 13. **Confusing `@restart` with an actual server restart.** Documentation and
     instructions said "run `@restart`" or similar, creating the false impression
     that there's an in-game command to restart the server. There is not. `@restart`
-    does not exist in AresMUSH. To actually restart the server, a staff member
-    must use `shutdown` to gracefully stop the server, then the server process
-    itself is rebooted by the hosting environment (systemd, Docker, etc.) or the
-    admin manually restarts it. *Avoid it*: never tell a user to "run `@restart`"
-    or "type a command" to restart the server. Instead, be explicit: "The game
-    must be shut down with `shutdown` from a staff account, then rebooted by your
-    hosting infrastructure or admin." If writing installation docs, specify that
-    a restart is needed (for plugin code changes to take effect), but clarify the
-    actual mechanism (shutdown + reboot via server infrastructure, not an in-game
-    command).
+    does not exist in AresMUSH. To actually restart the server, the admin must log
+    in to the server and run `sudo reboot`. *Avoid it*: never tell a user to "run
+    `@restart`" or suggest there's an in-game restart command. Instead, be explicit:
+    "Log in to your server and run `sudo reboot` to restart it." If writing
+    installation docs that require a restart (for plugin code changes to take
+    effect), make it clear that users must physically reboot the server, not run
+    an in-game command.
 
 ---
 

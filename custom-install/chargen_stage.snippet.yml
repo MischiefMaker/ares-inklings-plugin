@@ -67,7 +67,7 @@ secrets_goals: |
   Both are optional and can be filled in later via +inkling/secret and
   +inkling/goal commands, or edited on your character profile.
 #
-# STEP 5: Restart the server by running `shutdown` from a staff account and rebooting via your hosting infrastructure.
+# STEP 5: Log in to your server and run `sudo reboot` to restart it.
 #
 # ===========================================================================
 # FIELD TYPES REFERENCE
