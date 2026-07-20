@@ -161,9 +161,11 @@ NOT auto-installed components. This is a critical distinction from profile tabs.
 **Chargen field layout pattern** (verified on this project):
 For multi-field sections with title + description, use:
 - `<h2>` heading for the section name
-- Flex row (`d-flex align-items-center gap-2 mb-3 w-100`) with a plain `<label class="form-label mb-0">` beside a text input
+- Flex row (`d-flex align-items-center gap-2 mb-3` with `style="width: 98%;"`) with a plain `<label class="form-label mb-0">` beside a text input
 - Textarea directly below for the description, with no separate label (use placeholder for guidance)
 - `<hr class="my-4">` to divide sections
+
+Note: The flex container needs `style="width: 98%;"` to match Ares' textarea width constraint, ensuring the input and textarea visually align.
 
 This pattern keeps labels readable (plain labels inherit theme text color; avoid `input-group-text` which carries its own background), uses only Bootstrap utilities for spacing and alignment, and works across all Ares themes without plugin-specific CSS.
 
