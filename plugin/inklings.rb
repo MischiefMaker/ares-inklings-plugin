@@ -844,6 +844,16 @@ module AresMUSH
             return InklingChargenDraftCmd
           end
           return InklingStartCmd
+        elsif cmd.switch.present?
+          # A switch was given but matched none of the branches above (a
+          # staff typo, an unsupported kind, etc). Without this, an
+          # unrecognized switch fell out of the if/elsif chain entirely
+          # and was silently swallowed by the "no switch" fallback below
+          # - e.g. "+inkling/aprove 5" quietly showed the enactor's own
+          # list instead of reporting anything. Returning nil here defers
+          # to Ares' own unrecognized-command handling, the same as any
+          # cmd.root that isn't "inkling"/"inklings" in the first place.
+          return nil
         end
 
         # No switch: check if there's an inkling ID argument

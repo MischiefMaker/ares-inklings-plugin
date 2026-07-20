@@ -967,6 +967,54 @@ Each of these happened on this project — concretely, not hypothetically.
     already owns `custom_approval.rb`, and a plugin's merge-safe snippet is the
     right way to extend it.
 
+15. **A backlog audit found four real bugs by re-reading code, not by trusting
+    old assumptions.** Four separate, unrelated defects, each worth its own
+    lesson:
+    - **Web JSON error responses are useless if the frontend drops them.**
+      Every `public/*_api.rb` method here already returns a specific
+      `{ error: "..." }` on failure, but most Ember component actions did
+      `if (response.error) { return; }` — checking the field, then throwing
+      the message away instead of calling `this.flashMessages.danger(...)`.
+      The backend contract being right doesn't help if callers only check
+      `.error` to decide whether to *stop*, not to decide what to *tell the
+      user*. Grep every `.then((response) => {` block for a bare `return`
+      after an error check with no `flashMessages` call beside it.
+    - **A MUSH-colorized field (ansi `%x` codes) reused as both MUSH output
+      and stored data will leak raw escape sequences into any web JSON built
+      from it.** `InklingRoll#result` is intentionally built with ansi codes
+      because it's also interpolated straight into MUSH text elsewhere
+      (`+inkling <id>`, the submitted-thread transcript) — so stripping ansi
+      at the source would break that. The fix belongs at the render edge:
+      Ares's web portal already ships an `{{ansi-format}}` Handlebars helper
+      for exactly this (alongside `local-date`, `title`, `link-to`) — wrap the
+      field in the template (`{{ansi-format roll.result}}`) rather than
+      inventing Ruby-side ansi-stripping or a custom parser.
+    - **A `public/*_api.rb` method that takes both `char_id` (whose page this
+      is) and `viewer` (who's looking at it) must use the right one for each
+      query, and it's easy to default to `viewer` for everything.**
+      `InklingApi.get_inklings` used `viewer.id` for its "shared with me" and
+      "group match" queries instead of `char.id`. For a player viewing their
+      own profile the two are identical, so this shipped and passed casual
+      testing — the bug only appears when *staff* view *someone else's*
+      profile, where it silently mixed inklings shared with the staff
+      member's own character into the target's list. Any time a handler
+      takes both a subject and a viewer, audit every query in it for which
+      one it actually keyed off, especially ones that only get exercised by
+      a staff-viewing-another-character code path.
+    - **An `if/elsif` chain used as a command dispatcher needs an explicit
+      "none of these matched" branch, or unrecognized input silently falls
+      through to whatever code follows the chain.** `Inklings.get_cmd_handler`
+      had a long `elsif cmd.switch_is?(...)` chain with no final `else`; an
+      unrecognized switch (e.g. a typo'd `+inkling/aprove`) fell out of the
+      chain entirely into code written for the *different* case of "no switch
+      at all," which silently matched the bare-list fallback instead of
+      reporting anything. The fix: add `elsif cmd.switch.present?` as the
+      last branch, returning `nil` so Ares' own unrecognized-command handling
+      takes over — the same fallback that already applies to any `cmd.root`
+      that isn't handled by this plugin at all. Prefer that (deferring to a
+      mechanism that already exists) over inventing a new "unknown switch"
+      error command.
+
 ---
 
 ## 9. Plugin Review Checklist

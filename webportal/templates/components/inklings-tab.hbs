@@ -74,6 +74,9 @@
             <h4 class="inkling-title">#{{inkling.id}}) {{inkling.title}}</h4>
             <span class="badge text-bg-{{inkling.kind_color}}">{{inkling.kind_label}}</span>
             <span class="badge {{if (eq inkling.status "open") "text-bg-success" "text-bg-danger"}}">{{inkling.status}}</span>
+            {{#unless (eq inkling.character_id this.characterId)}}
+              <span class="badge text-bg-info">SHARED</span>
+            {{/unless}}
             {{#if inkling.locked}}
               {{#if (eq inkling.approval_state "approved")}}
                 <span class="badge text-bg-secondary">LOCKED - Completed</span>

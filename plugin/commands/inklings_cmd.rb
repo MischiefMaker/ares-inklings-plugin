@@ -55,7 +55,8 @@ module AresMUSH
           visible_message_count = i.messages.to_a.count { |m| Inklings.can_see_message?(m, enactor) }
           count_text = "#{visible_message_count} msg(s)#{unread ? "%xh*%xn" : ""}"
           lock_text = i.locked == "true" ? " %xh%crLOCKED%xn" : ""
-          "#{flag}##{i.id} [#{Inklings.color_type(i.kind.upcase)}] #{Inklings.color_title(title)} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} - #{count_text}#{lock_text}"
+          shared_text = i.character == enactor ? "" : " %xh%cySHARED%xn"
+          "#{flag}##{i.id} [#{Inklings.color_type(i.kind.upcase)}] #{Inklings.color_title(title)} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} - #{count_text}#{lock_text}#{shared_text}"
         end
         list.concat(inkling_lines)
 

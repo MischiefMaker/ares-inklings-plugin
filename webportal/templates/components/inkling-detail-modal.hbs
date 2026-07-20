@@ -73,7 +73,7 @@
                 <span class="small fst-italic">for {{roll.target_character}}</span>
               {{/if}}
               {{#if roll.private}}<span class="badge text-bg-info text-uppercase">PRIVATE</span>{{/if}}
-              <span class="fw-bold">{{roll.result}}</span>
+              <span class="fw-bold">{{ansi-format roll.result}}</span>
               <span class="small ms-auto">by {{roll.creator}}</span>
             </div>
             {{#if roll.reroll_count}}

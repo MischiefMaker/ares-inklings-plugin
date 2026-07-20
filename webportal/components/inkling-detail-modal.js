@@ -147,6 +147,7 @@ export default Component.extend({
           is_personal: true
         }, null).then((response) => {
           if (response.error) {
+            this.flashMessages.danger(response.error);
             return;
           }
           this.setProperties({ replyText: '', replyIsPersonal: false });
@@ -162,6 +163,7 @@ export default Component.extend({
         is_private: this.replyIsPrivate
       }, null).then((response) => {
         if (response.error) {
+          this.flashMessages.danger(response.error);
           return;
         }
         this.setProperties({ replyText: '', replyIsPrivate: false });
@@ -180,6 +182,7 @@ export default Component.extend({
         tag: this.tagInput.trim()
       }, null).then((response) => {
         if (response.error) {
+          this.flashMessages.danger(response.error);
           return;
         }
         this.set('tagInput', '');
@@ -194,6 +197,7 @@ export default Component.extend({
         tag
       }, null).then((response) => {
         if (response.error) {
+          this.flashMessages.danger(response.error);
           return;
         }
         this.loadDetail();
@@ -211,6 +215,7 @@ export default Component.extend({
         text: text.trim()
       }, null).then((response) => {
         if (response.error) {
+          this.flashMessages.danger(response.error);
           return;
         }
         this.loadDetail();
@@ -225,6 +230,7 @@ export default Component.extend({
         inkling_id: this.inklingId
       }, null).then((response) => {
         if (response.error) {
+          this.flashMessages.danger(response.error);
           return;
         }
         this.loadDetail();
@@ -241,6 +247,7 @@ export default Component.extend({
         feedback: feedback.trim()
       }, null).then((response) => {
         if (response.error) {
+          this.flashMessages.danger(response.error);
           return;
         }
         this.loadDetail();
@@ -270,6 +277,7 @@ export default Component.extend({
         amount: amount.trim()
       }, null).then((response) => {
         if (response.error) {
+          this.flashMessages.danger(response.error);
           return;
         }
         this.loadDetail();
@@ -325,6 +333,7 @@ export default Component.extend({
         }
         this.gameApi.requestOne('inklings_add_roll', args, null).then((response) => {
           if (response.error) {
+            this.flashMessages.danger(response.error);
             return;
           }
           this.setProperties({
@@ -346,6 +355,7 @@ export default Component.extend({
         inkling_id: this.inklingId
       }, null).then((response) => {
         if (response.error) {
+          this.flashMessages.danger(response.error);
           return;
         }
         this.loadDetail();
@@ -361,6 +371,7 @@ export default Component.extend({
         inkling_id: this.inklingId
       }, null).then((response) => {
         if (response.error) {
+          this.flashMessages.danger(response.error);
           return;
         }
         this.set('detail', response.inkling);
@@ -381,6 +392,7 @@ export default Component.extend({
         target_name: this.shareTarget
       }, null).then((response) => {
         if (response.error) {
+          this.flashMessages.danger(response.error);
           return;
         }
         this.set('shareTarget', '');
@@ -401,6 +413,7 @@ export default Component.extend({
         inkling_id: id
       }, null).then((data) => {
         if (data.error) {
+          this.flashMessages.danger(data.error);
           return;
         }
         if (data.deleted) {
