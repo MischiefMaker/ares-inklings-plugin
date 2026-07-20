@@ -641,6 +641,16 @@ to load it.
 
 ### README expectations
 
+**Audience:** Write all outward-facing text (README, help files, install instructions) for laypeople installing and running the plugin — game administrators, not developers. Never explain how things work on a code level. Focus on features (what players and staff can do) and the specific steps installers need to take to make it work.
+
+**Specifically:**
+- Describe the plugin's features and what it does (player-facing) and what staff can do with it
+- Do NOT explain implementation details (how the web components load data, how the hooks work, database schema, Ruby conventions, etc.)
+- Write installation steps as mechanical, numbered procedures a non-developer can follow
+- When referencing files or directories, use game-owner-relative paths (`game/config/inklings.yml`, not `plugins/inklings/game/config/inklings.yml`)
+- Use plain language; avoid technical jargon that requires AresMUSH knowledge to understand
+
+**Mechanical requirements:**
 - Describe exactly what's automatic vs. manual, matching what actually
   happens — don't describe an aspirational installer.
 - Give a numbered, mechanical install path with clear optional/required
