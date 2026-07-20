@@ -29,4 +29,13 @@
   .share-input-group {
     max-width: 300px;
   }
+
+  // Ensure form controls in the new inkling form align consistently
+  .card {
+    input.form-control,
+    textarea.form-control {
+      width: 100%;
+      box-sizing: border-box;
+    }
+  }
 }
