@@ -178,7 +178,7 @@ module AresMUSH
       type_config.key?(kind.to_s)
     end
 
-    # Kinds this viewer is allowed to create (via +inkling/new or the
+    # Kinds this viewer is allowed to create (via +inkling/create or the
     # web portal's "New Inkling" picker). Staff can create any type.
     # An unapproved, non-staff viewer can only create kinds explicitly
     # flagged chargen: true in config (none, by default - see
@@ -275,6 +275,40 @@ module AresMUSH
       return true if InklingParticipant.find(inkling_id: inkling.id, character_id: char.id).any?
       return true if is_group_participant?(inkling, char)
       false
+    end
+
+    # --- Shared CommandHandler check conditions --------------------------
+    # These three answer the same yes/no question every +inkling
+    # subcommand's own check_* method already re-derives from
+    # can_manage_inklings?/is_participant? - centralized here so the
+    # actual condition lives in exactly one place, while each command
+    # still owns its own check_* method (same name, same alphabetical-
+    # ordering position as before) since only CommandHandler instances
+    # can call t() to localize the resulting error message. Nil-safe:
+    # each returns false for a nil inkling, so callers don't need their
+    # own separate nil guard before calling these.
+
+    # Staff, or an explicit/group participant (owner, creator, shared
+    # individually, or via a matching group) - used by commands that
+    # read or reply to a thread (view, comment, personal, private, reply).
+    def self.can_view_or_reply?(inkling, char)
+      return false if !inkling
+      return true if can_manage_inklings?(char)
+      is_participant?(inkling, char)
+    end
+
+    # Staff, or the inkling's own owner - used by commands that manage
+    # thread-level state (close, tag/untag, share, group-share).
+    def self.owner_or_staff?(inkling, char)
+      return false if !inkling
+      return true if can_manage_inklings?(char)
+      inkling.character == char
+    end
+
+    # Whether inkling is closed. Nil-safe (a nil inkling isn't "closed" -
+    # let the caller's own check_valid_inkling report the real error).
+    def self.closed?(inkling)
+      inkling && inkling.status == "closed"
     end
 
     def self.split_list(value)
@@ -445,28 +479,18 @@ module AresMUSH
       end
     end
 
-    # Whether char has anything on this inkling they haven't seen yet
-    # that someone ELSE posted - a character's own posts never count as
-    # unread for them, even before they next explicitly view the
-    # thread, so posting an update doesn't immediately re-flag your own
-    # thread in your own +inkling/new queue. Only counts events char
-    # can actually see (respects the same private/GM/personal
-    # visibility rules the detail view itself uses).
-    def self.has_unread_for?(inkling, char)
-      baseline = find_read_receipt(inkling, char)&.last_read_seq.to_i
-
-      return true if inkling.messages.to_a.any? { |m|
-        m.seq.to_i > baseline && (!m.author || m.author.id != char.id) && can_see_message?(m, char)
-      }
-
-      inkling.rolls.to_a.any? { |r|
-        r.seq.to_i > baseline && (!r.creator || r.creator.id != char.id) && can_see_roll?(r, char)
-      }
-    end
-
-    # Timestamp of the earliest event char hasn't seen on this inkling
-    # (falling back to the inkling's own created_at if nothing
-    # qualifies), for ordering the +inkling/new queue oldest-first.
+    # Timestamp of the earliest event on inkling that char hasn't seen
+    # yet and didn't post themselves, or nil if they're fully caught up
+    # - a character's own posts never count as unread for them, even
+    # before they next explicitly view the thread, so posting an update
+    # doesn't immediately re-flag your own thread in your own
+    # +inkling/new queue. Only counts events char can actually see
+    # (respects the same private/GM/personal visibility rules the
+    # detail view itself uses). One pass over messages+rolls computes
+    # both "is this unread" (see has_unread_for?) and "what's the
+    # earliest unread event" (for +inkling/new's oldest-first ordering)
+    # together, since unread_inklings_for needs both per candidate and
+    # there's no reason to walk the same records twice.
     def self.earliest_unread_time(inkling, char)
       baseline = find_read_receipt(inkling, char)&.last_read_seq.to_i
 
@@ -480,7 +504,11 @@ module AresMUSH
         times << time_value(r.created_at)
       end
 
-      times.min || time_value(inkling.created_at)
+      times.min
+    end
+
+    def self.has_unread_for?(inkling, char)
+      !earliest_unread_time(inkling, char).nil?
     end
 
     # Every inkling char has access to (own, explicitly shared, or via
@@ -494,8 +522,11 @@ module AresMUSH
       group = Inkling.all.to_a.select { |i| is_group_participant?(i, char) }
 
       candidates = (own + shared + group).uniq(&:id).select { |i| i.status == "open" }
-      candidates.select { |i| has_unread_for?(i, char) }
-        .sort_by { |i| earliest_unread_time(i, char) }
+
+      candidates.map { |i| [i, earliest_unread_time(i, char)] }
+        .reject { |(_i, time)| time.nil? }
+        .sort_by { |(_i, time)| time }
+        .map(&:first)
     end
 
     # The stable "2.1" style reference for a message or roll: inkling
@@ -531,10 +562,11 @@ module AresMUSH
     end
 
     # Fixed job category so inkling-linked jobs land on their own board.
-    # Create this category in-game with: job/createcategory INKLINGS
-    # (override in inklings.yml if you want a different category name).
+    # Defaults to "Plots" (see game/config/inklings.yml, which ships
+    # with that value set explicitly) - override job_category in
+    # inklings.yml if your game uses a different category name.
     def self.job_category
-      Global.read_config("inklings", "job_category") || "INKLINGS"
+      Global.read_config("inklings", "job_category") || "Plots"
     end
 
     # Makes sure the given inkling has a linked job, so staff are
@@ -857,8 +889,7 @@ module AresMUSH
     # marked approved, never two separate approvals to keep in sync.
     # There's no confirmed AresMUSH event fired when a Job's status
     # changes, so the reverse direction (approving via the job itself
-    # auto-approving the inkling) isn't implemented - see the README's
-    # Verification Notes.
+    # auto-approving the inkling) isn't implemented.
     def self.approve_inkling(inkling, staff, message = nil)
       note = message.to_s.strip
 
@@ -974,7 +1005,8 @@ module AresMUSH
     #   - "fs3_skill" is recorded but NOT auto-applied. There's no
     #     confirmed FS3Skills API for directly changing a skill rating
     #     (only modify_xp was confirmed against real FS3 source) - see
-    #     the README's Verification Notes. Staff need to apply the
+    #     the "FS3 skill rewards require manual application" bullet in
+    #     the README's Known Limitations. Staff need to apply the
     #     actual skill change themselves through FS3's normal process;
     #     this just keeps a record and notifies the player.
     #   - Any other reward_type (a future SOUL/Boons/Banes system,
@@ -1135,11 +1167,13 @@ module AresMUSH
         elsif cmd.switch_is?("comment")
           return InklingCommentCmd
         elsif cmd.switch_is?("new")
-          # Bare +inkling/new (no args) cycles through unread inklings,
-          # bbnew-style (InklingNewUnreadCmd). +inkling/new
-          # <kind>=<title>/<text> creates one (InklingNewCmd). Same
-          # switch, different command, picked by whether args were given.
-          return cmd.args.to_s.strip.empty? ? InklingNewUnreadCmd : InklingNewCmd
+          # bbnew-style: cycles through unread inklings, oldest first.
+          # Deliberately takes no arguments - see InklingNewUnreadCmd.
+          # Kind-based creation is +inkling/create, a separate switch,
+          # so the two never collide.
+          return InklingNewUnreadCmd
+        elsif cmd.switch_is?("create")
+          return InklingCreateCmd
         elsif cmd.switch_is?("submit")
           return InklingSubmitCmd
         elsif cmd.switch_is?("approve")

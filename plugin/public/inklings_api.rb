@@ -13,7 +13,7 @@ module AresMUSH
       def self.creatable_type_options(viewer)
         Inklings.creatable_kinds(viewer).sort.map do |kind|
           config = Inklings.type_config[kind] || {}
-          { kind: kind, name: Inklings.kind_label(kind), color: config["color"] || "secondary" }
+          { kind: kind, name: Inklings.kind_label(kind), color: config["color"] || "secondary", description: Inklings.kind_description(kind) }
         end
       end
 
@@ -331,7 +331,6 @@ module AresMUSH
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
         return { error: "Your character must be approved to close inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
@@ -354,7 +353,6 @@ module AresMUSH
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
         return { error: "Your character must be approved to submit inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
@@ -379,7 +377,6 @@ module AresMUSH
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
         return { error: "Your character must be approved to delete inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
@@ -412,7 +409,6 @@ module AresMUSH
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
         return { error: "Your character must be approved to share inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
@@ -632,7 +628,6 @@ module AresMUSH
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_view_inkling?(inkling, viewer)
         return { error: "Not authorized to manage tags" } if inkling.character != viewer && !Inklings.can_manage_inklings?(viewer)
@@ -657,7 +652,6 @@ module AresMUSH
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        
         return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
         return { error: "Not authorized" } if !can_view_inkling?(inkling, viewer)
         return { error: "Not authorized to manage tags" } if inkling.character != viewer && !Inklings.can_manage_inklings?(viewer)
@@ -681,7 +675,6 @@ module AresMUSH
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        
         return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
         return { error: "Text cannot be empty" } if text.to_s.blank?
 
@@ -707,7 +700,6 @@ module AresMUSH
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        
         return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
         return { error: "Inkling not submitted for review" } if inkling.approval_state != "submitted"
 
@@ -721,7 +713,6 @@ module AresMUSH
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        
         return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
         return { error: "Inkling not submitted for review" } if inkling.approval_state != "submitted"
         return { error: "Feedback cannot be empty" } if feedback.to_s.blank?
@@ -736,7 +727,6 @@ module AresMUSH
         inkling = Inklings.find_inkling(inkling_id)
         return { error: "Inkling not found" } if !inkling
 
-        
         return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
         return { error: "Reward type cannot be empty" } if reward_type.to_s.blank?
         return { error: "Amount cannot be empty" } if amount.to_s.blank?

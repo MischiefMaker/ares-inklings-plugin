@@ -28,7 +28,6 @@ module AresMUSH
           # about which character's threads we're pulling.
           inklings = Inkling.find(character_id: model.id).to_a
             .sort_by { |i| Inklings.time_value(i.created_at) }.reverse
-          inklings.each { |i| Inklings.sync_job_replies(i) }
 
           drafts = model.is_approved? ? [] : Inklings.chargen_drafts(model)
 
@@ -48,8 +47,9 @@ module AresMUSH
             list << nil  # Blank line separator
           end
 
-          # Show real inklings
+          # Show real inklings, syncing only the ones we'll display
           inkling_lines = inklings.map do |i|
+            Inklings.sync_job_replies(i)
             job_ref = i.job ? "job ##{i.job.id} [#{i.job.status}]" : t('inklings.no_linked_job')
             title = i.title.to_s.blank? ? Inklings.kind_label(i.kind) : i.title
             unread = i.player_unread == "true"

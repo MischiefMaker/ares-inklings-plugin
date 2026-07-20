@@ -43,8 +43,8 @@ Jump straight to one numbered entry using its reference number, e.g. `+inkling/c
 **`+inkling/new`**
 With no arguments, shows the oldest inkling you have unread updates on and marks it read - run it again to see the next one, like the bulletin board's `+bbnew`. Tells you when you're caught up.
 
-**`+inkling/new <kind>=<title>/<text>`**
-Create a new inkling with a title and opening text. For example: `+inkling/new goal=Learn to Sail/Work toward buying lessons this month.`
+**`+inkling/create <kind>=<title>/<text>`**
+Create a new inkling with a title and opening text. For example: `+inkling/create goal=Learn to Sail/Work toward buying lessons this month.`
 
 **`+inkling/share <id>=<character>,<character>`**
 Share an inkling with one or more players, granting them read and reply access. Example: `+inkling/share 14=Bob,Alice`
@@ -63,6 +63,12 @@ Add a private entry to any inkling thread. Private entries are visible only to y
 
 **`+inkling/personal <id>=<text>`**
 Add a personal note to any inkling thread. Personal notes are visible only to you, even staff can't see them. Use this for OOC thoughts, session notes, or reminders you want to keep with the thread.
+
+**`+inkling/tag <id>=<tag>`**
+Add an organizational tag to one of your threads. Example: `+inkling/tag 14=romance`
+
+**`+inkling/untag <id>=<tag>`**
+Remove a tag.
 
 **`+inkling/submit <id>`**
 Lock the thread and send everything in it to staff as a single request. This is the only thing that actually gets a thread in front of staff - do this whenever you want a response. The thread stays locked until a staff member makes a decision via `+inkling/approve` (approved) or `+inkling/needschanges` (sent back for revisions). While locked, you can view it and read staff replies, but can't add new updates unless staff sends it back for changes.

@@ -61,28 +61,41 @@ push before marking the task complete.
 
    **MUSH-only commands (documented exceptions on this plugin):** Not every
    command needs a web equivalent - the rule is about *functionality*, not
-   every individual command. Two on this plugin are intentionally MUSH-only,
-   by explicit direction, because their whole reason to exist is
-   command-line-specific and the web thread view already covers the same
-   ground a different way:
+   every individual command. A handful on this plugin are intentionally
+   MUSH-only, for two different reasons:
+
+   *Command-line convenience for something the web already fully exposes a
+   different way* (by explicit direction; nothing is hidden from the web
+   that these reveal):
    - `+inkling/new` (bare, no args) - `InklingNewUnreadCmd`. Cycles through
-     unread inklings one at a time, bbnew-style. The underlying capability
-     (see what's unread) exists on the web too - the profile tab's list
-     already shows unread state per-thread - this command is just a MUSH-
-     idiom convenience for stepping through them one at a time on the
-     command line, not a capability the web portal lacks.
+     unread inklings one at a time, bbnew-style. The profile tab's list
+     already shows unread state per-thread - this is just a MUSH-idiom
+     convenience for stepping through them one at a time on the command
+     line.
    - `+inkling/comment <ref>` - `InklingCommentCmd`. Jumps straight to one
      numbered entry (`<inkling_id>.<seq>`, e.g. `3.4`) without showing the
      rest of the thread. The web detail view already shows every entry
-     inline with its ref number - there's nothing to "jump to" there, since
-     nothing is hidden that a ref-based lookup would reveal.
+     inline with its ref number.
+   - `+inkling/view-secret`, `+inkling/view-goal` - `InklingViewChargenDraftCmd`.
+     Read-only view of your own chargen draft before approval. The web
+     chargen "Secret & Goal" tab is the same data, read/write, live -
+     these two commands exist for players who prefer the MUSH client
+     during chargen.
+
+   *Deliberately kept off the web UI, not a parity gap at all:*
+   - `+inkling/reset` - `InklingResetCmd`. A destructive, confirmation-token-
+     gated wipe of every inkling thread in the game, restricted to
+     `manage_game` (Coders/Admins). This is the one command on this plugin
+     where *not* having a one-click web equivalent is the point.
+
    When adding a new MUSH command, default to also giving it a web path
-   (or explicitly note here why not) - these two are exceptions because a
+   (or explicitly note here why not) - these are exceptions because a
    *command-line-specific convenience for reaching content the web already
-   fully exposes* is different from a capability gap. Don't use "it's MUSH
-   idiom" to justify skipping a web equivalent for something the web
-   portal genuinely can't do yet - that's still a parity gap, and belongs
-   in the README's Known Limitations instead.
+   fully exposes*, or a *deliberately-not-web-accessible destructive action*,
+   is different from a capability gap. Don't use "it's MUSH idiom" to justify
+   skipping a web equivalent for something the web portal genuinely can't do
+   yet - that's still a parity gap, and belongs in the README's Known
+   Limitations instead.
 
 5. **Minimize duplicated logic between Ruby and Ember.** Authorization
    checks, filtering rules, and formatting decisions should exist in exactly

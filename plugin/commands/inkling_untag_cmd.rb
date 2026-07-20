@@ -27,10 +27,8 @@ module AresMUSH
       end
 
       def check_can_manage
-        return nil if !inkling
-        return nil if Inklings.can_manage_inklings?(enactor)
-        return nil if inkling.character == enactor
-        return t('dispatcher.not_allowed')
+        return nil if Inklings.owner_or_staff?(inkling, enactor)
+        t('dispatcher.not_allowed')
       end
 
       def handle

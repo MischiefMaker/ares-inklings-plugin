@@ -33,16 +33,13 @@ module AresMUSH
       end
 
       def check_can_reply
-        return nil if !inkling
-        return nil if Inklings.can_manage_inklings?(enactor)
-        return nil if Inklings.is_participant?(inkling, enactor)
-        return t('dispatcher.not_allowed')
+        return nil if Inklings.can_view_or_reply?(inkling, enactor)
+        t('dispatcher.not_allowed')
       end
 
       def check_not_closed
-        return nil if !inkling
-        return t('inklings.thread_is_closed') if inkling.status == "closed"
-        return nil
+        return t('inklings.thread_is_closed') if Inklings.closed?(inkling)
+        nil
       end
 
       def handle

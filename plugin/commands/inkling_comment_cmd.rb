@@ -68,9 +68,7 @@ module AresMUSH
       end
 
       def check_can_view
-        return nil if !inkling
-        return nil if Inklings.can_manage_inklings?(enactor)
-        return nil if Inklings.is_participant?(inkling, enactor)
+        return nil if Inklings.can_view_or_reply?(inkling, enactor)
         t('dispatcher.not_allowed')
       end
 

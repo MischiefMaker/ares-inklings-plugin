@@ -4,10 +4,9 @@ module AresMUSH
     # the single oldest inkling you have unread content on, one thread
     # per invocation. Run it again to advance to the next-oldest.
     #
-    # Distinct from +inkling/new <kind>=<title>/<text> (InklingNewCmd,
-    # which creates a new inkling) - which command actually runs
-    # depends on whether args were given, see the switch_is?("new")
-    # branch in Inklings.get_cmd_handler.
+    # Takes no arguments by design, so it can never collide with
+    # +inkling/create <kind>=<title>/<text> (InklingCreateCmd) - a
+    # separate switch entirely, see Inklings.get_cmd_handler.
     class InklingNewUnreadCmd
       include CommandHandler
 

@@ -33,6 +33,9 @@
           <option value={{t.kind}}>{{t.name}}</option>
         {{/each}}
       </select>
+      {{#if this.selectedTypeDescription}}
+        <div class="form-text">{{this.selectedTypeDescription}}</div>
+      {{/if}}
     </div>
 
     <div class="mb-3">

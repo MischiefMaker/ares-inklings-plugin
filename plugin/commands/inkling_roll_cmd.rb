@@ -46,8 +46,7 @@ module AresMUSH
       end
 
       def check_not_closed
-        return nil if !inkling
-        return t('inklings.thread_is_closed') if inkling.status == "closed"
+        return t('inklings.thread_is_closed') if Inklings.closed?(inkling)
         nil
       end
 

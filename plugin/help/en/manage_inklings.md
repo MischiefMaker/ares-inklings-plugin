@@ -61,6 +61,8 @@ Permanently deletes every inkling thread, message, and roll for every character.
 ## Shared Commands
 
 The following commands work for both staff and players. See `help inklings` for full details:
+- `+inkling/new` — Show your oldest unread inkling, one per use (like `+bbnew`)
+- `+inkling/comment <id>.<number>` — Jump straight to one numbered entry, e.g. `+inkling/comment 14.3`
 - `+inkling/advance <id>=<text>` — Reply to a thread (visible to participants)
 - `+inkling/private <id>=<name>/<text>` — Add a private message for specific participant (staff) or staff-only (players)
 - `+inkling/roll <id>=<roll command>` — Attach a roll (staff can roll for an NPC or another character, e.g. `+inkling/roll 14=Bob/Firearms+Reflexes`)

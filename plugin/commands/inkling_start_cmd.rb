@@ -1,6 +1,6 @@
 module AresMUSH
   module Inklings
-    # A title is now mandatory for every kind (matching +inkling/new's
+    # A title is now mandatory for every kind (matching +inkling/create's
     # "<title>/<text>" syntax) - rolls are the only exception, since
     # they aren't a kind at all.
     #
@@ -27,15 +27,15 @@ module AresMUSH
     class InklingStartCmd
       include CommandHandler
 
-      attr_accessor :kind, :target_name, :title, :text
+      attr_accessor :kind, :needs_target, :target_name, :title, :text
 
       def parse_args
         self.kind = cmd.switch
 
-        needs_target = Inklings.staff_kinds.include?(self.kind) ||
+        self.needs_target = Inklings.staff_kinds.include?(self.kind) ||
           (Inklings.shared_kinds.include?(self.kind) && cmd.args.to_s.include?("="))
 
-        if needs_target
+        if self.needs_target
           args = cmd.parse_args(ArgParser.arg1_equals_arg2)
           self.target_name = titlecase_arg(args.arg1)
           remainder = args.arg2
@@ -44,17 +44,26 @@ module AresMUSH
         end
 
         # Title is mandatory: split on the first "/", same convention
-        # as +inkling/new. required_args below rejects the command if
-        # there's no "/" (title.blank?) rather than silently falling
-        # back to an auto-generated title.
+        # as +inkling/create. check_valid_format below rejects the
+        # command if there's no "/" (title.blank?) rather than silently
+        # falling back to an auto-generated title.
         title_and_text = remainder.to_s.split("/", 2)
         self.title = trim_arg(title_and_text[0])
         self.text = trim_arg(title_and_text[1])
       end
 
-      def required_args
-        base = self.target_name ? [self.target_name] : []
-        base + [self.title, self.text]
+      # Deliberately no required_args here (this class handles every
+      # kind-based creation switch - hint, vision, nudge, hook, secret,
+      # goal, initiative, request, pitch, etc.) - the framework's own
+      # generic required_args failure message points at
+      # "help <cmd.root>/<cmd.switch>" (e.g. "help inkling/progress"),
+      # and none of those per-switch help topics exist; the real one is
+      # just `help inklings`. Validating explicitly here instead keeps
+      # the error pointing somewhere that actually exists.
+      def check_valid_format
+        return t('dispatcher.invalid_syntax', :cmd => 'inklings') if self.needs_target && self.target_name.blank?
+        return t('dispatcher.invalid_syntax', :cmd => 'inklings') if self.title.blank? || self.text.blank?
+        nil
       end
 
       def check_approved

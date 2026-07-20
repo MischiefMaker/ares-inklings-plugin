@@ -33,12 +33,7 @@ module AresMUSH
       end
 
       def check_not_closed
-        # Checks run in alphabetical order by method name, not
-        # declaration order, so check_valid_inkling may not have run
-        # yet. Bail out quietly here and let check_valid_inkling report
-        # the real "invalid ID" error instead of crashing on nil.
-        return nil if !inkling
-        return t('inklings.thread_is_closed') if inkling.status == "closed"
+        return t('inklings.thread_is_closed') if Inklings.closed?(inkling)
         nil
       end
 

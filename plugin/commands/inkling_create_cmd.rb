@@ -1,7 +1,7 @@
 module AresMUSH
   module Inklings
-    # +inkling/new <kind>=<title>/<text>
-    class InklingNewCmd
+    # +inkling/create <kind>=<title>/<text>
+    class InklingCreateCmd
       include CommandHandler
 
       attr_accessor :kind, :title, :text
@@ -15,8 +15,16 @@ module AresMUSH
         self.text = trim_arg(title_and_text[1])
       end
 
+      # No required_args - the framework's own generic failure message
+      # points at "help inkling/create", which doesn't exist as a help
+      # topic (the real one is `help inklings`). See check_valid_format.
       def required_args
-        [self.kind, self.title, self.text]
+        []
+      end
+
+      def check_valid_format
+        return t('dispatcher.invalid_syntax', :cmd => 'inklings') if self.kind.blank? || self.title.blank? || self.text.blank?
+        nil
       end
 
       def check_approved

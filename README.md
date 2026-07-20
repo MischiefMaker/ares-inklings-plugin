@@ -466,16 +466,20 @@ Requires the FS3Skills plugin to be installed.
 | `+inkling <id>` | View a thread |
 | `+inkling/comment <id>.<num>` | Jump straight to one numbered entry, e.g. `+inkling/comment 3.4` (MUSH-only) |
 | `+inkling/new` | Show your oldest unread inkling, one per use (like `+bbnew`) (MUSH-only) |
-| `+inkling/new <type>=<title>/<text>` | Create a new inkling |
+| `+inkling/create <type>=<title>/<text>` | Create a new inkling |
 | `+inkling/advance <id>=<text>` | Add a public message |
 | `+inkling/private <id>=<text>` | Add a message visible to specific participants + staff |
 | `+inkling/roll <id>=<roll>` | Attach a dice roll |
 | `+inkling/submit <id>` | Submit to staff for review (locks the thread) |
 | `+inkling/share <id>=<char>,<char>` | Grant access to specific characters |
 | `+inkling/group <id>=<group>` | Grant access to a demographics group |
+| `+inkling/personal <id>=<text>` | Add a note only you (not even staff) can see |
+| `+inkling/tag <id>=<tag>` | Add an organizational tag |
+| `+inkling/untag <id>=<tag>` | Remove a tag |
 | `+inkling/close <id>` | Close the thread |
 | `+inkling/delete <id>` | Request staff approval to delete (closes thread and creates staff job) |
 | `+inkling/requestunlock <id>=<reason>` | Request staff to reopen a completed inkling |
+| `+inkling/view-secret`, `+inkling/view-goal` | View your current chargen draft (unapproved characters only, MUSH-only) |
 
 ### Staff Commands
 
@@ -483,6 +487,8 @@ Requires the FS3Skills plugin to be installed.
 |---|---|
 | `+inkling/hint <char>=<title>/<text>` | Create a staff-only plot hint for a character |
 | `+inkling/vision <char>=<title>/<text>` | Create a staff vision for a character |
+| `+inkling/nudge <char>=<title>/<text>` | Create a staff nudge for a character |
+| `+inkling/hook <char>=<title>/<text>` | Create a staff plot hook for a character |
 | `+inkling/gm <id>=<text>` | Add a staff-only GM note to a thread |
 | `+inkling/advance <id>=<text>` | Reply to a thread (visible to participants) |
 | `+inkling/private <id>=<name>/<text>` | Add a private message to a specific participant |
@@ -492,14 +498,19 @@ Requires the FS3Skills plugin to be installed.
 | `+inkling/reward <id>=<type>:<amount>` | Award XP, FS3 skills, or custom rewards (e.g., `xp:5` or `fs3_skill:Occult:1`) — XP is applied automatically; FS3 skills must be applied manually |
 | `+inkling/list <char>` | List all of a character's threads |
 | `+inkling/admin` | List every Inkling in the game, any owner (`/closed`, `/all` for status; see the Admin Inklings Page below for the web equivalent) |
-| `+inkling/reset` | Wipe the entire system (confirmation required; use only during testing/development) |
+| `+inkling/reset` | Wipe the entire system (confirmation required; use only during testing/development; MUSH-only) |
 
 Commands marked **(MUSH-only)** are intentional exceptions to this plugin's
-usual MUSH/web parity - both are command-line conveniences for reaching
-content the web portal already fully exposes a different way (the profile
-tab already shows unread state per-thread, and every entry in the detail
-view already displays inline with its ref number), not a capability the web
-portal is missing.
+usual MUSH/web parity, for two different reasons:
+- `+inkling/new` (bare), `+inkling/comment`, and `+inkling/view-secret`/`+inkling/view-goal`
+  are command-line conveniences for reaching content the web portal already
+  fully exposes a different way (the profile tab already shows unread state
+  per-thread and lets you edit your chargen draft directly; every thread
+  entry already displays inline with its ref number) - not a capability the
+  web portal is missing.
+- `+inkling/reset` is a destructive, confirmation-gated whole-system wipe
+  restricted to the `manage_game` permission - deliberately kept off the web
+  UI rather than given a "delete everything" button there.
 
 See `help inklings` and `help managing inklings` in-game for full command details.
 

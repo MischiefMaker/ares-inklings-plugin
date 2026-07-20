@@ -16,7 +16,6 @@ module AresMUSH
         group_inklings = Inkling.all.to_a.select { |i| Inklings.is_group_participant?(i, enactor) }
 
         inklings = (own_inklings + shared_inklings + group_inklings).uniq(&:id)
-        inklings.each { |i| Inklings.sync_job_replies(i) }
 
         if cmd.switch_is?("closed")
           inklings = inklings.select { |i| i.status == "closed" }
@@ -25,6 +24,10 @@ module AresMUSH
         else
           inklings = inklings.select { |i| i.status == "open" }
         end
+
+        # Sync after filtering, not before - no reason to pull in job
+        # replies for inklings this listing won't even show.
+        inklings.each { |i| Inklings.sync_job_replies(i) }
 
         inklings = inklings.sort_by { |i| Inklings.time_value(i.created_at) }.reverse
 

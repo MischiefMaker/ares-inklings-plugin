@@ -27,6 +27,7 @@
 import Component from '@ember/component';
 import { A } from '@ember/array';
 import { inject as service } from '@ember/service';
+import { computed } from '@ember/object';
 
 export default Component.extend({
   gameApi: service(),
@@ -47,6 +48,13 @@ export default Component.extend({
   newOwner: null, // admin mode - single character object
   pendingSharedWith: A(), // characters selected but not yet confirmed
   sharedWithList: A(), // characters confirmed to share with
+
+  // Description of the currently-selected type, shown under the dropdown -
+  // matches +inkling/types on the MUSH side, which already shows this.
+  selectedTypeDescription: computed('newKind', 'typeInfo', function () {
+    let selected = (this.typeInfo || []).find((t) => t.kind === this.newKind);
+    return selected ? selected.description : null;
+  }),
 
   actions: {
     setNewKind(kind) {
