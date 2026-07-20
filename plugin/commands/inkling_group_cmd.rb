@@ -65,39 +65,14 @@ module AresMUSH
           return
         end
 
-        existing_specs = Inklings.split_list(inkling.shared_groups)
-        new_specs = self.group_names.reject { |g|
-          existing_specs.any? { |e| e.downcase == g.downcase }
-        }
-
-        if new_specs.empty?
+        result = Inklings.add_group_share(inkling, self.group_names, enactor)
+        if result[:new_specs].empty?
           client.emit_failure t('inklings.group_already_set')
           return
         end
 
-        combined = (existing_specs + new_specs).uniq.join(",")
-        Inklings.update_inkling(inkling, shared_groups: combined)
-
-        # Notify currently-approved characters who match the new specs.
-        # char_matches_group_spec? is checked before
-        # is_participant_explicit? since it's pure computation with no
-        # DB round-trip, letting it eliminate most candidates before
-        # the pricier explicit-participant lookup runs.
-        notified = []
-        new_specs.each do |spec|
-          Character.all.to_a.select { |c|
-            c.is_approved? &&
-              c.id != enactor.id &&
-              Inklings.char_matches_group_spec?(c, spec) &&
-              !Inklings.is_participant_explicit?(inkling, c)
-          }.each do |char|
-            Inklings.notify_shared(char, inkling, enactor.name, with_group: true)
-            notified << char.name
-          end
-        end
-
-        notice = t('inklings.group_spec_stored', :names => new_specs.join(", "))
-        notice << " " + t('inklings.group_notified', :names => notified.uniq.sort.map { |n| Inklings.color_name(n) }.join(", ")) if notified.any?
+        notice = t('inklings.group_spec_stored', :names => result[:new_specs].join(", "))
+        notice << " " + t('inklings.group_notified', :names => result[:notified].map { |n| Inklings.color_name(n) }.join(", ")) if result[:notified].any?
         client.emit_success notice
       end
     end

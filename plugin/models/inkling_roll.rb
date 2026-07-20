@@ -45,12 +45,6 @@ module AresMUSH
     # and staff, or visible to all participants in the inkling thread
     attribute :private
 
-    # Number of times this roll has been rerolled
-    attribute :reroll_count
-
-    # Cost in luck points if this was a luck reroll (0 = no luck used)
-    attribute :luck_cost
-
     attribute :created_at
     attribute :rolled_at
 

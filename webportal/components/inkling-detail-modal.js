@@ -39,6 +39,7 @@ export default Component.extend({
   replyIsPersonal: false,
   tagInput: '',
   shareTarget: '',
+  shareGroupTarget: '',
 
   showRollForm: false,
   rollType: 'player',
@@ -85,6 +86,7 @@ export default Component.extend({
       replyIsPersonal: false,
       tagInput: '',
       shareTarget: '',
+      shareGroupTarget: '',
       showRollForm: false,
       rollType: 'player',
       rollSpec: '',
@@ -382,6 +384,56 @@ export default Component.extend({
           return;
         }
         this.set('shareTarget', '');
+        this.loadDetail();
+      });
+    },
+
+    shareGroup() {
+      if (!this.shareGroupTarget || !this.shareGroupTarget.trim()) {
+        this.flashMessages.danger('Please enter a group to share with');
+        return;
+      }
+      this.gameApi.requestOne('inklings_share_group', {
+        char_id: this.characterId,
+        inkling_id: this.inklingId,
+        group_spec: this.shareGroupTarget
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
+        this.set('shareGroupTarget', '');
+        this.loadDetail();
+      });
+    },
+
+    requestUnlock() {
+      let reason = window.prompt('Enter a reason for requesting unlock:');
+      if (!reason || !reason.trim()) {
+        return;
+      }
+      this.gameApi.requestOne('inklings_request_unlock', {
+        char_id: this.characterId,
+        inkling_id: this.inklingId,
+        reason: reason.trim()
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
+        this.flashMessages.success('Unlock request sent to staff.');
+        this.loadDetail();
+      });
+    },
+
+    unlockInkling() {
+      if (!window.confirm('Unlock this inkling for further editing?')) {
+        return;
+      }
+      this.gameApi.requestOne('inklings_unlock_inkling', {
+        inkling_id: this.inklingId
+      }, null).then((response) => {
+        if (response.error) {
+          return;
+        }
         this.loadDetail();
       });
     },

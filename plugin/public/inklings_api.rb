@@ -453,6 +453,74 @@ module AresMUSH
         }
       end
 
+      # POST /api/characters/:char_id/inklings/:inkling_id/share_group
+      # Web counterpart to +inkling/group - same authorization and
+      # validation as share_inkling, but grants access to everyone whose
+      # group membership matches a demographics spec (now or in the
+      # future) instead of naming specific characters. See
+      # Inklings.add_group_share for the actual sharing/notification logic.
+      def self.share_group(char_id, inkling_id, viewer, group_spec)
+        char = Character[char_id]
+        return { error: "Character not found" } if !char
+
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
+        return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
+        return { error: "Your character must be approved to share inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
+        return { error: "Cannot share a closed inkling" } if inkling.status == "closed"
+
+        names = Inklings.split_list(group_spec)
+        return { error: "Please specify at least one group" } if names.empty?
+
+        invalid = names.reject { |g| Inklings.valid_group_spec?(g) }
+        return { error: "Not a valid group value in the demographics config: #{invalid.join(', ')}." } if invalid.any?
+
+        result = Inklings.add_group_share(inkling, names, viewer)
+        return { error: "Those group specs are already set on this inkling." } if result[:new_specs].empty?
+
+        {
+          success: true,
+          group_names: result[:new_specs],
+          notified_names: result[:notified]
+        }
+      end
+
+      # POST - Player requests staff reopen a completed inkling (web
+      # counterpart to +inkling/requestunlock). Does NOT unlock it - see
+      # Inklings.request_unlock.
+      def self.request_unlock_inkling(char_id, inkling_id, viewer, reason)
+        char = Character[char_id]
+        return { error: "Character not found" } if !char
+
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer) && inkling.character != viewer
+        return { error: "Reason cannot be empty" } if reason.to_s.blank?
+        return { error: "That inkling has not been approved yet." } if inkling.approval_state != "approved"
+
+        Inklings.request_unlock(inkling, viewer, reason)
+
+        { inkling: format_inkling_detail(inkling, viewer) }
+      end
+
+      # POST - Staff reopens a completed inkling for further editing (web
+      # counterpart to +inkling/unlock, staff only).
+      def self.unlock_inkling(inkling_id, viewer)
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
+        return { error: "That inkling has not been approved yet." } if inkling.approval_state != "approved"
+        return { error: "That inkling is not locked." } if inkling.locked != "true"
+
+        Inklings.unlock_inkling(inkling, viewer)
+
+        { inkling: format_inkling_detail(inkling, viewer) }
+      end
+
       private
 
       def self.in_context?(inkling, char, viewer)

@@ -1270,6 +1270,14 @@ alone; only grepping the actual frontend for a caller settled it.
   "mostly works," which is a materially different, false claim to a game
   admin deciding whether to rely on the feature.
 
+**Update:** Rather than build the missing frontend, this feature (rolls,
+`InklingRoll.reroll_count`/`luck_cost`, `RollsApi.reroll_with_luck`, the
+`inklings_reroll_with_luck` endpoint, and the README bullets describing it)
+was removed outright - rarely used and not worth the added surface area.
+Left the lesson above in place since the audit methodology it describes
+(grep the consuming side, not just the implementation) generalizes beyond
+this one feature.
+
 ---
 
 ## 9. Plugin Review Checklist

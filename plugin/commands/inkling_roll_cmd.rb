@@ -104,8 +104,6 @@ module AresMUSH
           result_value: success_level,
           seq: Inklings.next_event_seq(inkling),
           private: "false",
-          reroll_count: "0",
-          luck_cost: "0",
           created_at: Time.now,
           rolled_at: Time.now)
 

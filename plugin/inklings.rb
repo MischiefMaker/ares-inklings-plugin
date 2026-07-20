@@ -339,6 +339,45 @@ module AresMUSH
       :added
     end
 
+    # Adds group_specs (assumed already validated via valid_group_spec? -
+    # this method doesn't re-check) to inkling's shared_groups list, then
+    # notifies any currently-approved character whose group membership
+    # already matches one of the newly-added specs. Shared by both
+    # +inkling/group (InklingGroupCmd) and the web portal's group-share
+    # action (InklingApi.share_group) so the actual sharing/notification
+    # logic lives in exactly one place. Returns the specs that were
+    # actually new (already-set specs are silently skipped, same as
+    # add_participant's :already_shared) and who got notified, so each
+    # caller can phrase its own success/failure message.
+    def self.add_group_share(inkling, group_specs, sharer)
+      existing_specs = split_list(inkling.shared_groups)
+      new_specs = group_specs.reject { |g| existing_specs.any? { |e| e.downcase == g.downcase } }
+      return { new_specs: [], notified: [] } if new_specs.empty?
+
+      combined = (existing_specs + new_specs).uniq.join(",")
+      update_inkling(inkling, shared_groups: combined)
+
+      # Notify currently-approved characters who match the new specs.
+      # char_matches_group_spec? is checked before is_participant_explicit?
+      # since it's pure computation with no DB round-trip, letting it
+      # eliminate most candidates before the pricier explicit-participant
+      # lookup runs.
+      notified = []
+      new_specs.each do |spec|
+        Character.all.to_a.select { |c|
+          c.is_approved? &&
+            c.id != sharer.id &&
+            char_matches_group_spec?(c, spec) &&
+            !is_participant_explicit?(inkling, c)
+        }.each do |char|
+          notify_shared(char, inkling, sharer.name, with_group: true)
+          notified << char.name
+        end
+      end
+
+      { new_specs: new_specs, notified: notified.uniq.sort }
+    end
+
     # Character names shown in the "Shared With" section of a thread:
     # the thread's subject character (unless they're staff) plus anyone
     # explicitly added as a participant, either directly or via a
@@ -407,8 +446,6 @@ module AresMUSH
         creator: roll.creator ? roll.creator.name : "Unknown",
         creator_id: roll.creator ? roll.creator.id : nil,
         private: roll.private == "true",
-        reroll_count: roll.reroll_count.to_i,
-        luck_cost: roll.luck_cost.to_i,
         created_at: roll.created_at,
         rolled_at: roll.rolled_at
       }
@@ -1016,12 +1053,16 @@ module AresMUSH
         return InklingsDeleteInklingWebHandler
       when "inklings_share_inkling"
         return InklingsShareInklingWebHandler
+      when "inklings_share_group"
+        return InklingsShareGroupWebHandler
+      when "inklings_request_unlock"
+        return InklingsRequestUnlockWebHandler
+      when "inklings_unlock_inkling"
+        return InklingsUnlockInklingWebHandler
       when "inklings_submit_inkling"
         return InklingsSubmitInklingWebHandler
       when "inklings_add_roll"
         return InklingsAddRollWebHandler
-      when "inklings_reroll_with_luck"
-        return InklingsRerollWithLuckWebHandler
       when "inklings_add_tag"
         return InklingsAddTagWebHandler
       when "inklings_remove_tag"
