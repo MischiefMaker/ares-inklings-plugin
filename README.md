@@ -27,6 +27,7 @@ Inklings gives staff a structured approval workflow for character development su
 - **Approve or request changes** — Either close the thread as approved or send it back for revisions
 - **Provide feedback** — Add private notes that only specific players see, or staff-only GM notes
 - **Grant rewards** — Award XP, FS3 skills, or custom rewards tied to character development milestones
+- **Roll for NPCs** — Attach an NPC roll using just a name, no character record needed
 - **Track development** — View which players are actively developing their characters and what they're working on
 - **Enforce requirements** — Configure which inkling types are required before character approval (e.g., secret + goal)
 
@@ -504,9 +505,7 @@ Staff can award rewards during or after review.
 
 - **Resubmission repeats all content** — When a player resubmits after revisions, the entire thread is sent again, not just the new content. The job's comment history will include repeated messages.
 
-- **NPC rolls don't need a character sheet** — You can attach rolls for NPCs without creating character records, using just a name.
-
-- **Bonus XP is "approved characters" only** — The optional XP award system doesn't exclude staff PCs, assuming staff characters deserve XP for roleplay too.
+- **Bonus XP includes staff PCs** — The optional XP award system only checks that a character is approved; it doesn't exclude staff PCs, on the assumption staff characters deserve XP for roleplay too.
 
 - **FS3 skill rewards require manual application** — When granting FS3 skill rewards via `+inkling/reward`, the plugin records the reward but does not apply it automatically. Staff must apply it manually using `+skill/level` or your game's FS3 skill system. The amount specified (e.g., `fs3_skill:Occult:1`) is the number of dots to add, not the new total.
 
@@ -517,8 +516,6 @@ Staff can award rewards during or after review.
 - **Requires manual chargen snippet merging** — Chargen integration requires copying snippet code into your game's shared chargen files, since other plugins may also extend chargen. This cannot be automated without risk of breaking other plugins.
 
 - **Requires manual app-review hook merging** — If you enable chargen, app-review validation (showing Red/Yellow/Green status for Secrets & Goals during character approval) requires a one-line merge into your game's shared `custom_app_review.rb` hook file. See Step 3c in Installation.
-
-- **Reference numbers (`seq`) aren't backfilled** — Threads created before this update won't have sequence numbers. If upgrading an existing game, you can run a migration to backfill them (ask a developer for help if needed).
 
 - **Reset is permanent** — `+inkling/reset` deletes all inkling data across all characters. Linked jobs are preserved. Use only during development/testing. Confirmation uses a one-time token (5-minute expiry).
 
