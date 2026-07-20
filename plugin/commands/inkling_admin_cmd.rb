@@ -54,7 +54,7 @@ module AresMUSH
           line2 = "    Owner: #{Inklings.color_name(owner)}  Access: #{access}"
           list << line1
           list << line2
-          list << "" unless idx == inklings.length - 1
+          list << " " unless idx == inklings.length - 1
         end
 
         # per_page is in raw list-line units, not inkling units, since
