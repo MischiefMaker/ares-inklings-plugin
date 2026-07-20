@@ -984,16 +984,25 @@ Each of these happened on this project — concretely, not hypothetically.
     origin/main..<feature-branch>` to see what's still missing from `main`,
     not just that it's pushed *somewhere*.
 
-13. **Confusing `@restart` with an actual server restart.** Documentation and
-    instructions said "run `@restart`" or similar, creating the false impression
-    that there's an in-game command to restart the server. There is not. `@restart`
-    does not exist in AresMUSH. To actually restart the server, the admin must log
-    in to the server and run `sudo reboot`. *Avoid it*: never tell a user to "run
-    `@restart`" or suggest there's an in-game restart command. Instead, be explicit:
-    "Log in to your server and run `sudo reboot` to restart it." If writing
-    installation docs that require a restart (for plugin code changes to take
-    effect), make it clear that users must physically reboot the server, not run
-    an in-game command.
+13. **Confusing `@restart` with an actual server restart - and previously
+    telling users to `sudo reboot` the machine.** `@restart` does not exist
+    in AresMUSH - never tell a user to run it. This guide previously also
+    told users to fix a stale-code restart by running `sudo reboot` on the
+    server, which is wrong on two counts: it reboots the entire OS (unasked-
+    for, and something a game admin may not even have permission to do),
+    and it's not what AresMUSH's own docs recommend. Verified against the
+    real tutorial (`AresMUSH/aresmush.com`'s
+    `tutorials/manage/shutdown.md`, fetched via
+    `raw.githubusercontent.com` - see Lesson 22's technique for when
+    `www.aresmush.com` itself isn't reachable): the correct procedure is
+    (1) the in-game `shutdown` command, or Web Portal Admin -> Manage ->
+    Shutdown if that fails, (2) wait ~10 seconds, (3) `bin/startares` from
+    the server shell (`cd aresmush && bin/startares`) to bring it back up.
+    *Avoid it*: never tell a user to "run `@restart`" (it doesn't exist) or
+    to `sudo reboot` the machine (it's not the documented procedure, and is
+    far more disruptive than necessary). When installation docs require a
+    restart for plugin code changes to take effect, spell out the real
+    `shutdown` + `bin/startares` sequence instead.
 
 14. **Character approval integration must use the official hook.** A plugin's
     code that needs to run when a character is approved should NOT create a

@@ -156,7 +156,7 @@ This automatically:
 
 **Result:** MUSH commands and web portal components are ready. The Inklings tab will appear on character profiles once you complete the optional Step 2 below - **including Step 2c**, or the tab will render with broken layout (bullets, unstyled hover, missing spacing) despite Bootstrap 5 handling most of the styling.
 
-**If `plugin/install` is unavailable**, manually copy the `plugin/` folder to `plugins/inklings/` and copy `game/config/inklings.yml` to `game/config/`, then restart the server by running `sudo reboot` on the server.
+**If `plugin/install` is unavailable**, manually copy the `plugin/` folder to `plugins/inklings/` and copy `game/config/inklings.yml` to `game/config/`, then restart the MUSH server (see "Restart the MUSH Server" below).
 
 ### Step 2: Enable Web Portal Features (Optional, Manual)
 
@@ -216,7 +216,7 @@ if you don't need this feature, skip this entire step.
    (Step 2 is shared with the profile tab's type picker - see Step 2b above; if you already did that, 
    just add the chargen-required-fields line to the same hash)
 4. Save the file
-5. Restart the server by running `sudo reboot` on the server.
+5. Restart the MUSH server (see "Restart the MUSH Server" below).
 
 **Step 3b: Web Portal Form (Required if using chargen):**
 
@@ -245,7 +245,7 @@ The chargen drafts (Secrets and Goals) are validated during character approval a
      messages.concat(Inklings.get_app_review_issues(char))
      ```
 4. Save the file
-5. Restart the server by running `sudo reboot` on the server.
+5. Restart the MUSH server (see "Restart the MUSH Server" below).
 
 **What this does:** When a character is submitted for approval, the app review screen shows one line per chargen field:
 - **RED error** (if `chargen_required: true` and field is empty): "Checking for X Inklings. < Oops! Missing X >" — blocks approval until filled
@@ -271,7 +271,7 @@ By default, players fill in their Secrets & Goals via the web portal chargen for
 1. Open `custom-install/chargen_stage.snippet.yml` in this plugin
 2. Open `game/config/chargen.yml` in your **game** folder
 3. Follow the instructions in the snippet file to add the `secret_goal` stage to your chargen stages list
-4. Restart the server by running `sudo reboot` on the server.
+4. Restart the MUSH server (see "Restart the MUSH Server" below).
 
 **What this does:** Players can now fill in their Secret and Goal as part of the MUSH chargen flow, in addition to the web portal form. Either method (MUSH or web portal) saves to the same draft field, so players can start on one and finish on the other.
 
@@ -335,7 +335,19 @@ After completing any manual Steps 2, 3, or 4 above, restart the web portal:
 website/deploy
 ```
 
-**Note:** If you completed Step 3 (chargen integration), the server must also be restarted by running `sudo reboot` on the server for the backend custom_char_fields changes to take effect.
+### Restart the MUSH Server
+
+Steps 1 (if you had to install manually), 3a, 3c, and 3e above edit Ruby or
+YAML files the running MUSH server has already loaded, so they also need a
+server restart to take effect (separate from the web portal restart above):
+
+1. In-game, run `shutdown`. (If that doesn't work, log into the Web Portal
+   as an admin and go to Admin -> Manage -> Shutdown instead.)
+2. Wait about 10 seconds for the game to fully stop.
+3. From the server shell: `cd aresmush`, then `bin/startares`.
+
+See [Shutting Down and Restarting the Game](https://www.aresmush.com/tutorials/manage/shutdown.html)
+for more detail, including what to do if the game won't shut down normally.
 
 ## Configuration
 
