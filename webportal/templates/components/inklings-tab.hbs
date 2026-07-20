@@ -38,28 +38,12 @@
   {{/if}}
 
   {{#if this.showNewForm}}
-    <div class="card mb-3">
-      <div class="card-body">
-        <div class="mb-3">
-          <label for="inklings-new-kind" class="form-label">Type</label>
-          <select id="inklings-new-kind" class="form-select" onchange={{action "setNewKind" value="target.value"}}>
-            <option value="">-- Select a type --</option>
-            {{#each this.typeInfo as |t|}}
-              <option value={{t.kind}}>{{t.name}}</option>
-            {{/each}}
-          </select>
-        </div>
-        <div class="mb-3">
-          <label for="inklings-new-title" class="form-label">Title</label>
-          {{input id="inklings-new-title" class="form-control" type="text" value=this.newTitle placeholder="Enter a short title"}}
-        </div>
-        <div class="mb-3">
-          <label for="inklings-new-text" class="form-label">Text</label>
-          {{textarea id="inklings-new-text" class="form-control" value=this.newText placeholder="Enter your inkling..." rows=4}}
-        </div>
-        <button type="button" class="btn btn-success" {{action "createInkling"}}>Create Inkling</button>
-      </div>
-    </div>
+    {{inkling-create-form
+      mode="profile"
+      typeInfo=this.typeInfo
+      characterId=this.characterId
+      onCreated=(action "inklingCreated")
+    }}
   {{/if}}
 
   {{#if this.loading}}

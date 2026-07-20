@@ -1,0 +1,56 @@
+{{! See inkling-create-form.js for the mode="profile"/"admin" split. }}
+
+<div class="card mb-3">
+  <div class="card-body">
+
+    {{#if (eq this.mode "admin")}}
+      <div class="mb-3">
+        <label for="inklings-new-owner" class="form-label">Owner</label>
+        <PowerSelect
+          @selected={{this.newOwner}}
+          @options={{this.characters}}
+          @searchField="name"
+          @searchEnabled=true
+          @placeholder="Select the owning character..."
+          @onChange={{action "ownerChanged"}}
+          as |char|
+        >
+          {{char.name}}
+        </PowerSelect>
+      </div>
+      <div class="mb-3">
+        <label for="inklings-new-access" class="form-label">Players with Access <span class="text-muted small">(optional)</span></label>
+        <PowerSelectMultiple
+          @selected={{this.newAccess}}
+          @options={{this.characters}}
+          @searchField="name"
+          @searchEnabled=true
+          @placeholder="Select characters..."
+          @onChange={{action "accessChanged"}}
+          as |char|
+        >
+          {{char.name}}
+        </PowerSelectMultiple>
+      </div>
+    {{/if}}
+
+    <div class="mb-3">
+      <label for="inklings-new-kind" class="form-label">Type</label>
+      <select id="inklings-new-kind" class="form-select" onchange={{action "setNewKind" value="target.value"}}>
+        <option value="">-- Select a type --</option>
+        {{#each this.typeInfo as |t|}}
+          <option value={{t.kind}}>{{t.name}}</option>
+        {{/each}}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label for="inklings-new-title" class="form-label">Title</label>
+      {{input id="inklings-new-title" class="form-control" type="text" value=this.newTitle placeholder="Enter a short title"}}
+    </div>
+    <div class="mb-3">
+      <label for="inklings-new-text" class="form-label">Text</label>
+      {{textarea id="inklings-new-text" class="form-control" value=this.newText placeholder="Enter your inkling..." rows=4}}
+    </div>
+    <button type="button" class="btn btn-success" {{action "submit"}}>Create Inkling</button>
+  </div>
+</div>

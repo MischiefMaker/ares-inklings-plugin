@@ -112,10 +112,16 @@ A single page (`/admin-inklings`) listing every Inkling in the game, regardless 
 owner, status, or who has access — the game-wide management counterpart to the
 per-character profile tab above. Reuses the same list styling, badges, status
 filter, and detail modal as the profile tab, so it reads as an expanded version
-of it rather than a separate interface; the only genuinely new piece is the
-Add Inkling form, which lets staff pick who owns the new Inkling (and optionally
-who else has access) by character name, instead of assuming the logged-in staff
-member is the owner the way the profile tab's form does.
+of it rather than a separate interface.
+
+Add Inkling is the same form component the profile tab uses, extended with an
+Owner dropdown and a "Players with Access" multi-select instead of assuming the
+logged-in staff member is the owner. Both are searchable character dropdowns
+using [ember-power-select](https://ember-power-select.com/)'s `PowerSelect` /
+`PowerSelectMultiple` components, populated from the core `characters` web
+request — the exact same components and data source the core Jobs plugin's own
+Submitter/Assigned To/Other Participants fields use (see `job-edit.hbs` /
+`job-edit.js` in `ares-webportal`), not a custom picker built for this plugin.
 
 Each entry shows ID, type, title, status, date, linked Job (with a link, when
 one exists), message count, the owner, and everyone else with access — the same
@@ -296,9 +302,9 @@ the required permission — this step only adds a visible link.
 **What this does:** Staff with the configured Inklings management permission
 (see `manage_permission` under Configuration below) get a paginated,
 searchable-by-status list of every Inkling in the game — owner, access list,
-linked Job, and message count per entry — plus an Add Inkling form that lets
-them pick the owner (and optionally who else has access) instead of assuming
-the logged-in staff member is the owner. Server-side authorization is
+linked Job, and message count per entry — plus an Add Inkling form with
+searchable Owner and Players with Access character dropdowns, instead of
+assuming the logged-in staff member is the owner. Server-side authorization is
 enforced independently of the menu entry: the web endpoint and the MUSH
 command both check the same permission directly, so hiding or showing the
 menu link never changes who can actually use the page.
@@ -518,7 +524,7 @@ Staff can award rewards during or after review.
 
 - **Reset is permanent** — `+inkling/reset` deletes all inkling data across all characters. Linked jobs are preserved. Use only during development/testing. Confirmation uses a one-time token (5-minute expiry).
 
-- **Admin page owner/shared-with fields are plain character-name text, not a searchable picker** — no reusable searchable multi-select character component was confirmed to exist in the Ares web portal, so the admin Add Inkling form uses the same free-text, comma-separated name pattern the "Share" feature already uses elsewhere in this plugin, resolved server-side by exact name match.
+- **Admin page owner/access dropdowns include every character, not just approved ones** — populated from the same core `characters` web request the Jobs plugin's own Submitter/Assigned To/Other Participants fields use (`select: "all"`), which doesn't filter by approval status. Server-side validation still applies regardless of what the dropdown offers.
 
 - **Admin page requires manual route/menu snippet merging** — like chargen, registering the `/admin-inklings` route and its optional Admin dropdown entry both touch shared game files (`app/custom-routes.js`, `game/config/website.yml`), so they can't be auto-installed. See Step 4 in Installation.
 

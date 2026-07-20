@@ -16,7 +16,6 @@ import { inject as service } from '@ember/service';
 
 export default Component.extend({
   gameApi: service(),
-  flashMessages: service(),
 
   // --- Required arguments (pass these in when invoking the component) ---
   characterId: null,
@@ -48,9 +47,6 @@ export default Component.extend({
   statusFilter: 'open',
 
   showNewForm: false,
-  newKind: '',
-  newTitle: '',
-  newText: '',
 
   selectedInklingId: null,
 
@@ -105,41 +101,12 @@ export default Component.extend({
       this.toggleProperty('showNewForm');
     },
 
-    setNewKind(kind) {
-      this.set('newKind', kind);
-    },
-
-    createInkling() {
-      if (!this.newKind) {
-        this.flashMessages.danger('Please select a type');
-        return;
-      }
-      if (!this.newTitle || !this.newTitle.trim()) {
-        this.flashMessages.danger('Please enter an inkling title');
-        return;
-      }
-      if (!this.newText || !this.newText.trim()) {
-        this.flashMessages.danger('Please enter inkling text');
-        return;
-      }
-
-      this.gameApi.requestOne('inklings_create_inkling', {
-        char_id: this.characterId,
-        kind: this.newKind,
-        title: this.newTitle,
-        text: this.newText
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.inklings.unshiftObject(response.inkling);
-        this.setProperties({
-          newKind: '',
-          newTitle: '',
-          newText: '',
-          showNewForm: false
-        });
-      });
+    // Called by inkling-create-form (mode="profile") once it has
+    // successfully created the inkling - this component owns the list,
+    // the form component owns the create request itself.
+    inklingCreated(inkling) {
+      this.inklings.unshiftObject(inkling);
+      this.set('showNewForm', false);
     },
 
     // Only selectedInklingId is set here - inkling-detail-modal decides

@@ -19,14 +19,25 @@
 // { error: ... } back from the API, which GameApi's requestOne already
 // flashes automatically (see ARES_PLUGIN_DEVELOPMENT_GUIDE.md's note on
 // this - don't add a second flashMessages call on top of it).
+//
+// characters is fetched here (not by inkling-create-form itself) via
+// the same core "characters" web request Jobs' job-edit.js model() hook
+// uses for its own Submitter/Assigned To/Other Participants dropdowns
+// (select: "all" - every character, not just approved ones, matching
+// this endpoint's own default when no filter is requested). No
+// Inklings-specific character-list endpoint exists or is needed.
 
 import Route from '@ember/routing/route';
 import { inject as service } from '@ember/service';
+import RSVP from 'rsvp';
 
 export default Route.extend({
   gameApi: service(),
 
   model() {
-    return this.gameApi.requestOne('inklings_list_all', { status: 'open', page: 1 }, 'home');
+    return RSVP.hash({
+      listing: this.gameApi.requestOne('inklings_list_all', { status: 'open', page: 1 }, 'home'),
+      characters: this.gameApi.requestMany('characters', { select: 'all' })
+    });
   }
 });

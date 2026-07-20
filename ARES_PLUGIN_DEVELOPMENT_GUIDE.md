@@ -1073,14 +1073,66 @@ Each of these happened on this project — concretely, not hypothetically.
       logic - `InklingApi.create_inkling(char_id, viewer, ...)` already
       took the owner as an explicit argument distinct from `viewer`
       (staff creating on someone else's behalf was already a supported
-      case), and `share_inkling` already added participants by name. The
-      admin-only addition (`create_inkling_by_name`) is a thin
-      name-to-id wrapper around both, not a parallel implementation.
-      Before writing a new mutation for "staff does X on behalf of
-      character Y," check whether the existing single-character version
-      already threads a distinct owner/actor pair through - it often
-      already does, because MUSH commands almost always have to support
-      that same staff-acting-for-a-player case.
+      case). The admin-only addition (`create_inkling_by_name`) is a
+      thin owner-name-to-id wrapper around it, not a parallel
+      implementation. Sharing works the same way at one more remove:
+      `InklingShareCmd` (`+inkling/share`) doesn't inline its own
+      participant-creation logic either - it calls a shared module
+      method, `Inklings.add_participant(inkling, target, added_by)`.
+      The admin page's `add_participants_by_id` calls that exact same
+      method too, just resolving targets by id instead of by name -
+      *not* through `InklingApi.share_inkling` (a separate, web-specific,
+      name-based method that duplicates `add_participant`'s logic
+      inline rather than calling it - a pre-existing seam worth
+      revisiting someday, but out of scope for this pass). Before
+      writing a new mutation for "staff does X on behalf of character Y,"
+      check whether the existing single-character version already
+      threads a distinct owner/actor pair through, *and* trace each
+      MUSH command's `handle` back to find the actual shared module-level
+      service it calls - that's the thing to reuse, not the MUSH
+      command or the web API method sitting in front of it.
+
+17. **The reusable Ares character-picker precedent is `ember-power-select`'s
+    `PowerSelect`/`PowerSelectMultiple`, fed by the core `characters` web
+    request - not something to assume doesn't exist.** An earlier pass on
+    this admin page shipped free-text character-name fields after failing
+    to find a selector component, reasoning (documented at the time) that
+    none had been confirmed. That reasoning was correct given what had
+    actually been checked (a scan of `ares-webportal/app/components/` for
+    names containing "select"/"typeahead"/"char"), but the search stopped
+    one level too early - it never looked inside a *page* that already
+    solves this exact problem. Tracing `job-edit.hbs`/`job-edit.js`
+    (`ares-webportal`) directly showed the real pattern:
+    - `<PowerSelect @selected={{this.x}} @options={{this.model.characters}}
+      @searchField="name" @searchEnabled=true @onChange={{action "y"}}
+      as |char|>{{char.name}}</PowerSelect>` for a single pick (Jobs'
+      Submitter/Assigned To fields), `<PowerSelectMultiple ...>` with the
+      same arguments for multiple (Jobs' Other Participants field) -
+      already a dependency of `ares-webportal` itself, since a bundled
+      core plugin (Jobs) depends on it, so no new npm dependency needed.
+    - `this.model.characters` comes from the CORE profile plugin's
+      `characters` web request (`CharactersRequestHandler` in
+      `aresmush/plugins/profile/web/characters_request_handler.rb`), not
+      anything Jobs built itself - `select: "all"` returns every
+      character (`Character.all.to_a`, no approval filter), minimal shape
+      (`{id, name, icon}`), sorted by name. Reusable as-is by any plugin
+      that needs a character picker; no new list-characters endpoint
+      needed.
+    - Submission convention differs by arity, confirmed from
+      `job-edit.js`'s save action: a single-select value is sent as a
+      **name string** (`.get('model.job.author.name')`), a multi-select
+      value is sent as an **array of ids**
+      (`(participants || []).map(p => p.id)`). Match whichever shape the
+      field actually is, not one convention for both.
+    - **The lesson**: "no reusable component was found" needs the search
+      to include *pages already solving the same problem* (a full-page
+      character-assignment UI like `job-edit.hbs`), not just a scan of
+      component directory listings by name. A directory scan finds things
+      that *announce* themselves by name; it won't find a generic addon
+      component (`PowerSelect`) being used *inside* an unrelated feature's
+      page. When a "does X exist" search comes back empty, try one more
+      pass at "does anything already solve the same *user-facing*
+      problem," not just "does anything with a matching *name* exist."
 
 ---
 

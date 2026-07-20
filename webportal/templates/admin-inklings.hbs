@@ -20,43 +20,19 @@
   </div>
 
   {{#if this.showNewForm}}
-    <div class="card mb-3">
-      <div class="card-body">
-        <div class="mb-3">
-          <label for="admin-inklings-owner" class="form-label">Owner (character name)</label>
-          {{input id="admin-inklings-owner" class="form-control" type="text" value=this.newOwnerName placeholder="Enter the owning character's name"}}
-        </div>
-        <div class="mb-3">
-          <label for="admin-inklings-shared" class="form-label">Shared With (optional, comma-separated character names)</label>
-          {{input id="admin-inklings-shared" class="form-control" type="text" value=this.newSharedWith placeholder="e.g. Alice, Bob"}}
-        </div>
-        <div class="mb-3">
-          <label for="admin-inklings-kind" class="form-label">Type</label>
-          <select id="admin-inklings-kind" class="form-select" onchange={{action "setNewKind" value="target.value"}}>
-            <option value="">-- Select a type --</option>
-            {{#each this.model.type_options as |t|}}
-              <option value={{t.kind}}>{{t.name}}</option>
-            {{/each}}
-          </select>
-        </div>
-        <div class="mb-3">
-          <label for="admin-inklings-title" class="form-label">Title</label>
-          {{input id="admin-inklings-title" class="form-control" type="text" value=this.newTitle placeholder="Enter a short title"}}
-        </div>
-        <div class="mb-3">
-          <label for="admin-inklings-text" class="form-label">Text</label>
-          {{textarea id="admin-inklings-text" class="form-control" value=this.newText placeholder="Enter the inkling text..." rows=4}}
-        </div>
-        <button type="button" class="btn btn-success" {{action "createInkling"}}>Create Inkling</button>
-      </div>
-    </div>
+    {{inkling-create-form
+      mode="admin"
+      typeInfo=this.model.listing.type_options
+      characters=this.model.characters
+      onCreated=(action "inklingCreated")
+    }}
   {{/if}}
 
-  {{#if (eq this.model.inklings.length 0)}}
+  {{#if (eq this.model.listing.inklings.length 0)}}
     <p class="text-center py-5 mb-0">No inklings match this filter.</p>
   {{else}}
     <ul class="inklings-list">
-      {{#each this.model.inklings as |inkling|}}
+      {{#each this.model.listing.inklings as |inkling|}}
         <li class="inkling-item border-bottom" {{action "openDetail" inkling}}>
           <div class="inkling-header">
             <h4 class="inkling-title">#{{inkling.id}}) {{inkling.title}}</h4>
@@ -90,8 +66,8 @@
 
     <div class="d-flex justify-content-between align-items-center mt-3">
       <button type="button" class="btn btn-outline-secondary" disabled={{eq this.page 1}} {{action "previousPage"}}>Previous</button>
-      <span>Page {{this.page}} of {{this.model.total_pages}} ({{this.model.total_count}} total)</span>
-      <button type="button" class="btn btn-outline-secondary" disabled={{eq this.page this.model.total_pages}} {{action "nextPage"}}>Next</button>
+      <span>Page {{this.page}} of {{this.model.listing.total_pages}} ({{this.model.listing.total_count}} total)</span>
+      <button type="button" class="btn btn-outline-secondary" disabled={{eq this.page this.model.listing.total_pages}} {{action "nextPage"}}>Next</button>
     </div>
   {{/if}}
 

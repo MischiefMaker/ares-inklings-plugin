@@ -11,19 +11,16 @@
 // this controller tracking a single fixed characterId the way the
 // profile tab does.
 //
-// Add Inkling reuses InklingApi.create_inkling/share_inkling entirely
-// (via the create_inkling_by_name endpoint - see
-// plugin/public/inklings_api.rb) rather than a second creation path;
-// the only new surface is the owner/shared-with name fields this page
-// needs that the profile tab's form doesn't (it already knows its own
-// characterId). See the audit note in ARES_PLUGIN_DEVELOPMENT_GUIDE.md
-// (§4) on why this ships as this page's own form block instead of a
-// factored-out shared component: no confirmed reusable Ares character-
-// selector component was found, so both this page and the profile tab
-// already use the same plain free-text name pattern independently
-// (this page's owner/sharedWith fields, the profile tab's shareTarget) -
-// extracting a shared component was judged higher-risk to already-
-// working code than the win justified for this pass.
+// model is { listing: <paginated inklings_list_all response>,
+// characters: <core "characters" response> } (see the route) - listing
+// gets replaced wholesale on reload()/pagination, characters is fetched
+// once and stays put for the lifetime of the page.
+//
+// Add Inkling is the shared inkling-create-form component (mode="admin"
+// here, mode="profile" on the profile tab - see
+// webportal/components/inkling-create-form.js), not a form owned by
+// this controller - this controller only reacts to its onCreated
+// closure action.
 
 import Controller from '@ember/controller';
 import { inject as service } from '@ember/service';
@@ -31,17 +28,11 @@ import { A } from '@ember/array';
 
 export default Controller.extend({
   gameApi: service(),
-  flashMessages: service(),
 
   statusFilter: 'open',
   page: 1,
 
   showNewForm: false,
-  newKind: '',
-  newTitle: '',
-  newText: '',
-  newOwnerName: '',
-  newSharedWith: '',
 
   selectedInklingId: null,
   selectedCharacterId: null,
@@ -54,7 +45,7 @@ export default Controller.extend({
       if (response.error) {
         return;
       }
-      this.set('model', response);
+      this.set('model.listing', response);
       this.set('page', response.page);
     });
   },
@@ -81,51 +72,15 @@ export default Controller.extend({
       this.toggleProperty('showNewForm');
     },
 
-    setNewKind(kind) {
-      this.set('newKind', kind);
-    },
-
-    createInkling() {
-      if (!this.newOwnerName || !this.newOwnerName.trim()) {
-        this.flashMessages.danger('Please enter an owner character name');
-        return;
-      }
-      if (!this.newKind) {
-        this.flashMessages.danger('Please select a type');
-        return;
-      }
-      if (!this.newTitle || !this.newTitle.trim()) {
-        this.flashMessages.danger('Please enter an inkling title');
-        return;
-      }
-      if (!this.newText || !this.newText.trim()) {
-        this.flashMessages.danger('Please enter inkling text');
-        return;
-      }
-
-      this.gameApi.requestOne('inklings_create_inkling_by_name', {
-        owner_name: this.newOwnerName,
-        kind: this.newKind,
-        title: this.newTitle,
-        text: this.newText,
-        shared_with: this.newSharedWith
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        if (response.share_warning) {
-          this.flashMessages.warning(`Inkling created, but sharing failed: ${response.share_warning}`);
-        }
-        this.setProperties({
-          newKind: '',
-          newTitle: '',
-          newText: '',
-          newOwnerName: '',
-          newSharedWith: '',
-          showNewForm: false
-        });
-        this.reload(1);
-      });
+    // Called by inkling-create-form (mode="admin") once it has
+    // successfully created the inkling. A full reload (rather than
+    // unshifting locally, the way the profile tab's inklingCreated
+    // does) is simplest here since the new inkling may not even belong
+    // on the current page/filter (it could be for any character, and
+    // this list is server-paginated).
+    inklingCreated() {
+      this.set('showNewForm', false);
+      this.reload(1);
     },
 
     // Unlike inklings-tab.js (one fixed characterId for the whole tab),
@@ -142,7 +97,7 @@ export default Controller.extend({
     },
 
     inklingUpdated(updated) {
-      let list = A(this.model.inklings);
+      let list = A(this.model.listing.inklings);
       let idx = list.findIndex((i) => i.id === updated.id);
       if (idx > -1) {
         list.removeAt(idx);
@@ -150,7 +105,7 @@ export default Controller.extend({
       }
     },
 
-    inklingDeleted(id) {
+    inklingDeleted() {
       this.reload(this.page);
       this.send('closeDetail');
     }

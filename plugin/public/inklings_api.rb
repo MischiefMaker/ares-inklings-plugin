@@ -161,13 +161,16 @@ module AresMUSH
 
       # Web endpoint: create_inkling_by_name (admin page only)
       # The admin page has no single "current character" to default the
-      # owner to - the operator picks one by name. This is a thin wrapper
-      # around create_inkling/share_inkling, not a parallel creation path:
-      # it resolves owner_name to a char_id and delegates, then (if
-      # shared_with is present) delegates again to the exact same
-      # share_inkling used by the "Share" button on every other inkling.
-      # No creation/sharing logic is duplicated here.
-      def self.create_inkling_by_name(owner_name, viewer, kind, text, title, shared_with: nil)
+      # owner to - the operator picks one from the admin Add Inkling
+      # form's Owner PowerSelect (see inkling-create-form.js), submitted
+      # by name to match the exact convention the core Jobs plugin's
+      # job-edit.js uses for its own single-select Submitter/Assigned To
+      # fields. This is a thin wrapper around create_inkling, not a
+      # parallel creation path: it resolves owner_name to a char_id and
+      # delegates, then (if shared_with_ids is present) adds each access
+      # character via add_participants_by_id below - same underlying
+      # sharing service (Inklings.add_participant) as +inkling/share.
+      def self.create_inkling_by_name(owner_name, viewer, kind, text, title, shared_with_ids: nil)
         return { error: "Not authorized" } unless Inklings.can_manage_inklings?(viewer)
 
         owner = Character.find_one_by_name(owner_name.to_s.strip)
@@ -176,12 +179,63 @@ module AresMUSH
         result = create_inkling(owner.id, viewer, kind, text, title)
         return result if result[:error]
 
-        if shared_with.to_s.present?
-          share_result = share_inkling(owner.id, result[:inkling][:id], viewer, shared_with)
+        if shared_with_ids.present?
+          share_result = add_participants_by_id(owner.id, result[:inkling][:id], viewer, shared_with_ids)
           result[:share_warning] = share_result[:error] if share_result && share_result[:error]
         end
 
         result
+      end
+
+      # Grants access to an inkling for each of character_ids, via
+      # Inklings.add_participant - the same sharing service
+      # InklingShareCmd (+inkling/share) already uses, just resolving by
+      # id instead of by name to match the admin Add Inkling form's
+      # PowerSelectMultiple submission convention (Jobs' job-edit.js
+      # submits its own "Other Participants" multi-select as an array of
+      # ids the same way - see participantsChanged/saveJob there).
+      #
+      # The owner is never a meaningful "add" here: Inklings.is_participant?
+      # (which add_participant checks first) already treats inkling.character
+      # as always having access, so passing the owner's own id in
+      # character_ids is a harmless no-op (returns :already_shared, no
+      # duplicate InklingParticipant row) rather than something that needs
+      # filtering out beforehand.
+      def self.add_participants_by_id(char_id, inkling_id, viewer, character_ids)
+        char = Character[char_id]
+        return { error: "Character not found" } if !char
+
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        return { error: "Not authorized" } if !in_context?(inkling, char, viewer)
+        return { error: "Not authorized" } if !can_manage_thread?(inkling, viewer)
+        return { error: "Your character must be approved to share inklings." } if !Inklings.can_manage_inklings?(viewer) && !viewer.is_approved?
+        return { error: "Cannot share a closed inkling" } if inkling.status == "closed"
+
+        added = []
+        missing = []
+        skipped = []
+
+        Array(character_ids).each do |id|
+          target = Character[id]
+          if !target
+            missing << id
+            next
+          end
+
+          result = Inklings.add_participant(inkling, target, viewer)
+          added << target.name if result == :added
+          skipped << target.name if result == :already_shared
+        end
+
+        # Only a genuinely bad id (missing.any?) is treated as an error -
+        # an empty character_ids list, or one that only names the owner
+        # (always a harmless :already_shared no-op, never a real "miss"),
+        # succeeds quietly rather than surfacing a share_warning for
+        # nothing actually wrong.
+        return { error: "Character ID(s) not found: #{missing.join(', ')}" } if missing.any?
+        { success: true, added_names: added, skipped_names: skipped }
       end
 
       # Web endpoint: get_inkling
