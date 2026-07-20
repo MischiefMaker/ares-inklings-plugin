@@ -1134,6 +1134,26 @@ Each of these happened on this project — concretely, not hypothetically.
       pass at "does anything already solve the same *user-facing*
       problem," not just "does anything with a matching *name* exist."
 
+### Lesson 18: Config File Auto-Merge Limitations
+
+Config files like `game/config/inklings.yml` are included in plugin/install, but
+their updates don't always merge cleanly on subsequent installs, especially if
+the user has customized the config locally. For critical config sections:
+
+- **Document manual update steps** in the README's installation section, not
+  just one-time installation
+- **Clearly mark config sections** that are safe for users to customize
+  separately from sections the plugin manages
+- **Assume users will hand-edit** their config after the first install; make
+  it safe for them to run plugin/install again without wiping those edits
+- **Don't rely on auto-merge** for config — treat any config change as
+  something the user will handle manually if needed
+
+Example: Inklings plugin's config wasn't updating on re-install because the
+user had already customized `game/config/inklings.yml`. The lesson: config
+changes should be documented as "check if you need to merge these fields" in
+the release notes, not hidden in an auto-install step that silently fails.
+
 ---
 
 ## 9. Plugin Review Checklist
