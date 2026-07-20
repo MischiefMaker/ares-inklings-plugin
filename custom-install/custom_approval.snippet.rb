@@ -32,7 +32,7 @@
 #         (If other plugins have already added code here, just add this line
 #          alongside their existing code - the order doesn't matter.)
 #
-# STEP 4: Restart the game by running `sudo reboot` on your server.
+# STEP 4: Reload chargen from the MUSH with: load chargen
 #
 # ===========================================================================
 # EXAMPLE

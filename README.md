@@ -226,7 +226,7 @@ When a character is approved, the chargen draft fields (Secrets and Goals) must 
 2. Open `plugins/chargen/custom_approval.rb` in your **aresmush** folder (not ares-webportal)
 3. Follow the instructions in the snippet file to add the call to `Inklings.convert_chargen_drafts(char)` inside the `custom_approval` method
 4. Save the file
-5. Restart the server by running `sudo reboot` on the server.
+5. From the MUSH, run: `load chargen`
 
 **What this does:** When a character is approved (via `+char/approve` or the web UI), each populated Secret and Goal draft is automatically converted to a real Inkling. The new Inklings appear in the Jobs system and on the character's Inklings tab. Blank draft fields are ignored.
 
