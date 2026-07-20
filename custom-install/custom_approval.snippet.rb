@@ -25,7 +25,7 @@
 #         def self.custom_approval(char)
 #         end
 #
-# STEP 3: Add this line inside the method:
+# STEP 3: Add this line INSIDE the method:
 #
 #         Inklings.convert_chargen_drafts(char)
 #
@@ -35,7 +35,13 @@
 # STEP 4: Reload chargen from the MUSH with: load chargen
 #
 # ===========================================================================
-# EXAMPLE
+# COPY THIS LINE INTO THE METHOD
+# ===========================================================================
+
+Inklings.convert_chargen_drafts(char)
+
+# ===========================================================================
+# EXAMPLE (what your method should look like after adding the line)
 # ===========================================================================
 #
 # def self.custom_approval(char)
@@ -78,13 +84,12 @@
 # VERIFICATION
 # ===========================================================================
 #
-# After pasting, restart the game and approve a test character with
-# populated Secret and Goal drafts. Within a few seconds, check:
+# After pasting, run "load chargen" from the MUSH and approve a test character
+# with populated Secret and Goal drafts. Within a few seconds, check:
 #
 #   +inkling/list <character>   - should show the converted Secret and Goal
 #   +inklings                   - if your own character, shows your threads
 #   Character profile web tab   - Inklings tab should show the new threads
 #
-# Drafts disappear from the app-review screen and are not shown again
-# after approval.
+# Drafts disappear from the app-review screen after approval.
 #

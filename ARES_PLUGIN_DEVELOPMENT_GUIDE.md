@@ -171,6 +171,47 @@ This pattern keeps labels readable (plain labels inherit theme text color; avoid
 Instead, verify they're standard Ares files by checking the target webportal for their
 presence. If absent, provide clear instructions for creating them manually, not auto-install.
 
+### Merge-Safe Snippet Format
+
+When providing code snippets for users to copy-paste into shared game files (`custom_approval.rb`,
+`custom_app_review.rb`, `chargen-custom.hbs`, etc.), follow this pattern:
+
+**Do NOT comment out the code that needs copying.** Users will copy-paste it directly,
+and having to uncomment it is friction that invites copy-paste mistakes and misalignment.
+
+**Pattern:**
+```
+# FILE: path/to/shared/file
+# PURPOSE: brief description
+
+# INSTALLATION STEPS
+# ===================
+# 1. Open path/to/shared/file in your game folder
+# 2. Find the target method/location
+# 3. Paste this line:
+
+Actual.code_to_copy(here)
+
+# EXAMPLE (what it should look like after pasting):
+#
+# def self.method(arg)
+#   Actual.code_to_copy(here)
+#   # Other code may be present here
+# end
+```
+
+The actual code to copy is **always uncommented and ready to paste verbatim**. Comments and
+examples below it explain context and show how it fits into the host file. This pattern works
+for all merge-safe snippets: Ruby hooks, YAML config, Handlebars templates, JavaScript methods.
+
+**Why:** Users copy-paste line-by-line. Commenting out the payload means:
+- They have to remember to uncomment it (friction + error opportunity)
+- The instruction "paste this" becomes incomplete — it implies "uncomment and paste"
+- "Uncomment" is easy to miss in a wall of documentation
+- Commented code looks inactive/wrong, discouraging copy-paste confidence
+
+Instead, make the payload obvious and uncommented. Wrap explanation and examples in comments below it.
+
 ### The three shapes a screen can take
 
 - **Full page** — its own URL, its own Route + Controller + Template. Route's
