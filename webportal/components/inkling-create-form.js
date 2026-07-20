@@ -3,37 +3,29 @@
 // (admin-inklings.hbs, mode="admin"). Automatically installed to
 // ares-webportal/app/components/ via plugin/install.
 //
-// The two modes differ only in who the owner is and whether "Players
-// with Access" is offered - the type/title/text fields and validation
-// are identical either way, which is why this is one component with an
-// explicit `mode` argument rather than two forms or a component that
-// inspects the current route.
+// The two modes differ in character selection and sharing workflow:
 //
 // mode="profile" (inklings-tab.hbs):
-//   - characterId is already known (the profile being viewed) - owner
-//     is never asked for, and creation goes straight through the
-//     existing inklings_create_inkling endpoint, completely unchanged
-//     from before this component existed.
-// mode="admin" (admin-inklings.hbs):
-//   - No single "current profile" exists, so the operator picks an
-//     owner (single-select) and, optionally, who else has access
-//     (multi-select) from `characters` - the same PowerSelect/
-//     PowerSelectMultiple pattern the core Jobs plugin's job-edit.hbs
-//     uses for its Submitter/Assigned To (single) and Other
-//     Participants (multi) fields, populated from the same core
-//     `characters` web request Jobs itself uses (see
-//     webportal/routes/admin-inklings.js). Creation goes through
-//     inklings_create_inkling_by_name - a thin wrapper around
-//     InklingApi.create_inkling/add_participants_by_id, not a second
-//     creation path (see plugin/public/inklings_api.rb).
+//   - characterId and characterName are the profile being viewed
+//   - Main Character is shown as a static label (not editable)
+//   - Share With selector allows optional sharing with other characters
+//   - Creation goes through inklings_create_inkling endpoint
+//   - Profile owner can share with others; admins can share on any profile
 //
-// Matching Jobs' own submission convention exactly: the single-select
-// owner is submitted by name (job-edit.js's submitterChanged／
-// assigneeChanged fields go by `.name`), the multi-select access list
-// is submitted by id (job-edit.js's participantsChanged field goes by
-// `.map(p => p.id)`).
+// mode="admin" (admin-inklings.hbs):
+//   - No single "current profile" exists; admin picks the owner via dropdown
+//   - Main Character selector uses PowerSelect (single-select)
+//   - Share With selector allows optional sharing with other characters
+//   - Creation goes through inklings_create_inkling_by_name endpoint
+//
+// Share With workflow (both modes):
+//   - User selects characters from PowerSelectMultiple (pendingSharedWith)
+//   - User clicks "Add" to confirm selections (moves to sharedWithList)
+//   - User reviews and can remove individuals from sharedWithList
+//   - On submission, sharedWithList is sent as shared_with_ids
 
 import Component from '@ember/component';
+import { A } from '@ember/array';
 import { inject as service } from '@ember/service';
 
 export default Component.extend({
@@ -43,7 +35,8 @@ export default Component.extend({
   // --- Required arguments ---
   mode: 'profile', // 'profile' | 'admin'
   typeInfo: null,
-  characterId: null, // profile mode
+  characterId: null, // both modes - the profile being viewed (or created for)
+  characterName: null, // profile mode - display name of the character
   characters: null, // admin mode - array of { id, name, icon }
   onCreated: null, // closure action, called with the created inkling
 
@@ -52,7 +45,8 @@ export default Component.extend({
   newTitle: '',
   newText: '',
   newOwner: null, // admin mode - single character object
-  newAccess: null, // admin mode - array of character objects
+  pendingSharedWith: A(), // characters selected but not yet confirmed
+  sharedWithList: A(), // characters confirmed to share with
 
   actions: {
     setNewKind(kind) {
@@ -63,15 +57,31 @@ export default Component.extend({
       this.set('newOwner', char);
     },
 
-    accessChanged(chars) {
-      this.set('newAccess', chars);
+    pendingSharedWithChanged(chars) {
+      this.set('pendingSharedWith', A(chars || []));
+    },
+
+    addSharedWith() {
+      if (this.pendingSharedWith.length === 0) {
+        return;
+      }
+      // Add pending selections to the confirmed list, avoiding duplicates
+      let currentIds = new Set(this.sharedWithList.mapBy('id'));
+      let toAdd = this.pendingSharedWith.filter((c) => !currentIds.has(c.id));
+      this.sharedWithList.pushObjects(toAdd);
+      // Clear pending selections
+      this.set('pendingSharedWith', A());
+    },
+
+    removeSharedWith(char) {
+      this.sharedWithList.removeObject(char);
     },
 
     submit() {
       let isAdmin = this.mode === 'admin';
 
       if (isAdmin && !this.newOwner) {
-        this.flashMessages.danger('Please select an owner');
+        this.flashMessages.danger('Please select a main character');
         return;
       }
       if (!this.newKind) {
@@ -93,13 +103,14 @@ export default Component.extend({
           kind: this.newKind,
           title: this.newTitle,
           text: this.newText,
-          shared_with_ids: (this.newAccess || []).map((c) => c.id)
+          shared_with_ids: this.sharedWithList.mapBy('id')
         }, null)
         : this.gameApi.requestOne('inklings_create_inkling', {
           char_id: this.characterId,
           kind: this.newKind,
           title: this.newTitle,
-          text: this.newText
+          text: this.newText,
+          shared_with_ids: this.sharedWithList.mapBy('id')
         }, null);
 
       request.then((response) => {
@@ -114,7 +125,8 @@ export default Component.extend({
           newTitle: '',
           newText: '',
           newOwner: null,
-          newAccess: null
+          pendingSharedWith: A(),
+          sharedWithList: A()
         });
         if (this.onCreated) {
           this.onCreated(response.inkling);

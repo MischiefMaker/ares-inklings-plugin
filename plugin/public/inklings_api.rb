@@ -104,7 +104,7 @@ module AresMUSH
       end
 
       # POST /api/characters/:char_id/inklings
-      def self.create_inkling(char_id, viewer, kind, text, title = nil)
+      def self.create_inkling(char_id, viewer, kind, text, title = nil, shared_with_ids: nil)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
@@ -156,7 +156,14 @@ module AresMUSH
 
         Inklings.dispatch_inkling_created(inkling)
 
-        { inkling: format_inkling_detail(inkling, viewer) }
+        result = { inkling: format_inkling_detail(inkling, viewer) }
+
+        if shared_with_ids.present?
+          share_result = add_participants_by_id(char.id, inkling.id, viewer, shared_with_ids)
+          result[:share_warning] = share_result[:error] if share_result && share_result[:error]
+        end
+
+        result
       end
 
       # Web endpoint: create_inkling_by_name (admin page only)

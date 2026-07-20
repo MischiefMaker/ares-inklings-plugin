@@ -19,6 +19,7 @@ export default Component.extend({
 
   // --- Required arguments (pass these in when invoking the component) ---
   characterId: null,
+  characterName: null, // the profile being viewed (for inkling-create-form)
   viewerId: null,
   isStaff: false,
   isApproved: false,

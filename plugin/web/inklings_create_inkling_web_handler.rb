@@ -1,6 +1,8 @@
 module AresMUSH
   module Inklings
-    # cmd "inklings_create_inkling" - starts a new inkling thread.
+    # cmd "inklings_create_inkling" - starts a new inkling thread on a profile.
+    # Accepts optional shared_with_ids array to share with other characters
+    # (web portal only - MUSH commands handle sharing separately via +inkling/share).
     class InklingsCreateInklingWebHandler
       def handle(request)
         error = AresMUSH::Website.check_login(request)
@@ -11,7 +13,8 @@ module AresMUSH
           request.enactor,
           request.args["kind"],
           request.args["text"],
-          request.args["title"])
+          request.args["title"],
+          shared_with_ids: request.args["shared_with_ids"])
       end
     end
   end

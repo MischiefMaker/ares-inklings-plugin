@@ -5,52 +5,81 @@
 
     {{#if (eq this.mode "admin")}}
       <div class="mb-3">
-        <label for="inklings-new-owner" class="form-label">Owner</label>
+        <label for="inklings-new-owner" class="form-label">Main Character</label>
         <PowerSelect
           @selected={{this.newOwner}}
           @options={{this.characters}}
           @searchField="name"
           @searchEnabled=true
-          @placeholder="Select the owning character..."
+          @placeholder="Select the main character..."
           @onChange={{action "ownerChanged"}}
           as |char|
         >
           {{char.name}}
         </PowerSelect>
       </div>
+    {{else}}
       <div class="mb-3">
-        <label for="inklings-new-access" class="form-label">Players with Access <span class="text-muted small">(optional)</span></label>
-        <PowerSelectMultiple
-          @selected={{this.newAccess}}
-          @options={{this.characters}}
-          @searchField="name"
-          @searchEnabled=true
-          @placeholder="Select characters..."
-          @onChange={{action "accessChanged"}}
-          as |char|
-        >
-          {{char.name}}
-        </PowerSelectMultiple>
+        <label class="form-label">Main Character</label>
+        <p class="form-control-static">{{this.characterName}}</p>
       </div>
     {{/if}}
 
     <div class="mb-3">
-      <label for="inklings-new-kind" class="form-label">Type</label>
-      <select id="inklings-new-kind" class="form-select" onchange={{action "setNewKind" value="target.value"}}>
+      <label for="inklings-new-type" class="form-label">Type</label>
+      <select id="inklings-new-type" class="form-select form-select-powered" onchange={{action "setNewKind" value="target.value"}}>
         <option value="">-- Select a type --</option>
         {{#each this.typeInfo as |t|}}
           <option value={{t.kind}}>{{t.name}}</option>
         {{/each}}
       </select>
     </div>
+
     <div class="mb-3">
       <label for="inklings-new-title" class="form-label">Title</label>
       {{input id="inklings-new-title" class="form-control" type="text" value=this.newTitle placeholder="Enter a short title"}}
     </div>
+
     <div class="mb-3">
       <label for="inklings-new-text" class="form-label">Text</label>
       {{textarea id="inklings-new-text" class="form-control" value=this.newText placeholder="Enter your inkling..." rows=4}}
     </div>
+
+    <div class="mb-3">
+      <label for="inklings-share-with" class="form-label">Share With <span class="text-muted small">(optional)</span></label>
+      <div class="d-flex gap-2">
+        <div class="flex-grow-1">
+          <PowerSelectMultiple
+            @selected={{this.pendingSharedWith}}
+            @options={{this.characters}}
+            @searchField="name"
+            @searchEnabled=true
+            @placeholder="Select characters to share with..."
+            @onChange={{action "pendingSharedWithChanged"}}
+            as |char|
+          >
+            {{char.name}}
+          </PowerSelectMultiple>
+        </div>
+        <button type="button" class="btn btn-outline-secondary" {{action "addSharedWith"}} disabled={{eq this.pendingSharedWith.length 0}}>
+          Add
+        </button>
+      </div>
+      {{#if this.sharedWithList.length}}
+        <div class="mt-2 p-2 bg-light border rounded">
+          <small class="text-muted">Sharing with:</small>
+          <div class="mt-1">
+            {{#each this.sharedWithList as |char|}}
+              <span class="badge bg-secondary me-1 mb-1">
+                {{char.name}}
+                <button type="button" class="btn-close btn-close-white btn-close-sm ms-1" {{action "removeSharedWith" char}} title="Remove"></button>
+              </span>
+            {{/each}}
+          </div>
+        </div>
+      {{/if}}
+    </div>
+
     <button type="button" class="btn btn-success" {{action "submit"}}>Create Inkling</button>
   </div>
 </div>
