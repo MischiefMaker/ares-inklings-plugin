@@ -23,6 +23,7 @@ module AresMUSH
 
       def check_approved
         return nil if Inklings.can_manage_inklings?(enactor)
+        return nil if inkling && inkling.character == enactor
         return t('inklings.char_not_approved') unless enactor.is_approved?
         nil
       end

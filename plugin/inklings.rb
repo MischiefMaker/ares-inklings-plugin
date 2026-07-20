@@ -828,6 +828,8 @@ module AresMUSH
           return InklingTagCmd
         elsif cmd.switch_is?("untag")
           return InklingUntagCmd
+        elsif chargen_required_types.any? { |k| cmd.switch_is?("view-#{k}") }
+          return InklingViewChargenDraftCmd
         elsif all_kinds.any? { |k| cmd.switch_is?(k) }
           kind = all_kinds.find { |k| cmd.switch_is?(k) }
           # Self-targeted (no "=" - a target means staff acting on someone

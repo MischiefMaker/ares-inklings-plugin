@@ -69,6 +69,8 @@ en:
     tag_removed: "Tag '%{tag}' removed."
     chargen_draft_saved: "Your %{label} has been saved. It'll become an inkling once your character is approved."
     chargen_draft_unavailable: "That's not available right now - chargen inklings may be disabled, or your character may already be approved."
+    chargen_draft_already_approved: "Your character is already approved - use +inkling <id> to view your inklings."
+    no_chargen_draft: "You haven't written a %{label} yet. Use +inkling/%{label} <title>/<text> to create one."
     chargen_checking_inklings: "Checking for %{types} Inklings."
     chargen_oops_missing: "%xr< Missing %{missing} >%xn"
     chargen_are_you_sure: "%xy< Missing %{missing} >%xn"
