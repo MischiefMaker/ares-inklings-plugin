@@ -1176,6 +1176,36 @@ user had already customized `game/config/inklings.yml`. The lesson: config
 changes should be documented as "check if you need to merge these fields" in
 the release notes, not hidden in an auto-install step that silently fails.
 
+### Lesson 19: A component argument added later must be back-filled into every install snippet that invokes it
+
+`inkling-create-form.js` was given a `characterName` argument (profile mode
+needs it to display "Main Character" as a static label - see Lesson 17's
+neighbor note on that decision) well after `custom-install/profile-custom.snippet.hbs`
+had already been written and documented showing the `{{inklings-tab ...}}`
+invocation *without* it. Nothing caught the gap: the component itself
+degrades silently (an empty argument just renders an empty `<div
+class="form-control">`, no error, no console warning), and the snippet file
+is prose/markup meant for the user to hand-copy into their own webportal, not
+code this repo's own tooling ever executes or type-checks. The result shipped
+and stayed invisible until a user reported "Main Character shows a blank tiny
+box" against their real, already-installed profile page - which is a *second*
+copy of that markup this repo cannot see or grep, so the bug was invisible
+from inside the repo even after the report.
+
+- When a shared component gains a new required/consumed argument, grep
+  `custom-install/*.snippet.hbs` (and any other snippet file) for every
+  existing invocation of that component and update them in the same change -
+  don't treat snippets as documentation-only, treat them as call sites.
+- Because snippets are hand-copied, a fix here does NOT fix any installation
+  that already copied the old version - the user must be told explicitly to
+  re-copy (or manually patch) the specific line in their own
+  `ares-webportal/app/components/profile-custom.hbs` (or wherever they pasted
+  it). Say this plainly; don't imply `plugin/install` alone will pick it up.
+- A quick guard against recurrence: before shipping a change to a shared
+  component's argument list, grep the whole repo (not just the component's
+  own directory) for the component's tag/name to find every place - snippet
+  or otherwise - that invokes it.
+
 ---
 
 ## 9. Plugin Review Checklist

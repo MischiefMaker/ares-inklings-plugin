@@ -17,7 +17,7 @@
 
   ---START COPY HERE---
   <div class="tab-pane fade" id="inklings-tab-pane">
-    {{inklings-tab characterId=this.char.id viewerId=this.viewer.id isStaff=this.char.custom.can_manage_inklings isApproved=this.char.is_approved isSelf=(eq this.char.id this.viewer.id) typeInfo=this.char.custom.inkling_types}}
+    {{inklings-tab characterId=this.char.id characterName=this.char.name viewerId=this.viewer.id isStaff=this.char.custom.can_manage_inklings isApproved=this.char.is_approved isSelf=(eq this.char.id this.viewer.id) typeInfo=this.char.custom.inkling_types}}
   </div>
   ---END COPY---
 
@@ -28,12 +28,23 @@
   - Do NOT change this value
 
   PROPERTY NAMES:
-  - The component uses: characterId, viewerId, isStaff, isApproved, isSelf, and typeInfo
-  - These are passed from: this.char.id, this.viewer.id, this.char.custom.can_manage_inklings,
+  - The component uses: characterId, characterName, viewerId, isStaff, isApproved, isSelf, and typeInfo
+  - These are passed from: this.char.id, this.char.name, this.viewer.id, this.char.custom.can_manage_inklings,
     this.char.is_approved, (eq this.char.id this.viewer.id), and this.char.custom.inkling_types
   - If your profile-custom.hbs uses different property names, update them here
   - Common alternatives: character instead of char, user instead of viewer, etc.
   - Check the rest of your profile-custom.hbs to see what names are used
+  - characterName is used to display "Main Character" in the New Inkling
+    form on the profile version (see WHY characterName IS NEEDED below) -
+    if omitted, that field renders as an empty box.
+
+  WHY characterName IS NEEDED:
+  - In profile mode, the "New Inkling" form shows the profile being viewed as
+    a static "Main Character" label (not a dropdown - see the "Yes, please
+    ensure it is the profile owner and not the current user" note in
+    inkling-create-form.js). It reads this from the characterName argument,
+    not from any lookup of its own, so omitting it here leaves that field
+    blank even though everything else on the form still works.
 
   WHY isStaff READS FROM char.custom.can_manage_inklings, NOT viewer.isStaff:
   - There is no standard "isStaff" field on the Ares web portal's viewer
