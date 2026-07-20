@@ -44,6 +44,7 @@ export default Component.extend({
   // comment on InklingApi.get_inklings. Rendered as a visually distinct
   // "not yet approved" section, never as ordinary inklings-list rows.
   chargenDrafts: null,
+  characters: null, // for Share With selector in inkling-create-form
   loading: true,
   statusFilter: 'open',
 
@@ -68,6 +69,7 @@ export default Component.extend({
   didInsertElement() {
     this._super(...arguments);
     this.loadInklings();
+    this.loadCharacters();
   },
 
   loadInklings() {
@@ -89,6 +91,14 @@ export default Component.extend({
       })
       .finally(() => {
         this.set('loading', false);
+      });
+  },
+
+  loadCharacters() {
+    // Load character list for Share With selector in inkling-create-form
+    return this.gameApi.requestMany('characters', { select: 'all' }, null)
+      .then((response) => {
+        this.set('characters', A(response || []));
       });
   },
 
