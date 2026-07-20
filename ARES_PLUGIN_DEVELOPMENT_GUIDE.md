@@ -756,13 +756,23 @@ Each of these happened on this project — concretely, not hypothetically.
    explicitly as unverified scaffolding — don't let a guess read as fact in
    the code.
 
-2. **Inventing helpers Ares already provides.** This project shipped its own
+2. **Creating new hooks, methods, or classes without checking if they already
+   exist.** Before writing any new hook, method, class, or helper, always
+   search the Ares source (both core and bundled plugins) and any relevant
+   third-party plugins to see if the same or similar functionality already
+   exists. *Avoid it*: check `aresmush/aresmush` and `AresMUSH/ares-webportal`
+   for existing hooks, methods, and patterns. Use grep, GitHub search, or code
+   inspection to confirm the exact behavior of something you think exists
+   before writing a replacement. If it exists, use it; if you need a variant,
+   extend it rather than reinventing it.
+
+3. **Inventing helpers Ares already provides.** This project shipped its own
    `eq`/`and`/`or`/`not` helpers, duplicating `ember-truth-helpers`
    (bundled), and its own `format-date` helper, duplicating the built-in
    `local-date`. *Avoid it*: check `ares-webportal`'s `package.json` and
    `app/helpers/` before writing any helper.
 
-3. **Building custom architecture where Ares already had a pattern.** The
+4. **Building custom architecture where Ares already had a pattern.** The
    `.btn`/badge/alert CSS reinvented Bootstrap 5 components already loaded
    globally by `ares-webportal`. The `typeInfo` self-fetch reinvented what
    the `char.custom.*` hook mechanism already solves for exactly this kind
@@ -770,34 +780,34 @@ Each of these happened on this project — concretely, not hypothetically.
    mechanism, find the closest analog in a real Ares plugin and check
    whether it solved the same problem already.
 
-4. **Client-side duplication of server-side logic.** `availableKinds`
+5. **Client-side duplication of server-side logic.** `availableKinds`
    re-derived the staff/player authorization check `create_inkling` already
    enforced. *Avoid it*: any time a computed property or component method
    answers "is this viewer allowed to X," check whether an API method
    already answers that question, and have the server return the
    pre-filtered answer instead.
 
-5. **Assuming web conventions instead of confirming them.** Assumed
+6. **Assuming web conventions instead of confirming them.** Assumed
    `requestMany` behaves like "fetch a list" in the abstract, without
    checking that it literally calls `.map()` on the raw response. Assumed a
    response object was the unwrapped record without checking the Ruby
    method's actual return shape. *Avoid it*: read `game-api.js` and the
    specific Ruby method you're calling before writing the `.then()`.
 
-6. **Trusting stale GitHub state (default branch, file existence) without
+7. **Trusting stale GitHub state (default branch, file existence) without
    checking.** Different reference repos on GitHub used `master` vs. `main`
    as their default branch; guessing wrong silently returns a 404 that looks
    like "this doesn't exist" rather than "wrong branch name." *Avoid it*:
    check a repo's actual default branch (or try both) before concluding a
    file or pattern doesn't exist upstream.
 
-7. **Incorrect install assumptions.** Assumed `.ares-manifest.yml` was a
+8. **Incorrect install assumptions.** Assumed `.ares-manifest.yml` was a
    real, consumed installer format without checking; assumed single splat
    (`*`) merges a hash into a hash literal in Ruby without checking (it's a
    `SyntaxError`). *Avoid it*: for anything install-mechanism-related,
    verify against actual installer behavior or `ruby -c`, not intuition.
 
-8. **Legacy code that should have been deleted, not left inert.** The
+9. **Legacy code that should have been deleted, not left inert.** The
    original React component wasn't just unused — it was actively dangerous
    sitting in an auto-copied, resolver-scanned directory. *Avoid it*: when a
    rewrite makes a file obsolete, delete it in the same change, especially
@@ -807,7 +817,7 @@ Each of these happened on this project — concretely, not hypothetically.
    delete dead endpoints once nothing calls them, don't leave them as inert
    surface area.
 
-9. **`{{#with}}` on a property that gets set asynchronously.**
+10. **`{{#with}}` on a property that gets set asynchronously.**
    `{{#with someProperty as |alias|}}` reproducibly crashed this install's
    web portal with `resolvedDefinition is null` (cascading into "Recursive
    error condition - ignoring") whenever the wrapped property was set after
@@ -828,7 +838,7 @@ Each of these happened on this project — concretely, not hypothetically.
    chasing render-transaction/timing theories - it's the cheaper thing to
    rule out first.
 
-10. **Auto-installing files at shared customization points.** This plugin initially
+11. **Auto-installing files at shared customization points.** This plugin initially
     tried to auto-install `chargen-custom.js` and `chargen-custom.hbs` as plugin
     files, assuming they were plugin-owned. These are actually shared game
     customization files that already exist in standard AresMUSH installations and
@@ -840,7 +850,7 @@ Each of these happened on this project — concretely, not hypothetically.
     is acceptable only if they're clearly named as stubs for users to customize, not
     as replacements for existing files.
 
-11. **A `public/*_api.rb` method re-deriving a viewer it was already given.**
+12. **A `public/*_api.rb` method re-deriving a viewer it was already given.**
     `RollsApi.add_roll` and `RollsApi.reroll_with_luck` took `viewer_id` and
     did `Character[viewer_id]` to resolve it — but their only caller (a web
     handler) passes `request.enactor`, which is *already* a resolved
