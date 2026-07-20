@@ -12,7 +12,7 @@ Before finishing a task:
 2. Review the changed files carefully
 3. Create an appropriate commit message that describes the changes
 4. Commit the changes via `git commit`
-5. Push to the current branch via `git push origin [branch]`
+5. **Always push to main** via `git push origin main`
 6. Report the commit hash and push status
 
 **If push fails, clearly report the reason and do not claim the task is complete.**

@@ -10,6 +10,28 @@ current Ares source before you write code.
 
 ---
 
+## Git Workflow
+
+**Always push work to `main`.** Do not use feature branches for completed work.
+
+`plugin/install <url>` installs from the repository's default branch (`main`),
+not from feature branches or development branches. A fix or feature that only
+exists on a `claude/...` or other working branch is invisible to plugin
+installation and updates — a user running `plugin/install` will not receive the
+change even if the branch is pushed to GitHub. The failure mode is confusing
+(no error, just missing functionality), so this rule exists to prevent it.
+
+After completing any task:
+1. Run `git status` and review all changes
+2. Commit with a clear, descriptive message
+3. **Push to main:** `git push origin main`
+4. Report the commit hash and push status
+
+**Never leave completed work only on a feature branch.** Merge it to main and
+push before marking the task complete.
+
+---
+
 ## 1. Core Philosophy
 
 1. **Follow existing AresMUSH conventions before inventing anything.** If Ares

@@ -78,6 +78,13 @@
   max-width: 300px;
 }
 
+// Ensure form controls align consistently (input and textarea same width)
+input.form-control,
+textarea.form-control {
+  width: 100%;
+  box-sizing: border-box;
+}
+
 // Styled select dropdown to match PowerSelect appearance
 .form-select-powered {
   border-radius: 0.375rem;
