@@ -868,15 +868,25 @@ module AresMUSH
       nil
     end
 
-    # Hook called when a character is approved. Converts the draft
-    # chargen-inkling data (stored on the character as declared custom
-    # fields - see plugin/models/character_inkling_fields.rb) into actual
-    # Inkling records, then clears the draft fields so they don't linger
-    # or get re-converted on a later re-approval.
-    def self.character_approved(char, enactor)
+    # Called by the official AresMUSH approval hook (custom_approval in
+    # aresmush/plugins/chargen/custom_approval.rb) when a character is
+    # approved. Converts the draft chargen-inkling data (stored on the
+    # character as declared custom fields - see
+    # plugin/models/character_inkling_fields.rb) into actual Inkling records,
+    # then clears the draft fields so they don't linger or get re-converted
+    # on a later re-approval.
+    #
+    # Per https://www.aresmush.com/tutorials/code/hooks/approval-triggers.html,
+    # custom_approval(char) is called after char.is_approved = true is set,
+    # so the character is already approved when this method runs. The
+    # character itself serves as both the Inkling owner and the creator.
+    #
+    # Returns nothing (side effects only).
+    def self.convert_chargen_drafts(char)
       return unless char
+      return unless chargen_enabled?
 
-      Inklings.chargen_required_types.each do |kind|
+      chargen_required_types.each do |kind|
         # Skip any configured kind that has no declared Character attribute
         # (see plugin/models/character_inkling_fields.rb) rather than raising.
         next unless char.respond_to?("inkling_#{kind}_title")
@@ -888,13 +898,20 @@ module AresMUSH
         next if title.to_s.blank? && text.to_s.blank?
 
         begin
-          # viewer is the character itself (create_inkling reads viewer.id),
-          # since this is the player's own chargen submission being approved.
-          InklingApi.create_inkling(char.id, char, kind, text, title)
+          # character is both the owner and the creator of this Inkling
+          result = InklingApi.create_inkling(char.id, char, kind, text, title)
+
+          # Check for API errors (create_inkling returns { error: "msg" } on failure)
+          if result.is_a?(Hash) && result[:error]
+            AresMUSH::Coder.log_error "Error creating chargen inkling for #{char.name} (#{kind}): #{result[:error]}"
+            next  # Don't clear draft if creation failed
+          end
+
+          # Clear draft fields only after successful creation
           char.update("inkling_#{kind}_title".to_sym => nil)
           char.update("inkling_#{kind}_text".to_sym => nil)
         rescue => e
-          AresMUSH::Coder.log_error "Error creating approved inkling for #{char.name} (#{kind}): #{e.message}", e
+          AresMUSH::Coder.log_error "Exception creating chargen inkling for #{char.name} (#{kind}): #{e.message}", e
         end
       end
     end

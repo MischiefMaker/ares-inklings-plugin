@@ -218,15 +218,26 @@ The chargen drafts (Secrets and Goals) are validated during character approval a
 - **YELLOW warning** (if `chargen_required: false` and field is empty): "Checking for X Inklings. < Are you sure? Missing X >" — alerts staff but doesn't block approval
 - **GREEN OK** (if field has text): "Checking for X Inklings. < OK! >" — shows completion
 
-**Step 3d: (OPTIONAL) Add a MUSH Chargen Stage**
+**Step 3d: Approval Hook (Required if using chargen):**
+
+When a character is approved, the chargen draft fields (Secrets and Goals) must be converted into real Inklings. This uses the official AresMUSH approval trigger (see [approval-triggers documentation](https://www.aresmush.com/tutorials/code/hooks/approval-triggers.html)):
+
+1. Open `custom-install/custom_approval.snippet.rb` in this plugin
+2. Open `plugins/chargen/custom_approval.rb` in your **aresmush** folder (not ares-webportal)
+3. Follow the instructions in the snippet file to add the call to `Inklings.convert_chargen_drafts(char)` inside the `custom_approval` method
+4. Save the file
+5. Restart the server by running `sudo reboot` on the server.
+
+**What this does:** When a character is approved (via `+char/approve` or the web UI), each populated Secret and Goal draft is automatically converted to a real Inkling. The new Inklings appear in the Jobs system and on the character's Inklings tab. Blank draft fields are ignored.
+
+**Step 3e: (OPTIONAL) Add a MUSH Chargen Stage**
 
 By default, players fill in their Secrets & Goals via the web portal chargen form. If you want to also provide a dedicated stage in your MUSH chargen flow, you can add one:
 
 1. Open `custom-install/chargen_stage.snippet.yml` in this plugin
 2. Open `game/config/chargen.yml` in your **game** folder
-3. Follow the instructions in the snippet file to add the `secrets_goals` stage to your chargen stages list
-4. (Optional) Add a help topic for the stage in `game/config/help.yml` (see the snippet for an example)
-5. Restart the server by running `sudo reboot` on the server.
+3. Follow the instructions in the snippet file to add the `secret_goal` stage to your chargen stages list
+4. Restart the server by running `sudo reboot` on the server.
 
 **What this does:** Players can now fill in their Secret and Goal as part of the MUSH chargen flow, in addition to the web portal form. Either method (MUSH or web portal) saves to the same draft field, so players can start on one and finish on the other.
 

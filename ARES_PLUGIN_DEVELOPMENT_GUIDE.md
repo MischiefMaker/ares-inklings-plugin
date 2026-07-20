@@ -895,6 +895,25 @@ Each of these happened on this project — concretely, not hypothetically.
     effect), make it clear that users must physically reboot the server, not run
     an in-game command.
 
+14. **Character approval integration must use the official hook.** A plugin's
+    code that needs to run when a character is approved should NOT create a
+    custom approval event or invent a hook dispatching mechanism. AresMUSH
+    provides an official `Chargen.custom_approval(char)` hook (documented at
+    https://www.aresmush.com/tutorials/code/hooks/approval-triggers.html).
+    This hook is called by the Chargen plugin after `char.is_approved = true`
+    is persisted, so the character is already marked approved. A plugin that
+    provides lifecycle behavior tied to approval should (a) implement a
+    plugin-side method with a clear, descriptive name (e.g.,
+    `Inklings.convert_chargen_drafts(char)`), (b) provide a merge-safe snippet
+    for the shared `custom_approval.rb` hook file showing how to call that
+    method, and (c) document that the method runs after approval is finalized.
+    *Avoid it*: do not poll for approval state, do not add custom event dispatch,
+    do not modify Chargen core code, and do not put approval behavior in app-
+    review hooks (which run during app review, not at approval time). Let the
+    official hook carry the notification — the game owner's game/aresmush folder
+    already owns `custom_approval.rb`, and a plugin's merge-safe snippet is the
+    right way to extend it.
+
 ---
 
 ## 9. Plugin Review Checklist
