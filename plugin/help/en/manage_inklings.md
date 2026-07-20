@@ -13,8 +13,8 @@ Inklings are player-initiated threads for tracking character development, plot r
 **`+inkling/list <character>`**
 View all inklings for a specific character. Shows status, linked jobs, and message counts.
 
-**`+inkling/admin`** (`/closed`, `/all` for status)
-List every inkling in the game, for every character - not scoped to one character the way `+inkling/list` is. Each entry shows type, title, status, date, linked job, message count, owner, and everyone with access. Paginated, newest first. The web portal has an equivalent admin page (Inklings tab under Admin, once your game owner completes the optional setup in the plugin README) with the same list plus an Add Inkling form for creating an inkling on any character's behalf.
+**`+inkling/admin [/closed|/all]`** 
+List every inkling in the game, for every character - not scoped to one character the way `+inkling/list` is. Each entry displays as two lines (title/status + owner/access details) with blank lines between entries for readability. Default shows open threads only. Use `/closed` to see closed threads, or `/all` to see every inkling (all statuses). Paginated, newest first. The web portal has an equivalent admin page (Inklings tab under Admin, once your game owner completes the optional setup in the plugin README) with the same list plus an Add Inkling form for creating an inkling on any character's behalf.
 
 **`+inkling/hint <character>=<title>/<text>`**
 Send a hint to a character (typically guidance or a nudge in a direction).
