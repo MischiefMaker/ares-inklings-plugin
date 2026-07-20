@@ -6,12 +6,6 @@ module AresMUSH
     class InklingsCmd
       include CommandHandler
 
-      def check_approved
-        return nil if Inklings.can_manage_inklings?(enactor)
-        return t('inklings.char_not_approved') unless enactor.is_approved?
-        nil
-      end
-
       def handle
         # Query explicitly by character_id rather than enactor.inklings
         # (a reverse-collection macro) - see the note in
@@ -34,12 +28,27 @@ module AresMUSH
 
         inklings = inklings.sort_by { |i| Inklings.time_value(i.created_at) }.reverse
 
-        if inklings.empty?
+        # Show chargen drafts for unapproved characters
+        drafts = enactor.is_approved? ? [] : Inklings.chargen_drafts(enactor)
+
+        if inklings.empty? && drafts.empty?
           client.emit_success t('inklings.no_inklings')
           return
         end
 
-        list = inklings.map do |i|
+        list = []
+
+        # Show chargen drafts first if any exist (unapproved characters only)
+        if drafts.any?
+          list << "%xh%cy--- CHARGEN DRAFTS (not yet approved) ---%xn"
+          drafts.each do |d|
+            list << "  [#{Inklings.color_type(d[:kind].upcase)}] #{Inklings.color_title(d[:title].to_s.blank? ? d[:label] : d[:title])} %xh%cy(DRAFT)%xn"
+          end
+          list << nil  # Blank line separator
+        end
+
+        # Show real inklings
+        inkling_lines = inklings.map do |i|
           unread = i.character == enactor && i.player_unread == "true"
           flag = unread ? "%xh*%xn " : "  "
           title = i.title.to_s.blank? ? Inklings.kind_label(i.kind) : i.title
@@ -48,6 +57,7 @@ module AresMUSH
           lock_text = i.locked == "true" ? " %xh%crLOCKED%xn" : ""
           "#{flag}##{i.id} [#{Inklings.color_type(i.kind.upcase)}] #{Inklings.color_title(title)} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} - #{count_text}#{lock_text}"
         end
+        list.concat(inkling_lines)
 
         template = BorderedPagedListTemplate.new list, cmd.page, 25, t('inklings.inklings_title')
         client.emit template.render
