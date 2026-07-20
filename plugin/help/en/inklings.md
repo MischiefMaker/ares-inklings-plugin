@@ -37,6 +37,9 @@ List every available inkling type with a short description.
 **`+inkling <id>`**
 View a specific inkling thread and all messages in it. Mark it as read when you view it. Each message and roll appears as its own block with a permanent reference number (like `14.3`) for pointing back at it later.
 
+**`+inkling/comment <id>.<number>`**
+Jump straight to one numbered entry using its reference number, e.g. `+inkling/comment 14.3` shows entry #3 on inkling #14 by itself, without the rest of the thread.
+
 **`+inkling/new`**
 With no arguments, shows the oldest inkling you have unread updates on and marks it read - run it again to see the next one, like the bulletin board's `+bbnew`. Tells you when you're caught up.
 

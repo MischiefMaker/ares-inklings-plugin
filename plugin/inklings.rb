@@ -705,6 +705,16 @@ module AresMUSH
       "#{meta}\n\n#{message.text}"
     end
 
+    # "#<id> [TYPE] Title" - the compact identifying header used both
+    # as the prefix on the full detail view (render_inkling_view) and
+    # standalone by +inkling/comment (InklingCommentCmd), which shows a
+    # single numbered entry without the rest of the thread and still
+    # needs to say which inkling that entry belongs to.
+    def self.inkling_short_header(inkling)
+      title_text = inkling.title.to_s.blank? ? kind_label(inkling.kind) : inkling.title
+      "##{inkling.id} [#{color_type(inkling.kind.upcase)}] #{color_title(title_text)}"
+    end
+
     def self.format_view_roll_block(inkling, roll)
       who = roll.creator ? color_name(roll.creator.name) : "?"
       target_name = roll.target_character ? roll.target_character.name : roll.npc_name
@@ -753,8 +763,6 @@ module AresMUSH
       shared_lines << "Groups: #{group_list.join(", ")}" if group_list.any?
       shared_with_line = shared_lines.any? ? "\n\n[Shared With]\n#{shared_lines.join("\n")}" : ""
 
-      header_title = inkling.title.to_s.blank? ? kind_label(inkling.kind) : inkling.title
-
       lock_tag = ""
       if inkling.locked == "true"
         if inkling.approval_state == "approved"
@@ -765,7 +773,7 @@ module AresMUSH
           lock_tag = " %xh%crLOCKED%xn"
         end
       end
-      title = "##{inkling.id} [#{color_type(inkling.kind.upcase)}] #{color_title(header_title)} (#{inkling.status})#{lock_tag}"
+      title = "#{inkling_short_header(inkling)} (#{inkling.status})#{lock_tag}"
 
       shared_with_first = shared_with_line ? "#{shared_with_line}\n\n" : ""
       job_line = inkling.job ? "\n\n(Linked job ##{inkling.job.id}, status #{inkling.job.status})" : ""
@@ -1124,6 +1132,8 @@ module AresMUSH
           return InklingGroupCmd
         elsif cmd.switch_is?("roll")
           return InklingRollCmd
+        elsif cmd.switch_is?("comment")
+          return InklingCommentCmd
         elsif cmd.switch_is?("new")
           # Bare +inkling/new (no args) cycles through unread inklings,
           # bbnew-style (InklingNewUnreadCmd). +inkling/new

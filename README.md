@@ -452,7 +452,8 @@ Requires the FS3Skills plugin to be installed.
 | `+inklings` | List your open Inklings (`/closed` flag for closed, `/all` for both) |
 | `+inkling/types` | Show available inkling types with descriptions |
 | `+inkling <id>` | View a thread |
-| `+inkling/new` | Show your oldest unread inkling, one per use (like `+bbnew`) |
+| `+inkling/comment <id>.<num>` | Jump straight to one numbered entry, e.g. `+inkling/comment 3.4` (MUSH-only) |
+| `+inkling/new` | Show your oldest unread inkling, one per use (like `+bbnew`) (MUSH-only) |
 | `+inkling/new <type>=<title>/<text>` | Create a new inkling |
 | `+inkling/advance <id>=<text>` | Add a public message |
 | `+inkling/private <id>=<text>` | Add a message visible to specific participants + staff |
@@ -480,6 +481,13 @@ Requires the FS3Skills plugin to be installed.
 | `+inkling/list <char>` | List all of a character's threads |
 | `+inkling/admin` | List every Inkling in the game, any owner (`/closed`, `/all` for status; see the Admin Inklings Page below for the web equivalent) |
 | `+inkling/reset` | Wipe the entire system (confirmation required; use only during testing/development) |
+
+Commands marked **(MUSH-only)** are intentional exceptions to this plugin's
+usual MUSH/web parity - both are command-line conveniences for reaching
+content the web portal already fully exposes a different way (the profile
+tab already shows unread state per-thread, and every entry in the detail
+view already displays inline with its ref number), not a capability the web
+portal is missing.
 
 See `help inklings` and `help managing inklings` in-game for full command details.
 
