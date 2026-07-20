@@ -38,7 +38,7 @@ Add a personal note to an inkling thread. Personal notes are visible only to the
 Add a staff-only reference note. GM notes are never shown to players.
 
 **`+inkling/submit <id>`**
-Players use this to lock a thread and send its full contents to a single staff job - see "Submission & Approval Workflow" below. Staff can also run it (e.g. on a player's behalf).
+Players use this to lock a thread and send it to a single staff job - the full thread on first submission, only what's new since the last one after that - see "Submission & Approval Workflow" below. Staff can also run it (e.g. on a player's behalf).
 
 **`+inkling/approve <id>[=<message>]`**
 Approve a submitted inkling. Sets it to approved status, closes the linked job, and notifies the player. Optional message is added to thread history.
@@ -70,7 +70,7 @@ The following commands work for both staff and players. See `help inklings` for 
 
 ## Submission & Approval Workflow
 
-Players submit via `+inkling/submit <id>`, which locks the thread and sends its full contents to staff as a job. Once submitted, staff can:
+Players submit via `+inkling/submit <id>`, which locks the thread and sends it to staff as a job (full thread first time, only what's new after a revision round). Once submitted, staff can:
 
 - **Reply via `+inkling/advance` or `+inkling/private`** for discussion (does NOT unlock the thread)
 - **`+inkling/approve <id>`** to approve and close the review

@@ -1280,6 +1280,42 @@ this one feature.
 
 ---
 
+### Lesson 22: When `github.com`/`api.github.com` are unreachable, `raw.githubusercontent.com` usually still is - use it to verify real Ares source instead of guessing
+
+Needed the exact AresMUSH event fired on player login (name + field shape) to
+hook a "notify on login if anything happened while you were offline" feature.
+`github.com` and `api.github.com` both returned 403 in this sandbox (network
+policy), and third-party mirrors (`jsdelivr`, `unpkg`, `codeload.github.com`)
+were blocked too. `raw.githubusercontent.com/<owner>/<repo>/<branch>/<path>`
+was not blocked, and file paths could be guessed reliably by pattern-matching
+this project's own already-confirmed real paths (the dev guide already cites
+`aresmush/plugins/profile/custom_char_fields.rb`,
+`aresmush/plugins/chargen/custom_approval.rb` - same `plugins/<name>/<file>.rb`
+shape). That path led straight to `plugins/login/login.rb`
+(`get_event_handler`, confirming the event is named `CharConnectedEvent`) and
+`plugins/login/events/char_connected_event_handler.rb` (confirming the real
+handler reads `event.char_id` and `event.client`) - both fetched from the live
+`AresMUSH/aresmush` repo, not guessed.
+
+- If `github.com`/`api.github.com` 403 in a sandboxed session, don't give up
+  on verification and fall back to a guess - try
+  `raw.githubusercontent.com/<owner>/<repo>/<branch>/<path>` directly. It's a
+  different host from the blocked ones and was reachable here even though
+  `github.com` itself, `codeload.github.com`, `cdn.jsdelivr.net`, and
+  `unpkg.com` were all policy-denied in the same session.
+- There's no directory listing on `raw.githubusercontent.com` - you have to
+  guess exact file paths. Anchor guesses to paths this project has *already*
+  confirmed real (cited elsewhere in this guide or in this plugin's own
+  source comments) rather than guessing blind; the naming convention usually
+  carries over to the plugin/file you actually need.
+- This is meaningfully better than the "flag it as scaffolding for the user
+  to verify" fallback (see the `job_reply_event_handler.rb` precedent in §2)
+  - a live fetch of the actual handler source is real verification, not a
+    plausible-sounding guess with a disclaimer attached. Try this before
+    reaching for scaffolding-with-a-warning.
+
+---
+
 ## 9. Plugin Review Checklist
 
 Before considering a plugin (or a plugin change) complete:

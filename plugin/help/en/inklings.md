@@ -37,6 +37,9 @@ List every available inkling type with a short description.
 **`+inkling <id>`**
 View a specific inkling thread and all messages in it. Mark it as read when you view it. Each message and roll appears as its own block with a permanent reference number (like `14.3`) for pointing back at it later.
 
+**`+inkling/new`**
+With no arguments, shows the oldest inkling you have unread updates on and marks it read - run it again to see the next one, like the bulletin board's `+bbnew`. Tells you when you're caught up.
+
 **`+inkling/new <kind>=<title>/<text>`**
 Create a new inkling with a title and opening text. For example: `+inkling/new goal=Learn to Sail/Work toward buying lessons this month.`
 

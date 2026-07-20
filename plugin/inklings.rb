@@ -419,6 +419,85 @@ module AresMUSH
       (seqs.max || 0) + 1
     end
 
+    # --- Per-character read tracking (InklingReadReceipt) ---------------
+    # Separate from Inkling#player_unread, which only ever reflects the
+    # OWNING character's state. These track, per character + inkling,
+    # how far into the thread that specific character has read - so
+    # "unread" is meaningful for shared/group participants too. Powers
+    # +inkling/new (InklingNewUnreadCmd) and the on-login catch-up
+    # check (CharConnectedEventHandler).
+
+    def self.find_read_receipt(inkling, char)
+      InklingReadReceipt.find(inkling_id: inkling.id, character_id: char.id).first
+    end
+
+    # Records that char has now seen everything currently on inkling.
+    # Called whenever the full thread is actually rendered to them (see
+    # show_inkling) - never from a list view, which only shows
+    # titles/counts, not content.
+    def self.mark_read(inkling, char)
+      seq = next_event_seq(inkling) - 1
+      receipt = find_read_receipt(inkling, char)
+      if receipt
+        receipt.update(last_read_seq: seq)
+      else
+        InklingReadReceipt.create(inkling: inkling, character: char, last_read_seq: seq)
+      end
+    end
+
+    # Whether char has anything on this inkling they haven't seen yet
+    # that someone ELSE posted - a character's own posts never count as
+    # unread for them, even before they next explicitly view the
+    # thread, so posting an update doesn't immediately re-flag your own
+    # thread in your own +inkling/new queue. Only counts events char
+    # can actually see (respects the same private/GM/personal
+    # visibility rules the detail view itself uses).
+    def self.has_unread_for?(inkling, char)
+      baseline = find_read_receipt(inkling, char)&.last_read_seq.to_i
+
+      return true if inkling.messages.to_a.any? { |m|
+        m.seq.to_i > baseline && (!m.author || m.author.id != char.id) && can_see_message?(m, char)
+      }
+
+      inkling.rolls.to_a.any? { |r|
+        r.seq.to_i > baseline && (!r.creator || r.creator.id != char.id) && can_see_roll?(r, char)
+      }
+    end
+
+    # Timestamp of the earliest event char hasn't seen on this inkling
+    # (falling back to the inkling's own created_at if nothing
+    # qualifies), for ordering the +inkling/new queue oldest-first.
+    def self.earliest_unread_time(inkling, char)
+      baseline = find_read_receipt(inkling, char)&.last_read_seq.to_i
+
+      times = []
+      inkling.messages.to_a.each do |m|
+        next unless m.seq.to_i > baseline && (!m.author || m.author.id != char.id) && can_see_message?(m, char)
+        times << time_value(m.created_at)
+      end
+      inkling.rolls.to_a.each do |r|
+        next unless r.seq.to_i > baseline && (!r.creator || r.creator.id != char.id) && can_see_roll?(r, char)
+        times << time_value(r.created_at)
+      end
+
+      times.min || time_value(inkling.created_at)
+    end
+
+    # Every inkling char has access to (own, explicitly shared, or via
+    # a matching group) with unread content, oldest-unread-first - the
+    # queue +inkling/new works through. No staff special-casing: this
+    # only looks at inklings char can actually reach as a participant,
+    # same scope +inklings already uses.
+    def self.unread_inklings_for(char)
+      own = Inkling.find(character_id: char.id).to_a
+      shared = InklingParticipant.find(character_id: char.id).map(&:inkling).compact
+      group = Inkling.all.to_a.select { |i| is_group_participant?(i, char) }
+
+      candidates = (own + shared + group).uniq(&:id).select { |i| i.status == "open" }
+      candidates.select { |i| has_unread_for?(i, char) }
+        .sort_by { |i| earliest_unread_time(i, char) }
+    end
+
     # The stable "2.1" style reference for a message or roll: inkling
     # ID, dot, per-thread sequence number. Use this (rather than the
     # underlying database ID) any time you need to point at a specific
@@ -544,10 +623,16 @@ module AresMUSH
     # thread anyway. Deliberately plain (no ansi color codes), since
     # this text is persisted onto a Job that's read back both in-game
     # and through the web portal's Job view.
-    def self.compile_thread_text(inkling)
+    # since_seq: 0 (default) includes the whole thread. Pass a higher
+    # value (see last_submission_seq) to only include events added
+    # after that point - used by submit_inkling so resubmissions only
+    # push what staff haven't already seen, instead of the full thread
+    # every time.
+    def self.compile_thread_text(inkling, since_seq: 0)
       events = []
 
       inkling.messages.to_a.each do |m|
+        next if m.seq.to_i <= since_seq
         who = m.author ? m.author.name : "?"
         tags = []
         tags << "gm" if m.is_gm_note == "true"
@@ -559,6 +644,7 @@ module AresMUSH
       end
 
       inkling.rolls.to_a.each do |r|
+        next if r.seq.to_i <= since_seq
         who = r.creator ? r.creator.name : "?"
         target = r.target_character ? r.target_character.name : r.npc_name
         target_text = target.to_s.blank? ? "" : " for #{target}"
@@ -570,23 +656,167 @@ module AresMUSH
       events.sort_by { |time, _text| time }.map { |_time, text| text }.join("\n#{'-' * 40}\n")
     end
 
-    # +inkling/submit - locks the thread and sends its full current
-    # contents to a single staff job. If the inkling already has an
-    # OPEN linked job (e.g. this is a second round of submission after
-    # staff replied and the player added more), the full thread is
-    # mirrored as a fresh comment onto that same job rather than
+    # Seq of the most recent "submitted" marker on this inkling (see
+    # submit_inkling, which leaves one every time it runs), or 0 if
+    # it's never been submitted before. This is the boundary for what
+    # staff have already been shown - submit_inkling uses it to only
+    # push messages/rolls added after the last submission into the
+    # job, instead of the whole thread every time, however many rounds
+    # of back-and-forth revision have happened. No separate "last
+    # submission" field needed since each submission already leaves
+    # its own permanently-ordered marker in the thread.
+    def self.last_submission_seq(inkling)
+      submitted_seqs = inkling.messages.to_a.select { |m| m.message_type == "submitted" }.map { |m| m.seq.to_i }
+      submitted_seqs.max || 0
+    end
+
+    # A single message rendered as its own block for the player-facing
+    # detail view (+inkling <id> / +inkling/new) - a metadata line
+    # (reference number, timestamp, author, tags) followed by a blank
+    # line and then the message text on its own, since entries can run
+    # to multiple paragraphs. Module-level (not on a CommandHandler
+    # instance) so both InklingViewCmd and InklingNewUnreadCmd can
+    # share it via render_inkling_view - see the note there on why it
+    # can't use t().
+    def self.format_view_message_block(inkling, message)
+      who = message.author ? color_name(message.author.name) : "?"
+      tags = []
+
+      case message.message_type.to_s
+      when "submitted"
+        tags << "Submitted"
+      when "approved"
+        tags << "Approved"
+      when "needs_changes"
+        tags << "Needs Changes"
+      when "reward"
+        tags << "Reward"
+      end
+
+      tags << "staff" if message.is_staff == "true" && message.message_type.to_s.empty?
+      tags << "gm" if message.is_gm_note == "true"
+      tags << private_tag_label(message) if message.is_private == "true"
+      tags << "private to you" if message.is_personal == "true"
+      tag_text = tags.empty? ? "" : " [#{tags.join(", ")}]"
+
+      ref = event_ref(inkling, message.seq)
+      meta = "##{ref} #{format_time(message.created_at, '%m/%d %H:%M')} #{who}#{tag_text}"
+
+      "#{meta}\n\n#{message.text}"
+    end
+
+    def self.format_view_roll_block(inkling, roll)
+      who = roll.creator ? color_name(roll.creator.name) : "?"
+      target_name = roll.target_character ? roll.target_character.name : roll.npc_name
+      target_text = target_name.to_s.blank? ? "" : " for #{color_name(target_name)}"
+      private_tag = roll.private == "true" ? " [private]" : ""
+      ref = event_ref(inkling, roll.seq)
+      "##{ref} #{format_time(roll.created_at, '%m/%d %H:%M')} #{who}#{private_tag} [Roll]\n\nRolled #{roll.roll_spec}#{target_text}: #{roll.result}"
+    end
+
+    # Full formatted display for one inkling from viewer's perspective:
+    # header title (with lock tag), shared-with summary, every
+    # message/roll they can see in chronological order, linked-job
+    # note, and the submit/unlock hints - exactly what +inkling <id>
+    # shows. Shared with +inkling/new (InklingNewUnreadCmd, which shows
+    # the same detail view for the next unread thread) so there's one
+    # place that owns "what does viewing an inkling look like," not two
+    # copies that can drift.
+    #
+    # Plain module method, not a CommandHandler instance method, so it
+    # can't call t() (see Lesson 20 in the dev guide) - the handful of
+    # strings below that would normally go through the locale system
+    # (shared-with labels, the "not yet submitted" reminder) are
+    # written out directly instead, matching locale_en.yml's current
+    # wording. InklingViewCmd no longer needs those specific locale
+    # keys as a result.
+    def self.render_inkling_view(inkling, viewer)
+      separator = "-" * 60
+      blocks = []
+
+      inkling.messages.to_a.sort_by { |m| time_value(m.created_at) }
+        .select { |m| can_see_message?(m, viewer) }
+        .each { |m| blocks << [time_value(m.created_at), format_view_message_block(inkling, m)] }
+
+      inkling.rolls.to_a.sort_by { |r| time_value(r.created_at) }.each do |roll|
+        next if !can_see_roll?(roll, viewer)
+        blocks << [time_value(roll.created_at), format_view_roll_block(inkling, roll)]
+      end
+
+      ordered = blocks.sort_by { |time, _block| time }.map(&:last)
+      body = ordered.join("\n#{separator}\n")
+
+      shared_lines = []
+      shared_names = shared_with_names(inkling)
+      shared_lines << "Players: #{shared_names.map { |n| color_name(n) }.join(", ")}" if shared_names.any?
+      group_list = shared_group_list(inkling)
+      shared_lines << "Groups: #{group_list.join(", ")}" if group_list.any?
+      shared_with_line = shared_lines.any? ? "\n\n[Shared With]\n#{shared_lines.join("\n")}" : ""
+
+      header_title = inkling.title.to_s.blank? ? kind_label(inkling.kind) : inkling.title
+
+      lock_tag = ""
+      if inkling.locked == "true"
+        if inkling.approval_state == "approved"
+          lock_tag = " %xh%cgLOCKED - Completed%xn"
+        elsif inkling.approval_state == "submitted"
+          lock_tag = " %xh%crLOCKED - Awaiting Staff Review%xn"
+        else
+          lock_tag = " %xh%crLOCKED%xn"
+        end
+      end
+      title = "##{inkling.id} [#{color_type(inkling.kind.upcase)}] #{color_title(header_title)} (#{inkling.status})#{lock_tag}"
+
+      shared_with_first = shared_with_line ? "#{shared_with_line}\n\n" : ""
+      job_line = inkling.job ? "\n\n(Linked job ##{inkling.job.id}, status #{inkling.job.status})" : ""
+
+      submit_reminder = (!can_manage_inklings?(viewer) && inkling.character == viewer && inkling.locked != "true" && inkling.status != "closed") ?
+        "\n\n%xyThis Inkling is not currently under review.%xn Use +inkling/submit #{inkling.id} whenever you want staff to review it." : ""
+
+      unlock_note = (inkling.locked == "true" && inkling.approval_state == "approved" && inkling.character == viewer) ?
+        "\n\n%xhNeed this reopened? Use +inkling/requestunlock #{inkling.id}=<reason> to contact staff.%xn" : ""
+
+      { title: title, body: shared_with_first + body + job_line + submit_reminder + unlock_note }
+    end
+
+    # Renders inkling's full detail view for viewer and emits it to
+    # client, then marks it read for viewer - both the general
+    # per-character receipt (mark_read) and, when viewer is the
+    # inkling's own owner, the legacy player_unread flag other views
+    # (+inklings, +inkling/list) still read. Shared by +inkling <id>
+    # (InklingViewCmd) and +inkling/new (InklingNewUnreadCmd) - the
+    # only difference between the two commands is how they pick WHICH
+    # inkling to show; once picked, viewing it works identically.
+    def self.show_inkling(inkling, viewer, client)
+      sync_job_replies(inkling)
+      view = render_inkling_view(inkling, viewer)
+      template = BorderedDisplayTemplate.new view[:body], view[:title]
+      client.emit template.render
+
+      update_inkling(inkling, player_unread: "false") if inkling.character == viewer
+      mark_read(inkling, viewer)
+    end
+
+    # +inkling/submit - locks the thread and sends staff only what's
+    # new since the last submission (or the full thread, on the very
+    # first submission - see last_submission_seq). If the inkling
+    # already has an OPEN linked job (e.g. staff unlocked it without
+    # closing the job - see Inklings.unlock_inkling), that new content
+    # is mirrored as a fresh comment onto the same job rather than
     # creating a second one - "a single job" means one ongoing job per
     # inkling for as long as it stays open, not one job per submit. If
-    # the previously-linked job was closed, a new one is created,
-    # since that represents a finished round of review.
+    # the previously-linked job was closed (e.g. after
+    # +inkling/needschanges), a new one is created, since that
+    # represents a finished round of review.
     def self.submit_inkling(inkling, submitter)
       title = submission_job_title(submitter, inkling.kind)
+      prior_seq = last_submission_seq(inkling)
 
-      # For resubmissions (has an open job already), just add a note about the resubmission
-      if inkling.job && inkling.job.status != "closed"
-        body = "#{submitter.name} has resubmitted this inkling.\n\nUse +inkling #{inkling.id} to view the full thread."
+      if prior_seq > 0
+        delta = compile_thread_text(inkling, since_seq: prior_seq)
+        delta = "(No new messages or rolls since the last submission.)" if delta.blank?
+        body = "#{submitter.name} has resubmitted this inkling. Showing only what's new since the last submission - use +inkling #{inkling.id} to view the full thread.\n\n#{delta}"
       else
-        # For initial submission, include the full thread
         body = compile_thread_text(inkling)
       end
 
@@ -895,7 +1125,11 @@ module AresMUSH
         elsif cmd.switch_is?("roll")
           return InklingRollCmd
         elsif cmd.switch_is?("new")
-          return InklingNewCmd
+          # Bare +inkling/new (no args) cycles through unread inklings,
+          # bbnew-style (InklingNewUnreadCmd). +inkling/new
+          # <kind>=<title>/<text> creates one (InklingNewCmd). Same
+          # switch, different command, picked by whether args were given.
+          return cmd.args.to_s.strip.empty? ? InklingNewUnreadCmd : InklingNewCmd
         elsif cmd.switch_is?("submit")
           return InklingSubmitCmd
         elsif cmd.switch_is?("approve")
@@ -967,12 +1201,15 @@ module AresMUSH
     end
 
     # Per https://www.aresmush.com/tutorials/code/events.html - the
-    # Dispatcher asks every plugin for a handler by event name; we
-    # only care about CronEvent (see InklingXpCronHandler).
+    # Dispatcher asks every plugin for a handler by event name. We care
+    # about CronEvent (see InklingXpCronHandler) and CharConnectedEvent
+    # (see CharConnectedEventHandler).
     def self.get_event_handler(event_name)
       case event_name
       when "CronEvent"
         return InklingXpCronHandler
+      when "CharConnectedEvent"
+        return CharConnectedEventHandler
       end
       nil
     end

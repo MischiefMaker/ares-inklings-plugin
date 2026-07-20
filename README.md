@@ -18,6 +18,7 @@ Inklings gives you a private space to develop your character through threaded co
 - **Track character development** — Keep a permanent record of your character's arc and evolution
 - **Attach dice rolls** — Include FS3 rolls, custom rolls, or NPC rolls directly in your threads
 - **Share selectively** — Grant access to specific characters or demographics groups who should see your thread, from the MUSH or the web portal
+- **Catch up on what you missed** — Get notified at login if anything happened on your inklings while you were away, then use `+inkling/new` to page through unread threads one at a time, oldest first (like the bulletin board's `+bbnew`)
 
 ### For Staff
 
@@ -451,6 +452,7 @@ Requires the FS3Skills plugin to be installed.
 | `+inklings` | List your open Inklings (`/closed` flag for closed, `/all` for both) |
 | `+inkling/types` | Show available inkling types with descriptions |
 | `+inkling <id>` | View a thread |
+| `+inkling/new` | Show your oldest unread inkling, one per use (like `+bbnew`) |
 | `+inkling/new <type>=<title>/<text>` | Create a new inkling |
 | `+inkling/advance <id>=<text>` | Add a public message |
 | `+inkling/private <id>=<text>` | Add a message visible to specific participants + staff |
@@ -485,7 +487,7 @@ See `help inklings` and `help managing inklings` in-game for full command detail
 
 1. **Draft** — Player creates an inkling and builds it freely. Staff cannot see it. Player can add messages, rolls, and share access anytime.
 
-2. **Submitted** — Player runs `+inkling/submit` to lock the thread and send its full contents to staff as a single job. Thread is now read-only for the player.
+2. **Submitted** — Player runs `+inkling/submit` to lock the thread and send it to staff as a job. The first submission includes the full thread; a resubmission after revisions only includes what's new since the last submission, not the whole thread again. Thread is now read-only for the player.
 
 3. **Under Review** — Staff can:
    - Reply via `+inkling/advance` or `+inkling/private` for discussion
@@ -502,8 +504,6 @@ Staff can award rewards during or after review.
 ## Known Limitations
 
 - **Locks block building, not management** — A locked thread blocks `+inkling/advance`, `+inkling/private`, and `+inkling/roll`, but players can still share, close, or request deletion. This allows players to request staff to close/delete a submitted thread without waiting for approval.
-
-- **Resubmission repeats all content** — When a player resubmits after revisions, the entire thread is sent again, not just the new content. The job's comment history will include repeated messages.
 
 - **Bonus XP includes staff PCs** — The optional XP award system only checks that a character is approved; it doesn't exclude staff PCs, on the assumption staff characters deserve XP for roleplay too.
 

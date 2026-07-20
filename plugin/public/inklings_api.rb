@@ -388,6 +388,7 @@ module AresMUSH
           inkling.messages.each { |m| m.delete }
           inkling.rolls.each { |r| r.delete }
           InklingParticipant.find(inkling_id: inkling.id).each { |p| p.delete }
+          InklingReadReceipt.find(inkling_id: inkling.id).each { |r| r.delete }
           inkling.delete
 
           return { success: true, deleted: true }

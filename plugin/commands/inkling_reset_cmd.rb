@@ -2,8 +2,9 @@ module AresMUSH
   module Inklings
     # +inkling/reset
     #
-    # Permanently deletes every inkling thread, message, roll, and
-    # participant record. Restricted to the "manage_game" permission
+    # Permanently deletes every inkling thread, message, roll,
+    # participant record, and read receipt. Restricted to the
+    # "manage_game" permission
     # (normally just Coders/Admins), since this is destructive and
     # irreversible - it is deliberately a higher bar than
     # can_manage_inklings?, which many ordinary staff have.
@@ -75,6 +76,7 @@ module AresMUSH
 
         Global.logger.warn("Inklings: #{enactor.name} reset the entire inklings system (#{thread_count} threads).")
 
+        InklingReadReceipt.all.each { |r| r.delete }
         InklingParticipant.all.each { |p| p.delete }
         InklingRoll.all.each { |r| r.delete }
         InklingMessage.all.each { |m| m.delete }
