@@ -27,7 +27,7 @@
 
     <div class="mb-3">
       <label for="inklings-new-type" class="form-label">Type</label>
-      <select id="inklings-new-type" class="form-control" onchange={{action "setNewKind" value="target.value"}}>
+      <select id="inklings-new-type" class="form-select" onchange={{action "setNewKind" value="target.value"}}>
         <option value="">-- Select a type --</option>
         {{#each this.typeInfo as |t|}}
           <option value={{t.kind}}>{{t.name}}</option>
