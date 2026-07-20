@@ -362,15 +362,15 @@ characters' threads, and use the admin management view/command) is
 configurable via a single setting:
 
 ```yaml
-manage_permission: manage_jobs   # default
+manage_permission: manage_apps   # default
 ```
 
 `manage_permission` names an existing Ares permission (see [Using Permissions
 in Code](https://aresmush.com/tutorials/manage/roles.html#using-permissions-in-code));
 anyone who holds it is treated as Inklings staff everywhere in the plugin,
-including the admin page/command. It defaults to `manage_jobs` so anyone who
-can already manage Jobs can manage Inklings without extra setup — override it
-if your game's staff structure keeps those separate.
+including the admin page/command. It defaults to `manage_apps`, the standard
+AresMUSH permission for character application management — override it if your
+game's staff structure assigns Inklings management to a different permission.
 
 ### Chargen Integration (Optional, On/Off)
 

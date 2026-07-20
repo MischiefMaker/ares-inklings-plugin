@@ -1,12 +1,11 @@
 inklings:
   shortcuts: {}
   # Permission required to manage inklings (start staff threads, GM notes,
-  # view/approve/reward any thread). Defaults to reusing the Jobs plugin's
-  # "manage_jobs" permission so anyone who manages jobs can also manage
-  # inklings. Change this to a different permission name if your game's
-  # staff structure differs. The permission must exist in your game's role
-  # configuration.
-  manage_permission: manage_jobs
+  # view/approve/reward any thread). Defaults to "manage_apps" which is the
+  # standard AresMUSH permission for character application/chargen management.
+  # Change this to a different permission name if your game's staff structure
+  # differs. The permission must exist in your game's role configuration.
+  manage_permission: manage_apps
 
   # Job category used for jobs Inklings creates to notify staff of
   # player activity (new threads, replies, deletions). Create this

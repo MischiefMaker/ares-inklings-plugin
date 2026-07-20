@@ -13,12 +13,12 @@ module AresMUSH
     # Whether this character can manage inklings as staff (send hints,
     # visions, nudges, hooks; audit/delete other people's threads).
     # Permission is configurable via the "manage_permission" setting in
-    # game/config/inklings.yml. Defaults to "manage_jobs" so anyone who
-    # manages jobs can also manage inklings. Override in config if your
-    # game's staff structure differs.
+    # game/config/inklings.yml. Defaults to "manage_apps" (the standard
+    # AresMUSH permission for character application management). Override
+    # in config if your game's staff structure differs.
     def self.can_manage_inklings?(enactor)
       return false if !enactor
-      permission = Global.read_config("inklings", "manage_permission") || "manage_jobs"
+      permission = Global.read_config("inklings", "manage_permission") || "manage_apps"
       enactor.has_permission?(permission)
     end
 

@@ -12,7 +12,7 @@
 # the Admin dropdown itself. The Inklings entry below carries its own
 # roles: too, matching the permission your game actually uses for
 # Inklings staff (see manage_permission in game/config/inklings.yml -
-# defaults to manage_jobs; change "manage_jobs" below to match if you've
+# defaults to manage_apps; change "manage_apps" below to match if you've
 # customized that setting). This is a convenience, not the real gate:
 # per-item roles: on a NESTED menu entry were not confirmed against
 # Ares source for this project (only the outer section-level roles: was)
@@ -34,7 +34,7 @@
     - title: Inklings
       route: admin-inklings
       roles:
-      - manage_jobs
+      - manage_apps
 
 # 4. Reload website config: load website
 #
@@ -52,6 +52,6 @@
 #     - title: Inklings
 #       route: admin-inklings
 #       roles:
-#       - manage_jobs
+#       - manage_apps
 #     - title: Manage
 #       route: manage
