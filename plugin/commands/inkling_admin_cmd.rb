@@ -41,7 +41,8 @@ module AresMUSH
           return
         end
 
-        list = inklings.map do |i|
+        list = []
+        inklings.each_with_index do |i, idx|
           title = i.title.to_s.blank? ? Inklings.kind_label(i.kind) : i.title
           owner = i.character ? i.character.name : "?"
           job_text = i.job ? "Job ##{i.job.id}" : t('inklings.no_linked_job')
@@ -51,8 +52,10 @@ module AresMUSH
           line1 = "##{i.id} [#{Inklings.color_type(i.kind.upcase)}] #{Inklings.color_title(title)} (#{i.status}) " \
             "#{Inklings.format_time(i.created_at, '%m/%d')} - #{job_text} - #{i.messages.to_a.size} msg(s)#{lock_text}"
           line2 = "    Owner: #{Inklings.color_name(owner)}  Access: #{access}"
-          [line1, line2]
-        end.flatten
+          list << line1
+          list << line2
+          list << "" unless idx == inklings.length - 1
+        end
 
         # per_page is in raw list-line units, not inkling units, since
         # each inkling contributes the two lines above - 50 lines gives
