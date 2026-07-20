@@ -1,0 +1,57 @@
+# WEBSITE TOP_NAVBAR SNIPPET - ADMIN INKLINGS MENU ENTRY
+#
+# FILE: game/config/website.yml
+#       (in your game folder, NOT the plugin folder)
+#
+# NOTE: This is a SHARED GAME FILE. The Admin dropdown (website.top_navbar,
+# an entry with "title: Admin") already exists on a standard install with
+# its own menu: list of other admin pages. ADD the entry below to that
+# existing menu: list - do not replace the whole top_navbar section.
+#
+# The "roles:" on the existing Admin entry (usually admin, coder) gates
+# the Admin dropdown itself. The Inklings entry below carries its own
+# roles: too, matching the permission your game actually uses for
+# Inklings staff (see manage_permission in game/config/inklings.yml -
+# defaults to manage_jobs; change "manage_jobs" below to match if you've
+# customized that setting). This is a convenience, not the real gate:
+# per-item roles: on a NESTED menu entry were not confirmed against
+# Ares source for this project (only the outer section-level roles: was)
+# - if it turns out not to filter on your install, the link just becomes
+# visible to any admin/coder rather than actually being reachable by them,
+# since InklingApi.list_all_inklings (and InklingAdminCmd on the MUSH
+# side) enforce manage_inklings independently either way. That server-
+# side check is the real permission boundary - this entry only ever
+# controls whether the link is shown.
+#
+# ===========================================================================
+# INSTALLATION
+# ===========================================================================
+#
+# 1. Open game/config/website.yml
+# 2. Find the top_navbar entry with "title: Admin"
+# 3. Add this entry to its menu: list:
+
+    - title: Inklings
+      route: admin-inklings
+      roles:
+      - manage_jobs
+
+# 4. Reload website config: load website
+#
+# ===========================================================================
+# EXAMPLE
+# ===========================================================================
+#
+#   - title: Admin
+#     roles:
+#     - admin
+#     - coder
+#     menu:
+#     - title: Jobs
+#       route: jobs
+#     - title: Inklings
+#       route: admin-inklings
+#       roles:
+#       - manage_jobs
+#     - title: Manage
+#       route: manage

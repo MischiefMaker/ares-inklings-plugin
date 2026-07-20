@@ -62,6 +62,47 @@ module AresMUSH
         }
       end
 
+      # Default page size for the admin list. Mirrors the MUSH admin
+      # command's own per-page (see InklingAdminCmd), which is in turn
+      # the same 25 every other paginated inkling list in this plugin
+      # uses (InklingsCmd, InklingListCmd via BorderedPagedListTemplate).
+      ADMIN_PAGE_SIZE = 25
+
+      # Web endpoint: list_all_inklings (admin)
+      # Every inkling in the game, regardless of owner/participant/group
+      # access - the admin management view. manage_inklings-gated here,
+      # not just hidden client-side; the MUSH equivalent (InklingAdminCmd)
+      # enforces the same check via Inklings.can_manage_inklings?, and both
+      # share Inklings.all_inklings_query for the underlying list so
+      # ordering/filtering can't drift between them.
+      def self.list_all_inklings(viewer, status_filter: "open", page: 1)
+        return { error: "Not authorized" } unless Inklings.can_manage_inklings?(viewer)
+
+        page = page.to_i
+        page = 1 if page < 1
+
+        inklings = Inklings.all_inklings_query(status_filter: status_filter)
+        total_pages = [(inklings.size.to_f / ADMIN_PAGE_SIZE).ceil, 1].max
+        page = total_pages if page > total_pages
+
+        page_slice = inklings.each_slice(ADMIN_PAGE_SIZE).to_a[page - 1] || []
+
+        {
+          inklings: page_slice.map { |i| format_inkling_summary(i, viewer, include_access: true) },
+          # Reuses creatable_type_options as-is - for a manage_inklings
+          # viewer, Inklings.creatable_kinds already returns every
+          # configured kind (see the can_manage_inklings? short-circuit at
+          # the top of that method), so this needs no admin-specific
+          # variant. Sent alongside the list (rather than a separate
+          # request) so the Add Inkling form's type picker is ready
+          # immediately, the same reasoning as the profile tab's typeInfo.
+          type_options: creatable_type_options(viewer),
+          page: page,
+          total_pages: total_pages,
+          total_count: inklings.size
+        }
+      end
+
       # POST /api/characters/:char_id/inklings
       def self.create_inkling(char_id, viewer, kind, text, title = nil)
         char = Character[char_id]
@@ -116,6 +157,31 @@ module AresMUSH
         Inklings.dispatch_inkling_created(inkling)
 
         { inkling: format_inkling_detail(inkling, viewer) }
+      end
+
+      # Web endpoint: create_inkling_by_name (admin page only)
+      # The admin page has no single "current character" to default the
+      # owner to - the operator picks one by name. This is a thin wrapper
+      # around create_inkling/share_inkling, not a parallel creation path:
+      # it resolves owner_name to a char_id and delegates, then (if
+      # shared_with is present) delegates again to the exact same
+      # share_inkling used by the "Share" button on every other inkling.
+      # No creation/sharing logic is duplicated here.
+      def self.create_inkling_by_name(owner_name, viewer, kind, text, title, shared_with: nil)
+        return { error: "Not authorized" } unless Inklings.can_manage_inklings?(viewer)
+
+        owner = Character.find_one_by_name(owner_name.to_s.strip)
+        return { error: "Character not found: #{owner_name}" } if !owner
+
+        result = create_inkling(owner.id, viewer, kind, text, title)
+        return result if result[:error]
+
+        if shared_with.to_s.present?
+          share_result = share_inkling(owner.id, result[:inkling][:id], viewer, shared_with)
+          result[:share_warning] = share_result[:error] if share_result && share_result[:error]
+        end
+
+        result
       end
 
       # Web endpoint: get_inkling
@@ -353,14 +419,21 @@ module AresMUSH
       # visible_messages/visible_rolls can be passed in when the caller
       # (format_inkling_detail) has already computed them, to avoid
       # doing the sort+filter pass over the same records twice.
-      def self.format_inkling_summary(inkling, viewer = nil, visible_messages: nil, visible_rolls: nil)
+      #
+      # include_access: adds the same shared_with shape format_inkling_detail
+      # already merges in (owner + participants + shared groups - see
+      # Inklings.shared_with_names/shared_group_list). Off by default since
+      # the per-character list views (profile tab, +inklings) don't need it
+      # and it's an extra query per row; the admin list view (which shows
+      # every inkling regardless of the viewer's own access) turns it on.
+      def self.format_inkling_summary(inkling, viewer = nil, visible_messages: nil, visible_rolls: nil, include_access: false)
         visible_messages ||= viewer ? visible_messages_for(inkling, viewer) : inkling.messages.to_a
         visible_rolls ||= viewer ? visible_rolls_for(inkling, viewer) : inkling.rolls.to_a
 
         tags = inkling.tags.to_s.split(",").map(&:strip).reject(&:empty?)
         kind_color = (Inklings.type_config[inkling.kind] || {})["color"] || "secondary"
 
-        {
+        summary = {
           id: inkling.id,
           kind: inkling.kind,
           kind_label: Inklings.kind_label(inkling.kind),
@@ -378,6 +451,8 @@ module AresMUSH
           tags_label: tags.join(", "),
           linked_job: inkling.job ? { id: inkling.job.id, status: inkling.job.status } : nil
         }
+        summary[:shared_with] = format_shared_with(inkling) if include_access
+        summary
       end
 
       def self.format_inkling_detail(inkling, viewer = nil)

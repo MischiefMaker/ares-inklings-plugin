@@ -1,0 +1,111 @@
+{{! Admin "every inkling in the game" page. Automatically installed to }}
+{{! ares-webportal/app/templates/ via plugin/install. Reuses the same }}
+{{! inklings-tab/inklings-list/inkling-item classes (and inklings.scss }}
+{{! rules) as the profile tab so this reads as an expanded version of it, }}
+{{! not a different interface - see webportal/templates/components/ }}
+{{! inklings-tab.hbs for the component this mirrors. }}
+
+<div class="p-3 inklings-tab">
+
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h2 class="mb-0">All Inklings (Admin)</h2>
+    <div class="btn-group" role="group">
+      <button type="button" class="btn btn-outline-secondary {{if (eq this.statusFilter "open") "active"}}" {{action "setStatusFilter" "open"}}>Open</button>
+      <button type="button" class="btn btn-outline-secondary {{if (eq this.statusFilter "closed") "active"}}" {{action "setStatusFilter" "closed"}}>Closed</button>
+      <button type="button" class="btn btn-outline-secondary {{if (eq this.statusFilter "all") "active"}}" {{action "setStatusFilter" "all"}}>All</button>
+    </div>
+    <button type="button" class="btn btn-primary" {{action "toggleNewForm"}}>
+      {{if this.showNewForm "Cancel" "+ New Inkling"}}
+    </button>
+  </div>
+
+  {{#if this.showNewForm}}
+    <div class="card mb-3">
+      <div class="card-body">
+        <div class="mb-3">
+          <label for="admin-inklings-owner" class="form-label">Owner (character name)</label>
+          {{input id="admin-inklings-owner" class="form-control" type="text" value=this.newOwnerName placeholder="Enter the owning character's name"}}
+        </div>
+        <div class="mb-3">
+          <label for="admin-inklings-shared" class="form-label">Shared With (optional, comma-separated character names)</label>
+          {{input id="admin-inklings-shared" class="form-control" type="text" value=this.newSharedWith placeholder="e.g. Alice, Bob"}}
+        </div>
+        <div class="mb-3">
+          <label for="admin-inklings-kind" class="form-label">Type</label>
+          <select id="admin-inklings-kind" class="form-select" onchange={{action "setNewKind" value="target.value"}}>
+            <option value="">-- Select a type --</option>
+            {{#each this.model.type_options as |t|}}
+              <option value={{t.kind}}>{{t.name}}</option>
+            {{/each}}
+          </select>
+        </div>
+        <div class="mb-3">
+          <label for="admin-inklings-title" class="form-label">Title</label>
+          {{input id="admin-inklings-title" class="form-control" type="text" value=this.newTitle placeholder="Enter a short title"}}
+        </div>
+        <div class="mb-3">
+          <label for="admin-inklings-text" class="form-label">Text</label>
+          {{textarea id="admin-inklings-text" class="form-control" value=this.newText placeholder="Enter the inkling text..." rows=4}}
+        </div>
+        <button type="button" class="btn btn-success" {{action "createInkling"}}>Create Inkling</button>
+      </div>
+    </div>
+  {{/if}}
+
+  {{#if (eq this.model.inklings.length 0)}}
+    <p class="text-center py-5 mb-0">No inklings match this filter.</p>
+  {{else}}
+    <ul class="inklings-list">
+      {{#each this.model.inklings as |inkling|}}
+        <li class="inkling-item border-bottom" {{action "openDetail" inkling}}>
+          <div class="inkling-header">
+            <h4 class="inkling-title">#{{inkling.id}}) {{inkling.title}}</h4>
+            <span class="badge text-bg-{{inkling.kind_color}}">{{inkling.kind_label}}</span>
+            <span class="badge {{if (eq inkling.status "open") "text-bg-success" "text-bg-danger"}}">{{inkling.status}}</span>
+            {{#if inkling.locked}}
+              <span class="badge text-bg-secondary">LOCKED</span>
+            {{/if}}
+          </div>
+          <div class="inkling-meta">
+            <span>{{inkling.message_count}} message{{if (eq inkling.message_count 1) "" "s"}}</span>
+            {{#if inkling.linked_job}}
+              {{#link-to "job" inkling.linked_job.id class="badge text-bg-secondary"}}Job #{{inkling.linked_job.id}}{{/link-to}}
+            {{else}}
+              <span class="badge text-bg-light text-muted">no linked job</span>
+            {{/if}}
+            <span class="inkling-date">{{local-date inkling.created_at 'MMM D, YYYY h:mm A'}}</span>
+          </div>
+          <div class="inkling-meta">
+            <span><strong>Owner:</strong> {{inkling.character_name}}</span>
+            {{#if inkling.shared_with.players.length}}
+              <span><strong>Access:</strong> {{inkling.shared_with.players}}</span>
+            {{/if}}
+            {{#if inkling.shared_with.groups.length}}
+              <span><strong>Groups:</strong> {{inkling.shared_with.groups}}</span>
+            {{/if}}
+          </div>
+        </li>
+      {{/each}}
+    </ul>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <button type="button" class="btn btn-outline-secondary" disabled={{eq this.page 1}} {{action "previousPage"}}>Previous</button>
+      <span>Page {{this.page}} of {{this.model.total_pages}} ({{this.model.total_count}} total)</span>
+      <button type="button" class="btn btn-outline-secondary" disabled={{eq this.page this.model.total_pages}} {{action "nextPage"}}>Next</button>
+    </div>
+  {{/if}}
+
+  {{! viewerId deliberately omitted - every viewerId comparison in the }}
+  {{! modal is only ever reached through an (or this.isStaff ...) or }}
+  {{! (and (not this.isStaff) ...) branch, and isStaff is always true on }}
+  {{! this page, so viewerId can never change the outcome. }}
+  {{inkling-detail-modal
+    inklingId=this.selectedInklingId
+    characterId=this.selectedCharacterId
+    isStaff=true
+    onClose=(action "closeDetail")
+    onUpdate=(action "inklingUpdated")
+    onDelete=(action "inklingDeleted")
+  }}
+
+</div>

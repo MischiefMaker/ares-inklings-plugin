@@ -970,15 +970,23 @@ Each of these happened on this project — concretely, not hypothetically.
 15. **A backlog audit found four real bugs by re-reading code, not by trusting
     old assumptions.** Four separate, unrelated defects, each worth its own
     lesson:
-    - **Web JSON error responses are useless if the frontend drops them.**
-      Every `public/*_api.rb` method here already returns a specific
-      `{ error: "..." }` on failure, but most Ember component actions did
-      `if (response.error) { return; }` — checking the field, then throwing
-      the message away instead of calling `this.flashMessages.danger(...)`.
-      The backend contract being right doesn't help if callers only check
-      `.error` to decide whether to *stop*, not to decide what to *tell the
-      user*. Grep every `.then((response) => {` block for a bare `return`
-      after an error check with no `flashMessages` call beside it.
+    - **(Later corrected — see the note below §9.) A claimed bug about
+      `if (response.error) { return; }` "silently swallowing" errors was
+      wrong, and contradicted a fact already documented earlier in this
+      exact guide.** §2 already records that `GameApi.requestOne`/
+      `requestMany` call `this.flashMessages.danger(response.error)`
+      themselves, unconditionally, before the caller's `.then()` even runs
+      — confirmed again directly against `ares-webportal/app/services/
+      game-api.js`. `if (response.error) { return; }` in a component action
+      is therefore the *correct*, complete pattern: the framework already
+      told the user: the component just needs to stop before treating an
+      error response as success. Adding a second `flashMessages.danger(...)`
+      call on top doesn't fix a missing message, it duplicates a message
+      that was never missing. **The actual lesson: when a candidate bug
+      looks exactly like something this guide already documented a fact
+      about, grep the guide itself before "fixing" it** — the fact was
+      sitting in §2 the entire time this session diagnosed and "fixed" the
+      same code.
     - **A MUSH-colorized field (ansi `%x` codes) reused as both MUSH output
       and stored data will leak raw escape sequences into any web JSON built
       from it.** `InklingRoll#result` is intentionally built with ansi codes
@@ -1014,6 +1022,65 @@ Each of these happened on this project — concretely, not hypothetically.
       that isn't handled by this plugin at all. Prefer that (deferring to a
       mechanism that already exists) over inventing a new "unknown switch"
       error command.
+      **Follow-up regression, caught before it shipped:** that `elsif
+      cmd.switch.present?` catch-all is only safe once *every* switch a
+      command legitimately handles is matched by an earlier branch.
+      `InklingsCmd` handles `/closed` and `/all` itself, inside `#handle`,
+      after being dispatched via the *unmatched-switch* fallthrough this
+      lesson just described as a bug - so those two switches had no
+      explicit branch in the dispatcher chain at all. Adding the catch-all
+      turned that "works by falling through" case into "silently rejected
+      as unrecognized." A command that reads its own switches in `#handle`
+      rather than being routed by them still needs every one of those
+      switches represented in the dispatcher, even switches whose *routing
+      logic* is "just get me to this class." Grep the target command for
+      every `cmd.switch_is?` call before adding a catch-all above it.
+
+16. **"Custom routes" for a new top-level admin page is not a Ruby hook -
+    it's two separate, already-established manual-snippet extension
+    points, one Ember-side and one config-side.** Building an admin page
+    (a genuinely new top-level route, not a tab within an existing page)
+    required tracing this from `ares-webportal` source directly, since
+    neither `aresmush/plugins/website/website.rb` nor `plugins/manage/
+    manage.rb` define anything named "custom routes":
+    - **The route itself**: `app/custom-routes.js` in `ares-webportal`
+      exports `setupCustomRoutes(router)`, a function body that's empty
+      except for a comment on stock installs - a game owner (or a
+      plugin's snippet) adds `router.route('your-route');` inside it.
+      This is the *same* manual-merge-into-a-shared-file pattern this
+      project already uses for `chargen-custom.js`/`.hbs` - not a new
+      convention to learn, just a new file it applies to.
+    - **The Admin dropdown entry**: confirmed directly against
+      `install/game.distr/config/website.yml` in the `aresmush` repo -
+      the navbar (`website.top_navbar` in game config) is a plain,
+      game-owner-edited YAML list, not a Ruby-side hook either. Its
+      "Admin" section (`roles: [admin, coder]`) already lists entries
+      like `- title: Manage / route: manage` - i.e. the bundled `manage`
+      plugin gets its own Admin-menu entry through this exact mechanism,
+      confirming it's the intended path for a plugin-contributed admin
+      page. Per-item `roles:` on a *nested* menu entry (as opposed to
+      the top-level section) was not independently confirmed in
+      `ares-webportal/app/controllers/application.js`'s `topNavbar`
+      computed property or the client-side `checkRoute` helper it calls
+      - worth verifying against a running game before assuming it filters
+      client-side navbar visibility; either way it is not the actual
+      permission boundary, since the endpoint itself must enforce that
+      independently regardless (see the Inklings admin page work, which
+      gates both `InklingApi.list_all_inklings` and `InklingAdminCmd`
+      directly rather than trusting the nav entry to hide anything).
+    - **The reuse win worth repeating elsewhere**: the admin page's "Add
+      Inkling, choose the owner" requirement needed zero new creation
+      logic - `InklingApi.create_inkling(char_id, viewer, ...)` already
+      took the owner as an explicit argument distinct from `viewer`
+      (staff creating on someone else's behalf was already a supported
+      case), and `share_inkling` already added participants by name. The
+      admin-only addition (`create_inkling_by_name`) is a thin
+      name-to-id wrapper around both, not a parallel implementation.
+      Before writing a new mutation for "staff does X on behalf of
+      character Y," check whether the existing single-character version
+      already threads a distinct owner/actor pair through - it often
+      already does, because MUSH commands almost always have to support
+      that same staff-acting-for-a-player case.
 
 ---
 

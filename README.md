@@ -44,7 +44,8 @@ Inklings gives staff a structured approval workflow for character development su
 
 ## Web Portal
 
-The plugin provides web portal integration for both character profiles and chargen:
+The plugin provides web portal integration for character profiles, chargen, and
+game-wide admin management:
 
 ### Profile Tab
 
@@ -104,6 +105,31 @@ rather than deleting one of these types.
 Unlike the profile components, the chargen form does **not** fully auto-install: its
 markup lives in shared web-portal files that other plugins may also extend, so it is
 provided as manual snippets (Step 3 in Installation).
+
+### Admin Inklings Page
+
+A single page (`/admin-inklings`) listing every Inkling in the game, regardless of
+owner, status, or who has access — the game-wide management counterpart to the
+per-character profile tab above. Reuses the same list styling, badges, status
+filter, and detail modal as the profile tab, so it reads as an expanded version
+of it rather than a separate interface; the only genuinely new piece is the
+Add Inkling form, which lets staff pick who owns the new Inkling (and optionally
+who else has access) by character name, instead of assuming the logged-in staff
+member is the owner the way the profile tab's form does.
+
+Each entry shows ID, type, title, status, date, linked Job (with a link, when
+one exists), message count, the owner, and everyone else with access — the same
+owner/participant/group-share access model the rest of the plugin already uses
+(see `Inklings.shared_with_names`), not something inferred from who's posted in
+the thread. The list is paginated server-side, newest first, 25 per page.
+
+Requires the same permission as every other staff-only Inklings action (see
+`manage_permission` under Configuration below) — enforced independently by the
+web endpoint and by the MUSH equivalent (`+inkling/admin`), not by hiding the
+page or its menu entry. Like the chargen form, this does **not** fully
+auto-install: registering the page's route and (optionally) its Admin dropdown
+entry both touch shared game files, so they're manual snippets (Step 4 in
+Installation).
 
 ## Installation
 
@@ -241,7 +267,43 @@ By default, players fill in their Secrets & Goals via the web portal chargen for
 
 **What this does:** Players can now fill in their Secret and Goal as part of the MUSH chargen flow, in addition to the web portal form. Either method (MUSH or web portal) saves to the same draft field, so players can start on one and finish on the other.
 
-### Step 4: Post-Installation Setup
+### Step 4: Enable the Admin Inklings Page (Optional, Manual)
+
+A single admin page listing every Inkling in the game, regardless of owner or
+status — for staff who need a management view rather than a per-character one.
+Skip this step if the MUSH command (`+inkling/admin` - see Staff Commands
+below) is enough for your game.
+
+**Step 4a: Register the web route (Required if using the admin page):**
+
+1. Open `custom-install/custom-routes.snippet.js` in this plugin
+2. Open `app/custom-routes.js` in your **ares-webportal** checkout
+3. Follow the instructions in the snippet file to add `router.route('admin-inklings');`
+   inside the existing `setupCustomRoutes` function
+4. Rebuild/restart the web portal (see "Restart the Web Portal" below)
+
+**Step 4b: Add it to the Admin dropdown (Optional):**
+
+Without this step the page still works at `/admin-inklings` for anyone with
+the required permission — this step only adds a visible link.
+
+1. Open `custom-install/website_top_navbar.snippet.yml` in this plugin
+2. Open `game/config/website.yml` in your **game** folder
+3. Follow the instructions in the snippet file to add an "Inklings" entry to
+   the existing "Admin" section's `menu:` list
+4. From the MUSH, run: `load website`
+
+**What this does:** Staff with the configured Inklings management permission
+(see `manage_permission` under Configuration below) get a paginated,
+searchable-by-status list of every Inkling in the game — owner, access list,
+linked Job, and message count per entry — plus an Add Inkling form that lets
+them pick the owner (and optionally who else has access) instead of assuming
+the logged-in staff member is the owner. Server-side authorization is
+enforced independently of the menu entry: the web endpoint and the MUSH
+command both check the same permission directly, so hiding or showing the
+menu link never changes who can actually use the page.
+
+### Step 5: Post-Installation Setup
 
 **In-game:**
 
@@ -259,7 +321,7 @@ Confirm that your Coder role has the `manage_game` permission (used by the `+ink
 
 ### Restart the Web Portal
 
-After completing any manual Steps 2 or 3 above, restart the web portal:
+After completing any manual Steps 2, 3, or 4 above, restart the web portal:
 
 ```
 website/deploy
@@ -286,6 +348,23 @@ types:
 - **player** — Players can create these
 - **staff** — Only staff can create these
 - **shared** — Both can create these
+
+### Permissions
+
+Who counts as Inklings staff (can create staff/shared types, manage other
+characters' threads, and use the admin management view/command) is
+configurable via a single setting:
+
+```yaml
+manage_permission: manage_jobs   # default
+```
+
+`manage_permission` names an existing Ares permission (see [Using Permissions
+in Code](https://aresmush.com/tutorials/manage/roles.html#using-permissions-in-code));
+anyone who holds it is treated as Inklings staff everywhere in the plugin,
+including the admin page/command. It defaults to `manage_jobs` so anyone who
+can already manage Jobs can manage Inklings without extra setup — override it
+if your game's staff structure keeps those separate.
 
 ### Chargen Integration (Optional, On/Off)
 
@@ -390,6 +469,7 @@ Requires the FS3Skills plugin to be installed.
 | `+inkling/unlock <id>` | Reopen a completed inkling for further editing |
 | `+inkling/reward <id>=<type>:<amount>` | Award XP, FS3 skills, or custom rewards (e.g., `xp:5` or `fs3_skill:Occult:1`) — XP is applied automatically; FS3 skills must be applied manually |
 | `+inkling/list <char>` | List all of a character's threads |
+| `+inkling/admin` | List every Inkling in the game, any owner (`/closed`, `/all` for status; see the Admin Inklings Page below for the web equivalent) |
 | `+inkling/reset` | Wipe the entire system (confirmation required; use only during testing/development) |
 
 See `help inklings` and `help managing inklings` in-game for full command details.
@@ -437,6 +517,10 @@ Staff can award rewards during or after review.
 - **Reference numbers (`seq`) aren't backfilled** — Threads created before this update won't have sequence numbers. If upgrading an existing game, you can run a migration to backfill them (ask a developer for help if needed).
 
 - **Reset is permanent** — `+inkling/reset` deletes all inkling data across all characters. Linked jobs are preserved. Use only during development/testing. Confirmation uses a one-time token (5-minute expiry).
+
+- **Admin page owner/shared-with fields are plain character-name text, not a searchable picker** — no reusable searchable multi-select character component was confirmed to exist in the Ares web portal, so the admin Add Inkling form uses the same free-text, comma-separated name pattern the "Share" feature already uses elsewhere in this plugin, resolved server-side by exact name match.
+
+- **Admin page requires manual route/menu snippet merging** — like chargen, registering the `/admin-inklings` route and its optional Admin dropdown entry both touch shared game files (`app/custom-routes.js`, `game/config/website.yml`), so they can't be auto-installed. See Step 4 in Installation.
 
 ## License
 

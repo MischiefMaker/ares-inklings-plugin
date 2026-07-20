@@ -85,7 +85,6 @@ export default Component.extend({
     }, null)
       .then((response) => {
         if (response.error) {
-          this.flashMessages.danger(response.error);
           return;
         }
         this.set('inklings', A(response.inklings || []));
@@ -131,7 +130,6 @@ export default Component.extend({
         text: this.newText
       }, null).then((response) => {
         if (response.error) {
-          this.flashMessages.danger(response.error);
           return;
         }
         this.inklings.unshiftObject(response.inkling);

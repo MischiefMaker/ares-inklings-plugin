@@ -214,6 +214,28 @@ module AresMUSH
       Inkling[id]
     end
 
+    # Every inkling in the game, regardless of owner/participant/group
+    # access, filtered by status and sorted newest-first - the same
+    # filter/sort shape InklingsCmd and InklingApi.get_inklings already
+    # use per-character, just without the character scoping. Shared by
+    # the admin MUSH command and the admin web endpoint so query/
+    # ordering logic isn't duplicated between them - each caller does
+    # its own pagination on top (BorderedPagedListTemplate for MUSH,
+    # a manual slice for the web JSON), since those are different
+    # rendering targets, but the underlying list is identical.
+    def self.all_inklings_query(status_filter: "open")
+      inklings = Inkling.all.to_a
+      inklings = case status_filter.to_s
+      when "closed"
+        inklings.select { |i| i.status == "closed" }
+      when "all"
+        inklings
+      else
+        inklings.select { |i| i.status == "open" }
+      end
+      inklings.sort_by { |i| time_value(i.created_at) }.reverse
+    end
+
     def self.time_value(value)
       return value if value.is_a?(Time)
       return Time.parse(value) if !value.to_s.blank?
@@ -788,6 +810,8 @@ module AresMUSH
         # Shared switch handlers for both singular and plural
         if cmd.switch_is?("list")
           return InklingListCmd
+        elsif cmd.switch_is?("admin")
+          return InklingAdminCmd
         elsif cmd.switch_is?("types")
           return InklingTypesCmd
         elsif cmd.switch_is?("delete")
@@ -844,6 +868,15 @@ module AresMUSH
             return InklingChargenDraftCmd
           end
           return InklingStartCmd
+        elsif cmd.switch_is?("closed") || cmd.switch_is?("all")
+          # Status filters on the enactor's own list (see the "+inklings/closed"
+          # / "+inklings/all" doc comment on InklingsCmd) - not meta-commands
+          # of their own. InklingsCmd re-checks cmd.switch_is? on these same
+          # values inside #handle to pick the filter; this branch only routes
+          # to it explicitly instead of relying on falling out of the chain
+          # unmatched, which the catch-all right below would otherwise turn
+          # into a wrongly-reported "unrecognized switch".
+          return InklingsCmd
         elsif cmd.switch.present?
           # A switch was given but matched none of the branches above (a
           # staff typo, an unsupported kind, etc). Without this, an
@@ -938,10 +971,14 @@ module AresMUSH
       case request.cmd
       when "inklings_get_inklings"
         return InklingsGetInklingsWebHandler
+      when "inklings_list_all"
+        return InklingsListAllWebHandler
       when "inklings_get_inkling"
         return InklingsGetInklingWebHandler
       when "inklings_create_inkling"
         return InklingsCreateInklingWebHandler
+      when "inklings_create_inkling_by_name"
+        return InklingsCreateInklingByNameWebHandler
       when "inklings_reply_to_inkling"
         return InklingsReplyToInklingWebHandler
       when "inklings_close_inkling"
