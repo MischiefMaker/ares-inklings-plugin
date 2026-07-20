@@ -40,6 +40,8 @@ The Inklings plugin is a complete character development system for AresMUSH. It 
 - Threaded inkling management (goals, secrets, plot hooks, character progression)
 - MUSH commands and web portal integration
 - Approval workflow, rewards, and auditing
-- AresMUSH plugin installer support via `.ares-manifest.yml`
+- Standard `plugin/install <url>` support (see ARES_PLUGIN_DEVELOPMENT_GUIDE.md's
+  note on why there's no `.ares-manifest.yml` - a speculative one was added and
+  then removed after confirming the real installer doesn't read it)
 
 For more details, see README.md.

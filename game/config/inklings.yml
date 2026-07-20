@@ -61,8 +61,8 @@ inklings:
   #
   # Note: rolls are NOT a type - they're a different kind of record
   # that can be attached to any inkling thread, and work differently
-  # enough (FS3/NPC/static, reroll-with-luck, etc.) that they aren't
-  # configurable here.
+  # enough (FS3/NPC/static rolls, private vs. visible, etc.) that they
+  # aren't configurable here.
   types:
     hint:
       category: staff
