@@ -74,4 +74,3 @@ en:
     chargen_checking_inklings: "Checking for %{types} Inklings."
     chargen_oops_missing: "%xr< Missing %{missing} >%xn"
     chargen_are_you_sure: "%xy< Missing %{missing} >%xn"
-    secret_and_goal: "Secret & Goal"

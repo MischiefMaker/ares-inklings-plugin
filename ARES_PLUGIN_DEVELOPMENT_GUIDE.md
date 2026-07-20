@@ -1239,6 +1239,39 @@ message" notifications couldn't tell the player which thread it was about.
 
 ---
 
+### Lesson 21: A fully-built backend endpoint with no caller is still an incomplete feature - and the README can claim it works anyway
+
+`RollsApi.reroll_with_luck`, its `inklings_reroll_with_luck` web endpoint, and
+the `InklingRoll` model's `reroll_count`/`luck_cost` fields are all real,
+working code - complete with an honest comment on the handler explaining
+exactly what the (never-written) frontend was supposed to do: call the game's
+own FS3 luck-reroll endpoint first, then pass the result here. Nothing about
+the backend code is wrong. But no `webportal/*.js` file ever calls it -
+`inkling-detail-modal.js` only has `addRoll()`, no reroll action - so the
+feature has literally no way to be triggered by a player. Meanwhile the
+README's feature list confidently advertised "Reroll with luck - ... use them
+to reroll attached dice from the web portal" as if it shipped, and the Known
+Limitations section had a bullet caveating *when* the button wouldn't work
+("if your game doesn't track luck points") instead of noting the button
+doesn't exist at all. Both readings were plausible from the backend code
+alone; only grepping the actual frontend for a caller settled it.
+
+- Backend-complete is not feature-complete. When auditing "does X work,"
+  grep the consuming side (webportal `*.js` for a `gameApi` call, a MUSH
+  command for a code path) - a well-implemented, well-commented Ruby method
+  proves nothing about whether anything actually invokes it.
+- A dispatch-table entry (`when "some_cmd" ... return SomeWebHandler`) is not
+  evidence of a caller either - that's still just server-side plumbing. The
+  only real evidence is a `gameApi.requestOne`/`requestMany` call naming that
+  exact `cmd` string somewhere in `webportal/`.
+- Don't let a Known Limitations bullet describe a *conditional* failure mode
+  ("won't work if your game lacks field X") when the real state is total
+  absence ("doesn't exist yet regardless of config") - the former reads as
+  "mostly works," which is a materially different, false claim to a game
+  admin deciding whether to rely on the feature.
+
+---
+
 ## 9. Plugin Review Checklist
 
 Before considering a plugin (or a plugin change) complete:

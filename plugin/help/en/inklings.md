@@ -32,7 +32,7 @@ Inklings are a system for tracking character development, plot threads, and impo
 Show all your open inklings. Use `/closed` to see closed threads, or `/all` to see everything.
 
 **`+inkling/types`**
-List every available inkling type with a short description, pulled live from the game's configuration.
+List every available inkling type with a short description.
 
 **`+inkling <id>`**
 View a specific inkling thread and all messages in it. Mark it as read when you view it. Each message and roll appears as its own block with a permanent reference number (like `14.3`) for pointing back at it later.

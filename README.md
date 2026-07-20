@@ -17,8 +17,7 @@ Inklings gives you a private space to develop your character through threaded co
 - **Request feedback** — Submit to staff and they can approve, request changes, or provide feedback
 - **Track character development** — Keep a permanent record of your character's arc and evolution
 - **Attach dice rolls** — Include FS3 rolls, custom rolls, or NPC rolls directly in your threads
-- **Share selectively** — Grant access to specific characters or groups who should see your thread
-- **Reroll with luck** — If your character has luck points, use them to reroll attached dice from the web portal
+- **Share selectively** — Grant access to specific characters (from the MUSH or the web portal) or demographics groups (MUSH only, via `+inkling/group`) who should see your thread
 
 ### For Staff
 
@@ -53,7 +52,7 @@ The Inklings tab provides a modern web interface for:
 
 - **Browsing your threads** — Full thread view with all messages, rolls, and sharing information
 - **Creating and editing** — Start new threads or add messages without command syntax
-- **Rolling dice** — Attach FS3, custom, or NPC rolls directly; reroll with luck points if available
+- **Rolling dice** — Attach FS3, custom, or NPC rolls directly
 - **Sharing threads** — Grant access to specific characters or demographics groups
 - **Submitting for review** — Submit your complete thread to staff with one action
 - **Staff reviews** — View submitted threads, approve/request changes, add GM notes, and grant rewards
@@ -510,7 +509,7 @@ Staff can award rewards during or after review.
 
 - **FS3 skill rewards require manual application** — When granting FS3 skill rewards via `+inkling/reward`, the plugin records the reward but does not apply it automatically. Staff must apply it manually using `+skill/level` or your game's FS3 skill system. The amount specified (e.g., `fs3_skill:Occult:1`) is the number of dots to add, not the new total.
 
-- **Luck point rerolls require `char.luck`** — If your game doesn't track luck points on the Character model, the web portal's reroll button won't work (the rest of rolls work fine).
+- **Reroll-with-luck has no web portal control yet** — The backend (`RollsApi.reroll_with_luck` and its `inklings_reroll_with_luck` web endpoint) exists and works, but no button in the web portal calls it yet - there is currently no way to trigger a luck reroll from either the MUSH or the web. This is a real gap, not a config issue.
 
 - **FS3 rolling is optional** — `+inkling/roll` reports rolling unavailable if FS3Skills isn't installed; other features work normally without it.
 
@@ -527,6 +526,8 @@ Staff can award rewards during or after review.
 - **Admin page owner/access dropdowns include every character, not just approved ones** — populated from the same core `characters` web request the Jobs plugin's own Submitter/Assigned To/Other Participants fields use (`select: "all"`), which doesn't filter by approval status. Server-side validation still applies regardless of what the dropdown offers.
 
 - **Admin page requires manual route/menu snippet merging** — like chargen, registering the `/admin-inklings` route and its optional Admin dropdown entry both touch shared game files (`app/custom-routes.js`, `game/config/website.yml`), so they can't be auto-installed. See Step 4 in Installation.
+
+- **Some commands are MUSH-only** — `+inkling/group` (sharing with a demographics group), `+inkling/unlock` (staff reopening a completed inkling), and `+inkling/requestunlock` (a player asking staff to reopen one) have no web portal equivalent yet. Individual character sharing (`+inkling/share`) is available on both.
 
 ## License
 
