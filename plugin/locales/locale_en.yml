@@ -40,7 +40,6 @@ en:
     group_already_set: "Those group specs are already set on this inkling."
     character_not_found: "Can't find: %{name}."
     not_a_participant: "%{name} does not have access to this inkling."
-    new_message_notice: "<inklings> You have a new inkling message. Use +inklings to view it."
     shared_with_title: "Shared With"
     shared_with_players: "Players: %{names}"
     shared_with_groups: "Groups: %{names}"

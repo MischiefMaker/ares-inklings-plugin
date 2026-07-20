@@ -122,7 +122,7 @@ module AresMUSH
         # Notify others in the thread if it wasn't private
         if roll.private.to_s != "true"
           Inklings.update_inkling(inkling, player_unread: "true") if inkling.character.id != viewer.id
-          Inklings.notify_player(inkling.character, "<inklings> A roll was rerolled in inkling ##{inkling.id}")
+          Inklings.notify_player(inkling.character, "<inklings> A roll was rerolled in inkling ##{inkling.id}. Use +inkling #{inkling.id} to view it.")
         end
 
         {

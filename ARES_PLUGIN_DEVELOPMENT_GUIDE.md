@@ -1208,6 +1208,37 @@ from inside the repo even after the report.
 
 ---
 
+### Lesson 20: `t()` locale strings only work from `CommandHandler` classes - plain module code needs its own text helper
+
+A shared "new inkling message" notice existed as a locale key
+(`inklings.new_message_notice`) and was correctly used via `t(...)` from three
+`CommandHandler` command classes. But two other call sites that fired the
+*exact same notification* - `Inklings.submit_inkling`'s job-reply mirror in
+`inklings.rb` and `InklingApi#reply_to_inkling` in `inklings_api.rb` - are
+plain module/class methods with no `t()` available (it's a `CommandHandler`
+instance method, not a global). Rather than surface an error, those two sites
+just hardcoded their own duplicate English string. One of the two duplicates
+also silently lost the inkling ID in the process ("Use +inklings to view it"
+instead of "Use +inkling #14 to view it"), so half the app's "you have a new
+message" notifications couldn't tell the player which thread it was about.
+
+- Don't assume a locale key is single-sourced just because it exists in
+  `locale_en.yml` - grep every call site and check whether each one is
+  actually reachable from a `CommandHandler` instance. If any aren't, the
+  locale key is not really centralizing anything.
+- For text needed by both `CommandHandler` classes and plain module/API code,
+  put a plain Ruby method on the module itself (e.g. `Inklings.notify_new_message(char, inkling)`,
+  next to `Inklings.notify_player`) rather than a locale key. It works
+  identically from both contexts and there's exactly one place to edit the
+  wording.
+- When auditing "does every notification about inkling #N actually include
+  #N," check not just whether the string interpolates an ID, but whether
+  *every* call site sending that logical notification is going through the
+  same code path. Near-identical hand-duplicated strings are exactly where
+  one copy quietly drops the detail the others kept.
+
+---
+
 ## 9. Plugin Review Checklist
 
 Before considering a plugin (or a plugin change) complete:

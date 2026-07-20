@@ -33,8 +33,7 @@ module AresMUSH
           is_staff: "true")
 
         Inklings.update_inkling(inkling, player_unread: "true")
-        Inklings.notify_player(inkling.character,
-          "<inklings> You have a new inkling message. Use +inkling #{inkling.id} to view it.")
+        Inklings.notify_new_message(inkling.character, inkling)
       end
     end
   end

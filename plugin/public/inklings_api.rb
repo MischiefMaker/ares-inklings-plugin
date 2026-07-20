@@ -151,7 +151,7 @@ module AresMUSH
           private_recipient_ids: "")
 
         if viewer.id != char.id
-          Inklings.notify_player(char, "<inklings> You have a new inkling.")
+          Inklings.notify_new_inkling(char, inkling)
         end
 
         Inklings.dispatch_inkling_created(inkling)
@@ -317,7 +317,7 @@ module AresMUSH
           Inklings.mirror_to_job(inkling, job_text, viewer)
           recipients = recipient_ids.to_s.split(",").map(&:strip).reject(&:empty?)
           notify_target = recipients.first ? Character[recipients.first] : inkling.character
-          Inklings.notify_player(notify_target || inkling.character, "<inklings> You have a new inkling message. Use +inklings to view it.")
+          Inklings.notify_new_message(notify_target || inkling.character, inkling)
         end
 
         { message: format_message(message) }
@@ -435,8 +435,7 @@ module AresMUSH
             character: target,
             added_at: Time.now)
 
-          Inklings.notify_player(target,
-            "<inklings> #{viewer.name} has shared an inkling with you. Use +inkling #{inkling.id} to view it.")
+          Inklings.notify_shared(target, inkling, viewer.name)
           added << target.name
 
           Inklings.dispatch_inkling_shared(inkling, target)

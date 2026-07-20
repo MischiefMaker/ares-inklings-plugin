@@ -334,8 +334,7 @@ module AresMUSH
         character: target,
         added_at: Time.now)
 
-      Inklings.notify_player(target,
-        "<inklings> #{Inklings.color_name(added_by.name)} has shared an inkling with you. Use +inkling #{inkling.id} to view it.")
+      Inklings.notify_shared(target, inkling, added_by.name)
 
       :added
     end
@@ -492,10 +491,11 @@ module AresMUSH
         update_inkling(inkling, player_unread: "true")
         # NOTE: t() is a CommandHandler helper and isn't available here,
         # since this runs from a plain module method, not a command
-        # instance. Using a plain string instead - swap in your game's
-        # actual locale lookup (e.g. Global.locales.t(...)) if you want
-        # this localized.
-        Inklings.notify_player(inkling.character, "<inklings> You have a new inkling message. Use +inklings to view it.")
+        # instance. notify_new_message builds its own plain string rather
+        # than going through the locale system for exactly this reason -
+        # swap in your game's actual locale lookup (e.g.
+        # Global.locales.t(...)) there if you want this localized.
+        Inklings.notify_new_message(inkling.character, inkling)
       end
     end
 
@@ -616,7 +616,7 @@ module AresMUSH
       Jobs.close_job(staff, inkling.job, close_message) if inkling.job
 
       update_inkling(inkling, locked: "true", approval_state: "approved")
-      notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been approved.")
+      notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been approved. Use +inkling #{inkling.id} to view it.")
 
       dispatch_inkling_approved(inkling, staff)
     end
@@ -687,7 +687,7 @@ module AresMUSH
       mirror_to_job(inkling, "Inkling unlocked. Player may now edit.", staff) if inkling.job
 
       update_inkling(inkling, locked: "false", approval_state: "needs_changes", player_unread: "true")
-      notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been unlocked. You can now make edits and resubmit.")
+      notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been unlocked. You can now make edits and resubmit - use +inkling #{inkling.id} to view it.")
     end
 
     # +inkling/reward - records a reward in the generic InklingReward
@@ -744,7 +744,7 @@ module AresMUSH
         private_recipient_ids: visibility == "all" ? "" : character.id,
         message_type: "reward")
 
-      notify_player(character, "<inklings> You have received a reward on inkling ##{inkling.id}: #{summary}.")
+      notify_player(character, "<inklings> You have received a reward on inkling ##{inkling.id}: #{summary}. Use +inkling #{inkling.id} to view it.")
 
       reward = InklingReward.find(inkling_id: inkling.id).last
       dispatch_inkling_rewarded(inkling, reward) if reward
@@ -752,6 +752,33 @@ module AresMUSH
 
     def self.notify_player(char, message)
       Login.emit_ooc_if_logged_in(char, message)
+    end
+
+    # Centralized "new message" notice - every place a reply/message lands
+    # on a thread the recipient didn't just author (player reply seen by
+    # staff via job mirror, staff reply, staff-started thread, job reply
+    # mirrored back into the thread) used to build this text separately,
+    # and two of those call sites couldn't reach the t() locale helper at
+    # all (plain module code, not a CommandHandler), so they silently drifted
+    # to a duplicate string with no ID. One helper, always includes the ID.
+    def self.notify_new_message(char, inkling)
+      notify_player(char, "<inklings> You have a new message on inkling ##{inkling.id}. Use +inkling #{inkling.id} to view it.")
+    end
+
+    # Centralized "shared with you" notice, for both individual shares
+    # (+inkling/share, admin Add Inkling web form) and group shares
+    # (+inkling/group) - same wording, just "with you" vs "with your group".
+    def self.notify_shared(char, inkling, sharer_name, with_group: false)
+      target = with_group ? "with your group" : "with you"
+      notify_player(char, "<inklings> #{color_name(sharer_name)} has shared an inkling #{target}. Use +inkling #{inkling.id} to view it.")
+    end
+
+    # "You have a new inkling" notice for inklings staff create on a
+    # player's behalf (+inkling/admin, admin web Add Inkling). Its own
+    # helper (rather than folding into notify_new_message) since it's a
+    # distinct event - a brand-new thread, not a message on an existing one.
+    def self.notify_new_inkling(char, inkling)
+      notify_player(char, "<inklings> You have a new inkling (##{inkling.id}). Use +inkling #{inkling.id} to view it.")
     end
 
     # Character names a private message's recipient IDs resolve to, for

@@ -122,7 +122,7 @@ module AresMUSH
         client.emit warning if warning
 
         if staff_started
-          Inklings.notify_player(subject, t('inklings.new_message_notice'))
+          Inklings.notify_new_message(subject, inkling)
         end
       end
     end

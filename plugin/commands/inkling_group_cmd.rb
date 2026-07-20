@@ -91,8 +91,7 @@ module AresMUSH
               Inklings.char_matches_group_spec?(c, spec) &&
               !Inklings.is_participant_explicit?(inkling, c)
           }.each do |char|
-            Inklings.notify_player(char,
-              "<inklings> #{Inklings.color_name(enactor.name)} has shared an inkling with your group. Use +inkling #{inkling.id} to view it.")
+            Inklings.notify_shared(char, inkling, enactor.name, with_group: true)
             notified << char.name
           end
         end
