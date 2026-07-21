@@ -45,8 +45,8 @@ end
 #
 # If you already have other checks, add ONLY these 2 lines into your method:
 #
-#   inkling_review = Inklings.get_app_review_issues(char)
-#   messages << inkling_review unless inkling_review.blank?
+   inkling_review = Inklings.get_app_review_issues(char)
+   messages << inkling_review unless inkling_review.blank?
 #
 # Add them BEFORE "return messages.join("\n")" but AFTER "messages = []"
 #
