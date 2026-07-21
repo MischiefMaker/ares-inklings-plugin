@@ -101,14 +101,6 @@ Planned enhancements for future releases. Organized by phase and release.
   - Staff: `+inkling/grant-inspiration <player>=<amount>` — manually award Inspirations
 - **Default**: disabled (0/off) so existing games are unaffected
 
-**MUSH App-Review Integration**
-- Extend the MUSH `/char/app <charname>` review screen to display inkling app-review status
-- Add app-review data (Red/Yellow/Green status for chargen drafts) inline in the command output
-- Requires official hook: `Chargen.get_app_review_details(char)`
-- Hook should return array of status strings (same format as web app-review shows)
-- Enables staff to see inkling approval requirements without switching to web portal
-- Related: see ARES_PLUGIN_DEVELOPMENT_GUIDE.md section "App-Review Integration Hook" for implementation pattern (extensibility for other plugins like SOUL)
-
 **In-Game Text Editor for Inkling Messages**
 - Add `+inkling/edit <id>` command that emulates BG/Edit pattern
 - Pulls inkling text into MUD's built-in text editor window (same as `+bg/edit`)
