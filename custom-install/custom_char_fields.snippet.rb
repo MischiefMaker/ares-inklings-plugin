@@ -20,11 +20,11 @@
 #
 #      def self.get_fields_for_viewing(char, viewer)
 #        fields = {}
-#        fields
+#        return fields
 #      end
 #
 # 2. Add the 2 lines below INSIDE the method, AFTER "fields = {}" and
-#    BEFORE the last "fields" line (the one right before "end"). Do not
+#    BEFORE the "return fields" line (the one right before "end"). Do not
 #    put them inside the { } braces themselves - "fields = {}" stays as-is,
 #    these are separate lines added below it. Your method should now look
 #    something like this:
@@ -33,7 +33,7 @@
 #        fields = {}
 #        fields[:inkling_types] = Inklings::InklingApi.creatable_type_options(viewer)
 #        fields[:can_manage_inklings] = Inklings.can_manage_inklings?(viewer)
-#        fields
+#        return fields
 #      end
 #
 # THE LINES TO ADD:
@@ -47,11 +47,11 @@ fields[:can_manage_inklings] = Inklings.can_manage_inklings?(viewer)
 #
 #      def self.get_fields_for_chargen(char)
 #        fields = {}
-#        fields
+#        return fields
 #      end
 #
 # 2. Add the 4 lines below INSIDE the method, AFTER "fields = {}" and
-#    BEFORE the last "fields" line (the one right before "end"). Your
+#    BEFORE the "return fields" line (the one right before "end"). Your
 #    method should now look something like this:
 #
 #      def self.get_fields_for_chargen(char)
@@ -60,7 +60,7 @@ fields[:can_manage_inklings] = Inklings.can_manage_inklings?(viewer)
 #        fields[:inkling_secret_text] = Website.format_input_for_html(char.inkling_secret_text.to_s)
 #        fields[:inkling_goal_title] = Website.format_input_for_html(char.inkling_goal_title.to_s)
 #        fields[:inkling_goal_text] = Website.format_input_for_html(char.inkling_goal_text.to_s)
-#        fields
+#        return fields
 #      end
 #
 # THE LINES TO ADD:
@@ -75,10 +75,10 @@ fields[:inkling_goal_text] = Website.format_input_for_html(char.inkling_goal_tex
 # 1. Find the save_fields_from_chargen method. It will look something like this:
 #
 #      def self.save_fields_from_chargen(char, chargen_data)
-#        []
+#        return []
 #      end
 #
-# 2. Add the 5 lines below INSIDE the method, BEFORE the final "[]" line
+# 2. Add the 5 lines below INSIDE the method, BEFORE the "return []" line
 #    (the one right before "end"). Your method should now look something
 #    like this:
 #
@@ -88,7 +88,7 @@ fields[:inkling_goal_text] = Website.format_input_for_html(char.inkling_goal_tex
 #        char.update(inkling_secret_text: Website.format_input_for_mush(data['inkling_secret_text'].to_s))
 #        char.update(inkling_goal_title: Website.format_input_for_mush(data['inkling_goal_title'].to_s))
 #        char.update(inkling_goal_text: Website.format_input_for_mush(data['inkling_goal_text'].to_s))
-#        []
+#        return []
 #      end
 #
 # THE LINES TO ADD:
