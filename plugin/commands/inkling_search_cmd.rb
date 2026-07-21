@@ -42,6 +42,13 @@ module AresMUSH
           list << nil unless idx == results.length - 1
         end
 
+        # per_page is in raw list-line units, not inkling units - each
+        # inkling contributes one content line plus (except the last) a
+        # nil separator, so 50 lines gives 25 inklings/page here, matching
+        # the web search endpoint's SEARCH_PAGE_SIZE (see InklingApi.search)
+        # even though the raw numbers differ. NOT the same per-inkling line
+        # count as InklingAdminCmd (which uses two content lines per
+        # inkling), so its "50" isn't directly comparable to this one.
         template = BorderedPagedListTemplate.new list, cmd.page, 50,
           t('inklings.search_title', :query => self.query)
         client.emit template.render

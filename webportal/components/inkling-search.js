@@ -14,6 +14,14 @@
 
 import Component from '@ember/component';
 import { inject as service } from '@ember/service';
+import { debounce } from '@ember/runloop';
+
+// How long to wait after the last keystroke before firing a live search -
+// the search itself scores every viewable inkling's tags/title/messages
+// server-side (there's no cheap indexed lookup to fall back to), so firing
+// on every keystroke would mean one full-dataset scoring pass per letter
+// typed. The Search button/Enter still fire immediately, bypassing this.
+const LIVE_SEARCH_DEBOUNCE_MS = 400;
 
 export default Component.extend({
   gameApi: service(),
@@ -38,34 +46,52 @@ export default Component.extend({
     this.set('results', []);
   },
 
+  // Does the actual fetch for whatever this.page/this.query already are -
+  // callers are responsible for setting page first (search() and
+  // queryChanged() reset it to 1 for a new query; nextPage/previousPage
+  // leave it alone).
+  performSearch() {
+    if (!this.query || !this.query.trim()) {
+      this.set('results', []);
+      this.set('showResults', false);
+      return;
+    }
+
+    this.set('searching', true);
+    this.gameApi.requestOne('inklings_search', {
+      query: this.query,
+      page: this.page || 1
+    }, 'home')
+      .then((response) => {
+        if (response.error) {
+          return;
+        }
+        this.set('results', response.inklings || []);
+        this.set('page', response.page || 1);
+        this.set('totalPages', response.total_pages || 0);
+        this.set('totalCount', response.total_count || 0);
+        this.set('showResults', true);
+      })
+      .finally(() => {
+        this.set('searching', false);
+      });
+  },
+
   actions: {
-    performSearch(e) {
+    // Search button / Enter key - fires immediately, always page 1 (a new
+    // explicit search shouldn't silently reuse whatever page a previous
+    // query had scrolled to).
+    search(e) {
       e?.preventDefault();
+      this.set('page', 1);
+      this.performSearch();
+    },
 
-      if (!this.query || !this.query.trim()) {
-        this.set('results', []);
-        this.set('showResults', false);
-        return;
-      }
-
-      this.set('searching', true);
-      this.gameApi.requestOne('inklings_search', {
-        query: this.query,
-        page: this.page || 1
-      }, 'home')
-        .then((response) => {
-          if (response.error) {
-            return;
-          }
-          this.set('results', response.inklings || []);
-          this.set('page', response.page || 1);
-          this.set('totalPages', response.total_pages || 0);
-          this.set('totalCount', response.total_count || 0);
-          this.set('showResults', true);
-        })
-        .finally(() => {
-          this.set('searching', false);
-        });
+    // Live-as-you-type - debounced, also resets to page 1 per keystroke
+    // burst since it's searching for new text.
+    queryChanged() {
+      this.set('page', 1);
+      debounce(this, this.performSearch, LIVE_SEARCH_DEBOUNCE_MS);
     },
 
     clearSearch() {
@@ -84,14 +110,14 @@ export default Component.extend({
     nextPage() {
       if (this.page < this.totalPages) {
         this.set('page', this.page + 1);
-        this.send('performSearch');
+        this.performSearch();
       }
     },
 
     previousPage() {
       if (this.page > 1) {
         this.set('page', this.page - 1);
-        this.send('performSearch');
+        this.performSearch();
       }
     }
   }

@@ -1,6 +1,6 @@
 <div class="card mb-3 inkling-search-card">
   <div class="card-body">
-    <form onsubmit={{action "performSearch"}}>
+    <form onsubmit={{action "search"}}>
       <div class="input-group">
         {{input
           class="form-control"
@@ -8,9 +8,9 @@
           value=this.query
           placeholder="Search inklings by tags, title, or text..."
           disabled=this.searching
-          onkeyup=(action "performSearch")
+          onkeyup=(action "queryChanged")
         }}
-        <button type="button" class="btn btn-outline-secondary" onclick={{action "performSearch"}} disabled={{this.searching}}>
+        <button type="button" class="btn btn-outline-secondary" onclick={{action "search"}} disabled={{this.searching}}>
           {{#if this.searching}}
             <span class="spinner-border spinner-border-sm me-2"></span>Searching...
           {{else}}
@@ -37,7 +37,7 @@
           <ul class="inklings-list">
             {{#each this.results as |inkling|}}
               <li class="inkling-item border-bottom">
-                <div class="inkling-header" role="button" {{action "openResult" inkling}} class="cursor-pointer">
+                <div class="inkling-header cursor-pointer" role="button" {{action "openResult" inkling}}>
                   <h5 class="inkling-title mb-1">#{{inkling.id}}) {{inkling.title}}</h5>
                   <span class="badge text-bg-{{inkling.kind_color}} me-2">{{inkling.kind_label}}</span>
                   <span class="badge {{if (eq inkling.status "open") "text-bg-success" "text-bg-danger"}}">{{inkling.status}}</span>

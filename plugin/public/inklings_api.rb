@@ -103,6 +103,13 @@ module AresMUSH
         }
       end
 
+      # Page size for search results. Currently the same number as
+      # ADMIN_PAGE_SIZE, but kept as its own constant deliberately - the two
+      # listings are tuned independently (search result rows are shorter
+      # than admin list rows), so retuning one shouldn't silently retune
+      # the other.
+      SEARCH_PAGE_SIZE = 25
+
       # GET /api/inklings/search
       # Search across visible inklings by query text. Results limited to what
       # the viewer can see. Searches tags first (highest priority), then titles,
@@ -114,10 +121,10 @@ module AresMUSH
         page = 1 if page < 1
 
         results = Inklings.search_inklings(query, viewer)
-        total_pages = [(results.size.to_f / ADMIN_PAGE_SIZE).ceil, 1].max
+        total_pages = [(results.size.to_f / SEARCH_PAGE_SIZE).ceil, 1].max
         page = total_pages if page > total_pages
 
-        page_slice = results.each_slice(ADMIN_PAGE_SIZE).to_a[page - 1] || []
+        page_slice = results.each_slice(SEARCH_PAGE_SIZE).to_a[page - 1] || []
 
         {
           inklings: page_slice.map { |i| format_inkling_summary(i, viewer) },

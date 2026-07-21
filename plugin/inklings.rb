@@ -542,6 +542,15 @@ module AresMUSH
     # so a GM note, another player's personal note, or a private message not
     # addressed to char can never surface or rank a thread via content the
     # viewer isn't allowed to read.
+    #
+    # Unlike all_inklings_query's callers (which slice to a page BEFORE
+    # formatting), this scores every viewable candidate before sorting -
+    # relevance ranking across pages inherently needs every candidate's
+    # score up front, there's no way to know what belongs on page 2 without
+    # first ranking everything. Fine at this plugin's scale; a game with a
+    # very large inkling volume searched by staff (viewable = every inkling
+    # in the game) would want a real search index instead of scoring
+    # in-process on every request.
     def self.search_inklings(query, char)
       return [] if query.to_s.strip.blank?
 
