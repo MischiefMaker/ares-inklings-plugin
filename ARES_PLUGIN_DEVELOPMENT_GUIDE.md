@@ -511,6 +511,56 @@ Bootstrap class name under a slightly different definition — that's strictly
 worse than using the real class, since it silently shadows the framework
 styling other pages rely on staying consistent.
 
+### CSS Classes for End-User Customization
+
+Every key web element should include a unique, semantic CSS class that end users can
+target with their own custom CSS — not for the plugin to style, but to allow game
+admins to customize the appearance without modifying plugin code or adding `!important`
+overrides.
+
+**Pattern:** Use a namespace prefix tied to the plugin or component, then a descriptive
+element name:
+
+```html
+<!-- Good: unique, semantic classes for customization hooks -->
+<div class="inkling-thread-list">
+  <div class="inkling-thread-row">
+    <h3 class="inkling-thread-title">{{ inkling.title }}</h3>
+    <span class="inkling-thread-status">{{ inkling.status }}</span>
+  </div>
+</div>
+```
+
+**Why this matters:**
+- Game admins can theme the plugin to match their site without CSS conflicts or
+  `!important` workarounds
+- Plugin CSS remains minimal and focused on layout; theming becomes the admin's
+  responsibility with clear hooks
+- A class like `inkling-thread-row` is stable and unlikely to conflict with
+  other plugins' class names
+- Avoid generic class names (`row`, `item`, `content`) that could collide with
+  Bootstrap, other plugins, or custom game CSS
+
+**For component root elements:** Always include a component-specific class:
+```js
+// inkling-detail-modal.js
+export default class InklingDetailModalComponent extends Component {
+  classNameBindings = ['inkling-detail-modal'];
+  // ...
+}
+```
+
+Then users can write:
+```scss
+.inkling-detail-modal {
+  background: $my_theme_color;
+}
+
+.inkling-thread-row {
+  border-left: 3px solid $my_accent;
+}
+```
+
 ### Data loading — server vs. client responsibilities
 
 | Belongs in Ruby (server) | Belongs in Ember (client) |
