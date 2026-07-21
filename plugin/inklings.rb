@@ -529,6 +529,59 @@ module AresMUSH
         .map(&:first)
     end
 
+    # Search across viewable inklings by query text, searching tags first,
+    # then titles, then message text (in priority order). Returns results
+    # sorted by relevance: tag matches highest, title matches next, text
+    # matches lowest. Only returns inklings the viewer can see.
+    def self.search_inklings(query, char)
+      return [] if query.to_s.strip.blank?
+
+      query_lower = query.to_s.strip.downcase
+
+      # Get all viewable inklings for this character
+      own = Inkling.find(character_id: char.id).to_a
+      shared = InklingParticipant.find(character_id: char.id).map(&:inkling).compact
+      group = Inkling.all.to_a.select { |i| is_group_participant?(i, char) }
+      viewable = (own + shared + group).uniq(&:id)
+
+      # Score each inkling based on matches (higher scores first)
+      scored = viewable.map do |inkling|
+        score = 0
+        matches = []
+
+        # Check tags (highest priority - score 100 per match)
+        tags = get_tags(inkling)
+        tags.each do |tag|
+          if tag.downcase.include?(query_lower)
+            score += 100
+            matches << { type: 'tag', value: tag }
+          end
+        end
+
+        # Check title (medium priority - score 50 per match)
+        title = inkling.title.to_s.downcase
+        if title.include?(query_lower)
+          score += 50
+          matches << { type: 'title', value: inkling.title }
+        end
+
+        # Check message text (lowest priority - score 10 per match)
+        inkling.messages.to_a.each do |msg|
+          if msg.text.to_s.downcase.include?(query_lower)
+            score += 10
+            matches << { type: 'message', value: msg.text }
+            break if matches.size > 3  # Limit to 3 message matches per inkling
+          end
+        end
+
+        score > 0 ? [inkling, score, matches] : nil
+      end.compact
+
+      # Sort by score descending
+      scored.sort_by { |(_i, score, _m)| -score }
+        .map { |inkling, _score, _matches| inkling }
+    end
+
     # The stable "2.1" style reference for a message or roll: inkling
     # ID, dot, per-thread sequence number. Use this (rather than the
     # underlying database ID) any time you need to point at a specific

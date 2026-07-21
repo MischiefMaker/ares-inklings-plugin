@@ -103,6 +103,31 @@ module AresMUSH
         }
       end
 
+      # GET /api/inklings/search
+      # Search across visible inklings by query text. Results limited to what
+      # the viewer can see. Searches tags first (highest priority), then titles,
+      # then message text.
+      def self.search(query, viewer, page: 1)
+        return { error: "Must provide a search query" } if query.to_s.strip.blank?
+
+        page = page.to_i
+        page = 1 if page < 1
+
+        results = Inklings.search_inklings(query, viewer)
+        total_pages = [(results.size.to_f / ADMIN_PAGE_SIZE).ceil, 1].max
+        page = total_pages if page > total_pages
+
+        page_slice = results.each_slice(ADMIN_PAGE_SIZE).to_a[page - 1] || []
+
+        {
+          inklings: page_slice.map { |i| format_inkling_summary(i, viewer) },
+          page: page,
+          total_pages: total_pages,
+          total_count: results.size,
+          query: query
+        }
+      end
+
       # POST /api/characters/:char_id/inklings
       def self.create_inkling(char_id, viewer, kind, text, title = nil, shared_with_ids: nil)
         char = Character[char_id]

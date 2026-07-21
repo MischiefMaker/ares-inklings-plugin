@@ -48,6 +48,10 @@
     }}
   {{/if}}
 
+  {{inkling-search
+    onSelect=(action "openDetail")
+  }}
+
   {{#if this.loading}}
     <p>Loading inklings...</p>
   {{else if (eq this.inklings.length 0)}}

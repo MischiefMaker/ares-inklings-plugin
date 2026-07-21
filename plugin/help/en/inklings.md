@@ -34,6 +34,9 @@ Show all your open inklings. Use `/closed` to see closed threads, or `/all` to s
 **`+inkling/types`**
 List every available inkling type with a short description.
 
+**`+inkling/search <text>`**
+Search across all your visible inklings. The search looks at tags first (highest priority), then inkling titles, then message text. Example: `+inkling/search romance` finds all inklings tagged "romance", then any with "romance" in the title, then any containing "romance" in the messages.
+
 **`+inkling <id>`**
 View a specific inkling thread and all messages in it. Mark it as read when you view it. Each message and roll appears as its own block with a permanent reference number (like `14.3`) for pointing back at it later.
 

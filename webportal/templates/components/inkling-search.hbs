@@ -1,0 +1,71 @@
+<div class="card mb-3 inkling-search-card">
+  <div class="card-body">
+    <form onsubmit={{action "performSearch"}}>
+      <div class="input-group">
+        {{input
+          class="form-control"
+          type="text"
+          value=this.query
+          placeholder="Search inklings by tags, title, or text..."
+          disabled=this.searching
+          onkeyup=(action "performSearch")
+        }}
+        <button type="button" class="btn btn-outline-secondary" onclick={{action "performSearch"}} disabled={{this.searching}}>
+          {{#if this.searching}}
+            <span class="spinner-border spinner-border-sm me-2"></span>Searching...
+          {{else}}
+            Search
+          {{/if}}
+        </button>
+        {{#if this.showResults}}
+          <button type="button" class="btn btn-outline-secondary" onclick={{action "clearSearch"}}>
+            Clear
+          </button>
+        {{/if}}
+      </div>
+    </form>
+
+    {{#if this.showResults}}
+      <div class="mt-3 inkling-search-results">
+        {{#if this.results.length}}
+          <div class="mb-2 text-muted small">
+            {{this.totalCount}} result{{if (eq this.totalCount 1) "" "s"}}
+            {{#if (gt this.totalCount 25)}}
+              (showing {{this.results.length}} per page)
+            {{/if}}
+          </div>
+          <ul class="inklings-list">
+            {{#each this.results as |inkling|}}
+              <li class="inkling-item border-bottom">
+                <div class="inkling-header" role="button" {{action "openResult" inkling}} class="cursor-pointer">
+                  <h5 class="inkling-title mb-1">#{{inkling.id}}) {{inkling.title}}</h5>
+                  <span class="badge text-bg-{{inkling.kind_color}} me-2">{{inkling.kind_label}}</span>
+                  <span class="badge {{if (eq inkling.status "open") "text-bg-success" "text-bg-danger"}}">{{inkling.status}}</span>
+                </div>
+                <div class="inkling-meta small text-muted">
+                  <span class="me-2">{{inkling.character_name}}</span>
+                  <span class="me-2">{{inkling.message_count}} msg{{if (eq inkling.message_count 1) "" "s"}}</span>
+                  <span>{{local-date inkling.created_at 'MMM D'}}</span>
+                </div>
+              </li>
+            {{/each}}
+          </ul>
+
+          {{#if (gt this.totalPages 1)}}
+            <div class="d-flex justify-content-between align-items-center mt-3 small">
+              <button type="button" class="btn btn-sm btn-outline-secondary" disabled={{eq this.page 1}} {{action "previousPage"}}>
+                Previous
+              </button>
+              <span>Page {{this.page}} of {{this.totalPages}}</span>
+              <button type="button" class="btn btn-sm btn-outline-secondary" disabled={{eq this.page this.totalPages}} {{action "nextPage"}}>
+                Next
+              </button>
+            </div>
+          {{/if}}
+        {{else}}
+          <p class="text-center text-muted py-3">No results found for "{{this.query}}"</p>
+        {{/if}}
+      </div>
+    {{/if}}
+  </div>
+</div>

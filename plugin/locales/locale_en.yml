@@ -64,6 +64,8 @@ en:
     tag_added: "Tag '%{tag}' added."
     tag_not_found: "The tag '%{tag}' is not on this inkling."
     tag_removed: "Tag '%{tag}' removed."
+    search_title: "Search Results for '%{query}'"
+    no_search_results: "No inkling results found."
     chargen_draft_saved: "Your %{label} has been saved. It'll become an inkling once your character is approved."
     chargen_draft_unavailable: "That's not available right now - chargen inklings may be disabled, or your character may already be approved."
     chargen_draft_already_approved: "Your character is already approved - use +inkling <id> to view your inklings."

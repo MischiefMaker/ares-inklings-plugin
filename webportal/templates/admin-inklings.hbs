@@ -28,6 +28,10 @@
     }}
   {{/if}}
 
+  {{inkling-search
+    onSelect=(action "openDetail")
+  }}
+
   {{#if (eq this.model.listing.inklings.length 0)}}
     <p class="text-center py-5 mb-0">No inklings match this filter.</p>
   {{else}}

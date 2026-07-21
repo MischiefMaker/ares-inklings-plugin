@@ -137,3 +137,24 @@ textarea.form-control {
     padding: 0;
   }
 }
+
+// Search component styles
+.inkling-search-card {
+  .input-group {
+    gap: 0.5rem;
+  }
+
+  .inkling-search-results {
+    border-top: 1px solid #dee2e6;
+    padding-top: 1rem;
+
+    .inkling-item {
+      cursor: pointer;
+      transition: background-color 0.15s ease-in-out;
+
+      &:hover {
+        background-color: color-mix(in srgb, currentColor 8%, transparent);
+      }
+    }
+  }
+}
