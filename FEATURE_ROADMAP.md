@@ -109,6 +109,14 @@ Planned enhancements for future releases. Organized by phase and release.
 - Enables staff to see inkling approval requirements without switching to web portal
 - Related: see ARES_PLUGIN_DEVELOPMENT_GUIDE.md section "App-Review Integration Hook" for implementation pattern (extensibility for other plugins like SOUL)
 
+**In-Game Text Editor for Inkling Messages**
+- Add `+inkling/edit <id>` command that emulates BG/Edit pattern
+- Pulls inkling text into MUD's built-in text editor window (same as `+bg/edit`)
+- Allows multi-line editing in-game without web portal
+- Useful for players on MUSH-only clients, or for quick edits
+- Should support editing both public messages (`+inkling/advance`) and private messages
+- Related: verify if BG plugin's text-editor integration is reusable or if pattern needs reimplementation
+
 ### Architecture / Internal
 
 **Audit Component Arguments**
