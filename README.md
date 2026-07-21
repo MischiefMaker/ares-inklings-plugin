@@ -211,9 +211,9 @@ if you don't need this feature, skip this entire step.
 
 1. Open `custom-install/custom_char_fields.snippet.rb` in this plugin
 2. Open `plugins/profile/custom_char_fields.rb` in your **aresmush** folder (not ares-webportal)
-3. Follow Steps 1, 3, 4, 5, and 6 in the snippet file and paste the code at the marked locations
-   (Step 2 is shared with the profile tab's type picker - see Step 2b above; if you already did that, 
-   just add the chargen-required-fields line to the same hash)
+3. Follow METHOD 2 and METHOD 3 in the snippet file and paste the code at the marked locations
+   (METHOD 1 is shared with the profile tab's type picker - see Step 2b above; if you already did that, 
+   you only need to add METHODS 2 and 3)
 4. Save the file
 5. Restart the MUSH server (see "Restart the MUSH Server" below).
 
@@ -422,10 +422,8 @@ goes fully dormant: no chargen tab, no draft fields, no approval warnings, and t
 profile/chargen custom fields return nothing. The rest of the plugin (commands, staff
 threads, rewards, the profile Inklings browser) is unaffected.
 
-The set of chargen types is intentionally **not** configurable — the web form and the
-character draft fields are built specifically for secret and goal. This keeps the design
-simple and prevents configuration errors. If you need different chargen behavior, disable
-chargen and let players create those Inklings normally after approval.
+Chargen types are fixed to secret and goal. If you need different types, disable chargen
+and let players create those Inklings normally after approval.
 
 ### Job Category
 

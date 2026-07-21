@@ -20,50 +20,18 @@
   - Do NOT change this value
 
   PROPERTY NAMES:
-  - The component uses: characterId, characterName, viewerId, isStaff, isApproved, isSelf, and typeInfo
-  - These are passed from: this.char.id, this.char.name, this.viewer.id, this.char.custom.can_manage_inklings,
-    this.char.is_approved, (eq this.char.id this.viewer.id), and this.char.custom.inkling_types
-  - If your profile-custom.hbs uses different property names, update them here
-  - Common alternatives: character instead of char, user instead of viewer, etc.
-  - Check the rest of your profile-custom.hbs to see what names are used
-  - characterName is used to display "Main Character" in the New Inkling
-    form on the profile version - if omitted, that field renders as an empty box.
+  - These must match the property names used in your profile-custom.hbs
+  - If your profile uses "character" instead of "char", update all instances
+  - See the rest of your profile-custom.hbs to find the correct names
 
-  WHY characterName IS NEEDED:
-  - In profile mode, the "New Inkling" form shows the profile being viewed as
-    a static "Main Character" label (not a dropdown). It reads this from the
-    characterName argument, not from any lookup of its own, so omitting it here
-    leaves that field blank even though everything else on the form still works.
+  REQUIRED BACKEND SETUP:
+  - You must also install the get_fields_for_viewing hook from
+    custom-install/custom_char_fields.snippet.rb (Step 2) or the type
+    dropdown will be empty and staff won't see their permission override.
 
-  WHY isStaff READS FROM char.custom.can_manage_inklings, NOT viewer.isStaff:
-  - There is no standard "isStaff" field on the Ares web portal's viewer object.
-  - can_manage_inklings is computed server-side via the plugin's own
-    Inklings.can_manage_inklings? permission check, exposed through
-    get_fields_for_viewing exactly like inkling_types below. This guarantees
-    the client-side value always matches the server's real permission decision.
-
-  TYPE PICKER DATA (typeInfo) AND STAFF OVERRIDE (isStaff):
-  - Both char.custom.inkling_types and char.custom.can_manage_inklings are
-    populated by custom_char_fields.snippet.rb's get_fields_for_viewing hook,
-    NOT fetched by the component itself - this must be installed too, or the
-    "New Inkling" type dropdown will be empty AND staff won't get their
-    approval override.
-  - See custom-install/custom_char_fields.snippet.rb, Step 2.
-
-  ABOUT THE COMPONENT:
-  {{inklings-tab}} renders the list and the "New Inkling" form. Clicking a
-  row opens inkling-detail-modal (a second component it invokes internally,
-  installed alongside it by plugin/install) - that's where messages, rolls,
-  sharing, submission, and all staff actions live, in an ember-bootstrap
-  modal. You only ever need to reference {{inklings-tab}} here; it wires up
-  the detail modal itself. Its only dependency on the rest of the profile page
-  is typeInfo (see above) - everything else it loads or sends itself via the
-  gameApi service.
-
-  COMPONENTS: inklings-tab.js and inkling-detail-modal.js are automatically
-  installed via the plugin installer - no manual file copying needed.
-  The web portal integration is entirely optional - if you're running a
-  MUSH-only game, you do not need this snippet or the components at all.
+  WEB PORTAL OPTIONAL:
+  - This component is entirely optional - if you're running MUSH-only,
+    you do not need this snippet or the related components at all.
 -->
 
 <div class="tab-pane fade" id="inklings-tab-pane">
