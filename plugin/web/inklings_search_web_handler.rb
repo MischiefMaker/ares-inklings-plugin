@@ -8,7 +8,7 @@ module AresMUSH
         InklingApi.search(
           request.args["query"],
           request.enactor,
-          request.args["page"] || 1)
+          page: request.args["page"] || 1)
       end
     end
   end
