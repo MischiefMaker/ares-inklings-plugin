@@ -141,6 +141,12 @@ Installation).
 
 ## Installation
 
+**Two folders, two checkouts:** Your server setup has two separate directories.
+**`aresmush`** is your game server checkout — it contains both `plugins/` (plugin
+code) and `game/` (your game's config files, e.g. `game/config/inklings.yml`).
+**`ares-webportal`** is the separate web portal checkout. Every step below tells
+you which one to open.
+
 ### Step 1: Install Core Plugin (Automatic)
 
 **From the MUSH, run:**
@@ -262,7 +268,7 @@ When a character is approved, the chargen draft fields (Secrets and Goals) must 
 By default, players fill in their Secrets & Goals via the web portal chargen form. If you want to also provide a dedicated stage in your MUSH chargen flow, you can add one:
 
 1. Open `custom-install/chargen_stage.snippet.yml` in this plugin
-2. Open `game/config/chargen.yml` in your **game** folder
+2. Open `game/config/chargen.yml` in your **aresmush** folder
 3. Follow the instructions in the snippet file to add the `secret_goal` stage to your chargen stages list
 4. Restart the MUSH server (see "Restart the MUSH Server" below).
 
@@ -289,7 +295,7 @@ Without this step the page still works at `/admin-inklings` for anyone with
 the required permission — this step only adds a visible link.
 
 1. Open `custom-install/website_top_navbar.snippet.yml` in this plugin
-2. Open `game/config/website.yml` in your **game** folder
+2. Open `game/config/website.yml` in your **aresmush** folder
 3. Follow the instructions in the snippet file to add an "Inklings" entry to
    the existing "Admin" section's `menu:` list
 4. From the MUSH, run: `load website`
@@ -344,7 +350,7 @@ for more detail, including what to do if the game won't shut down normally.
 
 ## Configuration
 
-Edit `game/config/inklings.yml` to customize the plugin. Key settings:
+Edit `game/config/inklings.yml` in your **aresmush** folder to customize the plugin. Key settings:
 
 ### Inkling Types
 
