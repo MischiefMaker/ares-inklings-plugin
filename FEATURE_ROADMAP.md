@@ -109,6 +109,13 @@ Planned enhancements for future releases. Organized by phase and release.
 - Should support editing both public messages (`+inkling/advance`) and private messages
 - Related: verify if BG plugin's text-editor integration is reusable or if pattern needs reimplementation
 
+**Inkling Details in App Review**
+- Extend `app/review <name>` command to display character's inkling secret and goal
+- Show full secret and goal text (title + description) inline in app/review output
+- Allows staff to see inkling chargen data without switching to web portal
+- Integrates with existing chargen approval workflow
+- Improves staff efficiency during character review process
+
 ### Architecture / Internal
 
 **Audit Component Arguments**
