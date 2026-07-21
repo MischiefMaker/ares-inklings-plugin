@@ -69,6 +69,38 @@ Planned enhancements for future releases. Organized by phase and release.
 - Provides parity with MUSH command set; staff don't need command line for common actions
 - Keep destructive actions (`delete`, `reset`) on MUSH only or behind confirmation dialogs
 
+**Inspirations — Optional Submission Currency**
+- Optional currency system ("Inspirations") to gatekeep and encourage quality submissions
+- **Accrual**: players earn Inspirations automatically at a configurable rate (e.g., 1/week, 5/month) via Cron job
+- **Extensibility**: other game systems (RP rewards, achievements, staff grants) can award Inspirations via generic `grant_inspiration` method
+- **Cost**: submitting an inkling costs a configurable amount per type (e.g., pitch = 1, plot = 4, goal = 2)
+- **Refund**: denials (`+inkling/needschanges`) or explicit rejections refund the spent Inspirations to the player
+- **Configuration** (in `game/config/inklings.yml`):
+  ```yaml
+  inspiration_enabled: false              # Enable/disable (default: off)
+  inspiration_accrual_amount: 1           # Points earned per cycle
+  inspiration_accrual_period:             # Cron format (e.g., weekly, monthly)
+    day_of_week: [Sat]
+    hour: [0]
+    minute: [0]
+  inspiration_submit_costs:               # Cost per inkling type
+    goal: 1
+    pitch: 2
+    plot: 4
+    # ... other types as defined in inklings.yml types:
+  ```
+- **Use Case**: staff on high-volume games can gatekeep submissions without rejecting them outright, while encouraging thoughtful work (players choose which threads are worth the resource cost)
+- **Web UI**:
+  - Display current Inspiration balance in profile/portal
+  - Show cost before submitting ("This will cost 2 Inspirations")
+  - Warn if player doesn't have enough (suggest pending accrual)
+  - Optional: show Inspiration accrual date/countdown
+- **MUSH Commands**:
+  - `+inspiration` / `+inspiration/balance` — check current balance and next accrual date
+  - `+inkling/submit <id>` — deducts cost if enabled (existing command, enhanced)
+  - Staff: `+inkling/grant-inspiration <player>=<amount>` — manually award Inspirations
+- **Default**: disabled (0/off) so existing games are unaffected
+
 ### Architecture / Internal
 
 **Audit Component Arguments**
