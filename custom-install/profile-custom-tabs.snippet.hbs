@@ -1,30 +1,27 @@
-{{!
+<!--
   PROFILE CUSTOM TABS SNIPPET
 
   Adds the "Inklings" tab to the character profile page tab list.
 
   FILE: ares-webportal/app/components/profile-custom-tabs.hbs
 
-  IMPORTANT: This file might be empty or minimal if you don't have other custom profile tabs.
+  INSTALLATION:
 
-  STEP 1: Check the file contents
   1. Open your game's ares-webportal/app/components/profile-custom-tabs.hbs
-  2. Look at what's in the file:
-     - If it's EMPTY or has only comments, use "OPTION A" below
-     - If it has existing <ul> with <li> entries, use "OPTION B" below
-
-  If the file is empty, copy ONLY this:
-
-  ---START COPY HERE---
-  <li class="nav-item">
-    <a class="nav-link" data-bs-toggle="tab" href="#inklings-tab-pane">Inklings</a>
-  </li>
-  ---END COPY---
+  2. Copy the code block below this comment:
+     - If the file is empty or nearly empty, paste it as-is
+     - If the file already has other tabs, add it after the closing </li> of
+       another tab entry (maintain the existing indentation and structure)
 
   IMPORTANT:
   - DO NOT change the href="#inklings-tab-pane" - it must match the
     id="inklings-tab-pane" in profile-custom.snippet.hbs
-  - Complete Step 2 of the README (Install Web Portal Components) first,
-    which includes copying inklings-tab.js and other web files.
-    The web portal integration is entirely optional.
-}}
+  - The Inklings web components (inklings-tab.js, inkling-detail-modal.js,
+    inkling-create-form.js, inklings-search.js) are automatically installed
+    via the plugin installer - no manual file copying needed.
+  - The web portal integration is entirely optional.
+-->
+
+<li class="nav-item">
+  <a class="nav-link" data-bs-toggle="tab" href="#inklings-tab-pane">Inklings</a>
+</li>
