@@ -33,6 +33,42 @@ Planned enhancements for future releases. Organized by phase and release.
 - Requires Scenes plugin to be installed; degrades gracefully if absent
 - Staff can remove scene links with: `+inkling/unlink-scene <inkling_id>=<scene_id>`
 
+**Clone Inkling to Multiple Players**
+- New command: `+inkling/clone <inkling_id>=<player1>,<player2>,<player3>`
+- Creates a fresh copy of the inkling for each listed player as the owner
+- Each clone is independent: separate threads, separate approvals, separate rewards
+- Useful for staff creating a shared prompt/challenge that multiple players develop independently
+- Example: staff creates a "first meeting" inkling, clones it to 3 players, each develops their character's unique perspective on the meeting
+- Web UI: button in detail view (staff only) to open clone dialog with character picker
+
+**Separate Rewards Per Player**
+- Allow granting rewards to different participants in a multi-player inkling
+- Current system awards to the owner only
+- New capability: staff can specify which participant(s) receive a reward via `+inkling/reward <inkling_id>=<player>:<reward_type>:<amount>`
+- Web equivalent: reward modal shows participant picker, option to award to one or multiple
+- Enables collaborative inklings to properly credit each participant's contribution
+
+**Tags Management on Web**
+- Current: tags can only be added/removed via MUSH commands (`+inkling/tag`, `+inkling/untag`)
+- Add tag UI to web detail view:
+  - Show existing tags as badges
+  - Input field or tag picker to add new tags
+  - Remove button/X on each tag badge
+- Players and staff can manage tags without MUSH client
+- Improves discoverability and organization on the web portal
+
+**Admin Commands on Web**
+- Extend web portal admin actions to include:
+  - `+inkling/reward` — award XP, FS3 skills, or custom rewards
+  - `+inkling/approve` — approve submitted threads
+  - `+inkling/needschanges` — send back for revisions
+  - `+inkling/unlock` — reopen completed threads
+  - `+inkling/delete` — delete threads (staff only)
+  - `+inkling/gm` — add GM notes
+- Web UI: action buttons in detail view (staff only) with appropriate forms/modals
+- Provides parity with MUSH command set; staff don't need command line for common actions
+- Keep destructive actions (`delete`, `reset`) on MUSH only or behind confirmation dialogs
+
 ### Architecture / Internal
 
 **Audit Component Arguments**
