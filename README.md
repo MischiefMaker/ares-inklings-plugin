@@ -178,11 +178,6 @@ If you want players to see the Inklings tab on character profiles:
 
 **Step 2b: Add the type-picker backend hook (Required)**
 
-The Inklings tab's "New Inkling" type dropdown is populated from the character
-payload (`char.custom.inkling_types`), not fetched separately by the component -
-this matches how other Ares plugins expose profile-tab reference data (e.g. the
-RPG plugin's `char.rpg.sheet`). Without this step the dropdown will be empty:
-
 1. Open `custom-install/custom_char_fields.snippet.rb` in this plugin
 2. Open `plugins/profile/custom_char_fields.rb` in your **aresmush** folder (not ares-webportal)
 3. Follow **Step 2** in the snippet file (the `get_fields_for_viewing` addition) and paste it at the marked location
