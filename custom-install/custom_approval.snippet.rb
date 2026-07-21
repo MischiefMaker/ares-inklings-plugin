@@ -9,12 +9,15 @@
 #
 # 1. Open aresmush/plugins/chargen/custom_approval.rb
 # 2. Find the custom_approval method
-# 3. Add this line inside the method:
+# 3. Add the line shown below inside the method
+# 4. Reload chargen: load chargen
+#
+# ===========================================================================
+# CODE TO ADD
+# ===========================================================================
 
 Inklings.convert_chargen_drafts(char)
 
-# 4. Reload chargen: load chargen
-#
 # ===========================================================================
 # EXAMPLE
 # ===========================================================================

@@ -1,4 +1,4 @@
-{{!
+<!--
   CHARGEN CUSTOM TABS SNIPPET
 
   Adds the "Secret & Goal" tab to the chargen step list.
@@ -8,19 +8,18 @@
   This file outputs ONLY the <li> tab elements for custom chargen fields.
   These get injected into the main chargen tab list.
 
-  STEP 1: Open your game's ares-webportal/app/components/chargen-custom-tabs.hbs
+  INSTALLATION:
 
-  STEP 2: Copy everything below (between the markers) - this is the ENTIRE contents
-  of chargen-custom-tabs.hbs for Inklings:
-
-  ---START COPY HERE---
-  <li role="presentation" class="nav-item"><a href="#chargen-inklings-pane" aria-controls="chargen-inklings-pane" role="tab" data-bs-toggle="tab" class="nav-link">Secret &amp; Goal</a></li>
-  ---END COPY---
+  1. Open your game's ares-webportal/app/components/chargen-custom-tabs.hbs
+  2. Copy the code block below this comment and paste it into your file:
+     - If the file is empty, paste it as-is
+     - If the file already has other tabs, add it after the closing </li> of
+       another tab entry
 
   IMPORTANT DETAILS:
 
   FILE STRUCTURE:
-  - This file contains ONLY <li> elements, no wrapper <ul>
+  - This file contains ONLY <li> elements, no wrapper
   - The <li> gets inserted into the main chargen tab list
   - If you have other custom tabs from other plugins, add their <li> here too
 
@@ -34,7 +33,7 @@
 
   IF YOU CUSTOMIZED chargen_required_types:
   If your game uses different inkling types, change the tab label to match.
-  Example: if chargen_required_types: [hooks], change "Secret &amp; Goal" to "Hooks"
+  Example: if chargen_required_types: [hooks], change "Secret & Goal" to "Hooks"
 
   BEFORE (secret and goal):
     <a href="#chargen-inklings-pane" ... >Secret &amp; Goal</a>
@@ -44,4 +43,6 @@
 
   Note: Keep href="#chargen-inklings-pane" and id="chargen-inklings-pane" the same,
         only change the display label to match your configured types.
-}}
+-->
+
+<li role="presentation" class="nav-item"><a href="#chargen-inklings-pane" aria-controls="chargen-inklings-pane" role="tab" data-bs-toggle="tab" class="nav-link">Secret &amp; Goal</a></li>

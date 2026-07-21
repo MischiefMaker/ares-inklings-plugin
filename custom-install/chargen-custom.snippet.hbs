@@ -1,4 +1,4 @@
-{{!
+<!--
   CHARGEN CUSTOM CONTENT SNIPPET
 
   Adds the Secret and Goal form fields to the chargen process.
@@ -8,39 +8,13 @@
   This file outputs ONLY the <div class="tab-pane"> element for the custom
   chargen fields. It gets injected into the main chargen tab-content container.
 
-  STEP 1: Open your game's ares-webportal/app/components/chargen-custom.hbs
+  INSTALLATION:
 
-  STEP 2: Find the closing </div> tag for the <div class="tab-content"> container
-
-  STEP 3: Copy the block below and paste it just BEFORE that closing </div>:
-
-  ---START COPY HERE---
-  <div class="tab-pane fade active show" id="chargen-inklings-pane">
-    <div class="cg-tip">
-      Add a secret and goal for your character. A secret is something that only your character knows and should be personal. A goal is something your character is working towards and should be actionable.
-    </div>
-
-    <section class="mb-4">
-      <h2>Secret</h2>
-      <div class="d-flex align-items-center gap-2 mb-3" style="width: 98%;">
-        <label for="chargen-secret-title" class="form-label mb-0">Title</label>
-        {{input id="chargen-secret-title" type="text" class="form-control" value=this.char.custom.inkling_secret_title placeholder="A short name for your secret"}}
-      </div>
-      {{textarea id="chargen-secret-text" class="form-control" value=this.char.custom.inkling_secret_text rows=5 placeholder="Write a secret your character is hiding here. What don't they want others to know?"}}
-    </section>
-
-    <hr class="my-4">
-
-    <section class="mt-4">
-      <h2>Goal</h2>
-      <div class="d-flex align-items-center gap-2 mb-3" style="width: 98%;">
-        <label for="chargen-goal-title" class="form-label mb-0">Title</label>
-        {{input id="chargen-goal-title" type="text" class="form-control" value=this.char.custom.inkling_goal_title placeholder="A short name for your goal"}}
-      </div>
-      {{textarea id="chargen-goal-text" class="form-control" value=this.char.custom.inkling_goal_text rows=5 placeholder="Write a goal your character is working toward here. What do they want to achieve?"}}
-    </section>
-  </div>
-  ---END COPY---
+  1. Open your game's ares-webportal/app/components/chargen-custom.hbs
+  2. Copy the code block below this comment and paste it into your file:
+     - If the file is empty, paste it as-is
+     - If the file already has other tab-pane divs, add it after the closing </div>
+       of another tab-pane entry
 
   IMPORTANT DETAILS:
 
@@ -78,4 +52,30 @@
   - These MUST match exactly what chargen-custom.snippet.js sends and what
     custom_char_fields.rb reads/writes. The chargen types are fixed to secret and
     goal - see README "Chargen Integration".
-}}
+-->
+
+<div class="tab-pane fade active show" id="chargen-inklings-pane">
+  <div class="cg-tip">
+    Add a secret and goal for your character. A secret is something that only your character knows and should be personal. A goal is something your character is working towards and should be actionable.
+  </div>
+
+  <section class="mb-4">
+    <h2>Secret</h2>
+    <div class="d-flex align-items-center gap-2 mb-3" style="width: 98%;">
+      <label for="chargen-secret-title" class="form-label mb-0">Title</label>
+      {{input id="chargen-secret-title" type="text" class="form-control" value=this.char.custom.inkling_secret_title placeholder="A short name for your secret"}}
+    </div>
+    {{textarea id="chargen-secret-text" class="form-control" value=this.char.custom.inkling_secret_text rows=5 placeholder="Write a secret your character is hiding here. What don't they want others to know?"}}
+  </section>
+
+  <hr class="my-4">
+
+  <section class="mt-4">
+    <h2>Goal</h2>
+    <div class="d-flex align-items-center gap-2 mb-3" style="width: 98%;">
+      <label for="chargen-goal-title" class="form-label mb-0">Title</label>
+      {{input id="chargen-goal-title" type="text" class="form-control" value=this.char.custom.inkling_goal_title placeholder="A short name for your goal"}}
+    </div>
+    {{textarea id="chargen-goal-text" class="form-control" value=this.char.custom.inkling_goal_text rows=5 placeholder="Write a goal your character is working toward here. What do they want to achieve?"}}
+  </section>
+</div>

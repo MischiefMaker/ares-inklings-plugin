@@ -10,10 +10,25 @@
 # added code to this method, KEEP their lines and add yours.
 #
 # ===========================================================================
-# COPY ONLY THIS METHOD BODY (not the comment block above):
+# METHOD TO INSTALL
 # ===========================================================================
 #
-# ---START COPY HERE---
+# Choose ONE of the options below depending on your current code state.
+#
+# ⚠️  CRITICAL: DO NOT PASTE ONLY THE ONE-LINE INTEGRATION ⚠️
+# ===========================================================================
+#
+# If you choose to merge into an existing method (Step 3, second option),
+# you MUST keep the full method structure including:
+#   - def self.custom_app_review(char)
+#   - messages = []
+#   - messages (at the end)
+#
+# Pasting ONLY the integration lines without these will cause errors.
+#
+# ===========================================================================
+# OPTION A: FULL METHOD REPLACEMENT (if method is empty)
+# ===========================================================================
 
 def self.custom_app_review(char)
   messages = []
@@ -24,21 +39,16 @@ def self.custom_app_review(char)
   return messages.join("\n")
 end
 
-# ---END COPY---
-#
-#
 # ===========================================================================
-# ⚠️  CRITICAL: DO NOT PASTE ONLY THE ONE-LINE INTEGRATION ⚠️
+# OPTION B: INTEGRATION INTO EXISTING METHOD
 # ===========================================================================
 #
-# If you choose to merge into an existing method (Step 3, second option),
-# you MUST keep the full method structure including:
-#   - def self.custom_app_review(char)
-#   - messages = []
-#   - messages (at the end)
+# If you already have other checks, add ONLY these 2 lines into your method:
 #
-# Pasting ONLY "messages.concat(...)" without these lines will cause the
-# error: "undefined local variable or method `messages'"
+#   inkling_review = Inklings.get_app_review_issues(char)
+#   messages << inkling_review unless inkling_review.blank?
+#
+# Add them BEFORE "return messages.join("\n")" but AFTER "messages = []"
 #
 # ===========================================================================
 # INTEGRATION STEPS
