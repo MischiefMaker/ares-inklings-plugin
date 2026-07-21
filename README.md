@@ -187,13 +187,6 @@ file for its other steps - Step 2 here can be done now regardless.)
 
 **Step 2c: Import the Inklings stylesheet (Required)**
 
-`plugin/install` copies `inklings.scss` into `ares-webportal/app/styles/`, but a
-copied `.scss` file is inert until something actually imports it - Ember's Sass
-build only compiles files that `app.scss` references. Without this step, the
-Inklings tab and modal will render using Bootstrap defaults only: no bullet
-removal on the list, no hover highlight, no header/metadata layout, no
-scrollable message pane.
-
 1. Open `ares-webportal/app/styles/app.scss`
 2. Add this line alongside the other `@use` lines already at the top of the file:
    ```scss
