@@ -23,6 +23,16 @@ Planned enhancements for future releases. Organized by phase and release.
 - Accessible to both profile tab (per-character) and admin page (system-wide)
 - Provides in-context help without requiring players to memorize or look up commands
 
+**Link Scenes to Inklings**
+- New command: `+inkling/link-scene <inkling_id>=<scene_id>/<summary>`
+- Players and staff can link related Scenes to an Inkling
+- Creates a clickable link in the thread that jumps directly to the Scene
+- Summary field (required) describes the relationship or relevance (e.g., "opening scene," "climax," "flashback")
+- Links display in both MUSH `+inkling <id>` output and web detail view
+- Web equivalent: button/form in Inkling detail modal to add scene links
+- Requires Scenes plugin to be installed; degrades gracefully if absent
+- Staff can remove scene links with: `+inkling/unlink-scene <inkling_id>=<scene_id>`
+
 ### Architecture / Internal
 
 **Audit Component Arguments**
