@@ -16,16 +16,15 @@
 #
 # METHOD 1: get_fields_for_viewing
 # ---------
-# 1. Find the get_fields_for_viewing method. It will look something like this:
+# This method populates custom fields visible in the character profile.
 #
-#      def self.get_fields_for_viewing(char, viewer)
-#        fields = {}
-#        return fields
-#      end
+# CHOOSE ONE OPTION based on your current code:
 #
-# 2. Add the 3 lines below INSIDE the method, AFTER "fields = {}" and
-#    BEFORE the "return fields" line. Your method should now look exactly
-#    like this:
+# ===========================================================================
+# OPTION A: METHOD IS EMPTY (only has "fields = {}" and "return fields")
+# ===========================================================================
+#
+# Replace the ENTIRE method with this:
 
 def self.get_fields_for_viewing(char, viewer)
   fields = {}
@@ -34,16 +33,39 @@ def self.get_fields_for_viewing(char, viewer)
   return fields
 end
 
-# METHOD 2: get_fields_for_chargen
-# ---------
-# 1. Find the get_fields_for_chargen method. It will look something like this:
+# ===========================================================================
+# OPTION B: METHOD ALREADY HAS OTHER CUSTOM FIELDS
+# ===========================================================================
 #
-#      def self.get_fields_for_chargen(char)
+# If other plugins (or your own code) already added fields to this method,
+# add ONLY these 2 lines inside the method, AFTER "fields = {}" and
+# BEFORE the "return fields" line:
+#
+#      fields[:inkling_types] = Inklings::InklingApi.creatable_type_options(viewer)
+#      fields[:can_manage_inklings] = Inklings.can_manage_inklings?(viewer)
+#
+# Your method should then look something like:
+#
+#      def self.get_fields_for_viewing(char, viewer)
 #        fields = {}
+#        fields[:some_other_field] = ...
+#        fields[:inkling_types] = Inklings::InklingApi.creatable_type_options(viewer)
+#        fields[:can_manage_inklings] = Inklings.can_manage_inklings?(viewer)
 #        return fields
 #      end
+
+# METHOD 2: get_fields_for_chargen
+# ---------
+# This method populates custom fields during character creation (chargen).
+# ONLY REQUIRED IF CHARGEN IS ENABLED (chargen_enabled: true in config).
 #
-# 2. Replace the ENTIRE method with the code below:
+# CHOOSE ONE OPTION based on your current code:
+#
+# ===========================================================================
+# OPTION A: METHOD IS EMPTY (only has "fields = {}" and "return fields")
+# ===========================================================================
+#
+# Replace the ENTIRE method with this:
 
 def self.get_fields_for_chargen(char)
   fields = {}
@@ -54,15 +76,43 @@ def self.get_fields_for_chargen(char)
   return fields
 end
 
+# ===========================================================================
+# OPTION B: METHOD ALREADY HAS OTHER CUSTOM FIELDS
+# ===========================================================================
+#
+# If other plugins (or your own code) already added fields to this method,
+# add ONLY these 4 lines inside the method, AFTER "fields = {}" and
+# BEFORE the "return fields" line:
+#
+#      fields[:inkling_secret_title] = Website.format_input_for_html(char.inkling_secret_title.to_s)
+#      fields[:inkling_secret_text] = Website.format_input_for_html(char.inkling_secret_text.to_s)
+#      fields[:inkling_goal_title] = Website.format_input_for_html(char.inkling_goal_title.to_s)
+#      fields[:inkling_goal_text] = Website.format_input_for_html(char.inkling_goal_text.to_s)
+#
+# Your method should then look something like:
+#
+#      def self.get_fields_for_chargen(char)
+#        fields = {}
+#        fields[:some_other_field] = ...
+#        fields[:inkling_secret_title] = Website.format_input_for_html(char.inkling_secret_title.to_s)
+#        fields[:inkling_secret_text] = Website.format_input_for_html(char.inkling_secret_text.to_s)
+#        fields[:inkling_goal_title] = Website.format_input_for_html(char.inkling_goal_title.to_s)
+#        fields[:inkling_goal_text] = Website.format_input_for_html(char.inkling_goal_text.to_s)
+#        return fields
+#      end
+
 # METHOD 3: save_fields_from_chargen
 # ---------
-# 1. Find the save_fields_from_chargen method. It will look something like this:
+# This method saves custom fields after chargen submission.
+# ONLY REQUIRED IF CHARGEN IS ENABLED (chargen_enabled: true in config).
 #
-#      def self.save_fields_from_chargen(char, chargen_data)
-#        return []
-#      end
+# CHOOSE ONE OPTION based on your current code:
 #
-# 2. Replace the ENTIRE method with the code below:
+# ===========================================================================
+# OPTION A: METHOD IS EMPTY (only has "return []")
+# ===========================================================================
+#
+# Replace the ENTIRE method with this:
 
 def self.save_fields_from_chargen(char, chargen_data)
   data = chargen_data['custom'] || {}
@@ -72,6 +122,31 @@ def self.save_fields_from_chargen(char, chargen_data)
   char.update(inkling_goal_text: Website.format_input_for_mush(data['inkling_goal_text'].to_s))
   return []
 end
+
+# ===========================================================================
+# OPTION B: METHOD ALREADY HAS OTHER CUSTOM FIELD SAVING
+# ===========================================================================
+#
+# If other plugins (or your own code) already save fields in this method,
+# add ONLY these 5 lines inside the method, AFTER "data = chargen_data['custom'] || {}"
+# and BEFORE the "return []" line:
+#
+#      char.update(inkling_secret_title: Website.format_input_for_mush(data['inkling_secret_title'].to_s))
+#      char.update(inkling_secret_text: Website.format_input_for_mush(data['inkling_secret_text'].to_s))
+#      char.update(inkling_goal_title: Website.format_input_for_mush(data['inkling_goal_title'].to_s))
+#      char.update(inkling_goal_text: Website.format_input_for_mush(data['inkling_goal_text'].to_s))
+#
+# Your method should then look something like:
+#
+#      def self.save_fields_from_chargen(char, chargen_data)
+#        data = chargen_data['custom'] || {}
+#        char.update(some_other_field: ...)
+#        char.update(inkling_secret_title: Website.format_input_for_mush(data['inkling_secret_title'].to_s))
+#        char.update(inkling_secret_text: Website.format_input_for_mush(data['inkling_secret_text'].to_s))
+#        char.update(inkling_goal_title: Website.format_input_for_mush(data['inkling_goal_title'].to_s))
+#        char.update(inkling_goal_text: Website.format_input_for_mush(data['inkling_goal_text'].to_s))
+#        return []
+#      end
 
 # ===========================================================================
 # DONE
