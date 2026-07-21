@@ -1,30 +1,22 @@
-{{!
+<!--
   PROFILE CUSTOM CONTENT SNIPPET
 
   Adds the Inklings tab content to the character profile page.
 
   FILE: ares-webportal/app/components/profile-custom.hbs
 
-  IMPORTANT: This file might be empty or minimal if you don't have other custom profile content.
+  INSTALLATION:
 
-  STEP 1: Check the file contents
   1. Open your game's ares-webportal/app/components/profile-custom.hbs
-  2. Look at what's in the file:
-     - If it's EMPTY or has only comments, use "OPTION A" below
-     - If it has existing <div class="tab-content"> with other <div class="tab-pane">, use "OPTION B" below
-
-  Copy ONLY this content:
-
-  ---START COPY HERE---
-  <div class="tab-pane fade" id="inklings-tab-pane">
-    {{inklings-tab characterId=this.char.id characterName=this.char.name viewerId=this.viewer.id isStaff=this.char.custom.can_manage_inklings isApproved=this.char.is_approved isSelf=(eq this.char.id this.viewer.id) typeInfo=this.char.custom.inkling_types}}
-  </div>
-  ---END COPY---
+  2. Copy the code block below this comment:
+     - If the file is empty or nearly empty, paste it as-is
+     - If the file already has other tab-pane divs, add it after the closing </div> of
+       another tab-pane entry (maintain the existing indentation and structure)
 
   IMPORTANT DETAILS:
 
   ID MATCHING:
-  - The id="inklings-tab-pane" below MUST match the href in profile-custom-tabs.snippet.hbs
+  - The id="inklings-tab-pane" MUST match the href in profile-custom-tabs.snippet.hbs
   - Do NOT change this value
 
   PROPERTY NAMES:
@@ -35,27 +27,20 @@
   - Common alternatives: character instead of char, user instead of viewer, etc.
   - Check the rest of your profile-custom.hbs to see what names are used
   - characterName is used to display "Main Character" in the New Inkling
-    form on the profile version (see WHY characterName IS NEEDED below) -
-    if omitted, that field renders as an empty box.
+    form on the profile version - if omitted, that field renders as an empty box.
 
   WHY characterName IS NEEDED:
   - In profile mode, the "New Inkling" form shows the profile being viewed as
-    a static "Main Character" label (not a dropdown - see the "Yes, please
-    ensure it is the profile owner and not the current user" note in
-    inkling-create-form.js). It reads this from the characterName argument,
-    not from any lookup of its own, so omitting it here leaves that field
-    blank even though everything else on the form still works.
+    a static "Main Character" label (not a dropdown). It reads this from the
+    characterName argument, not from any lookup of its own, so omitting it here
+    leaves that field blank even though everything else on the form still works.
 
   WHY isStaff READS FROM char.custom.can_manage_inklings, NOT viewer.isStaff:
-  - There is no standard "isStaff" field on the Ares web portal's viewer
-    object. An earlier version of this snippet assumed one existed
-    (viewer.isStaff) and the "+ New Inkling" button silently never showed
-    for staff as a result - it was reading an undefined property.
+  - There is no standard "isStaff" field on the Ares web portal's viewer object.
   - can_manage_inklings is computed server-side via the plugin's own
-    Inklings.can_manage_inklings? permission check (the same check the
-    create-inkling API enforces), exposed through get_fields_for_viewing
-    exactly like inkling_types below. This guarantees the client-side value
-    always matches the server's real permission decision.
+    Inklings.can_manage_inklings? permission check, exposed through
+    get_fields_for_viewing exactly like inkling_types below. This guarantees
+    the client-side value always matches the server's real permission decision.
 
   TYPE PICKER DATA (typeInfo) AND STAFF OVERRIDE (isStaff):
   - Both char.custom.inkling_types and char.custom.can_manage_inklings are
@@ -71,15 +56,16 @@
   installed alongside it by plugin/install) - that's where messages, rolls,
   sharing, submission, and all staff actions live, in an ember-bootstrap
   modal. You only ever need to reference {{inklings-tab}} here; it wires up
-  the detail modal itself.
-  Its only dependency on the rest of the profile page is typeInfo (see above) -
-  everything else it loads or sends itself via the gameApi service.
+  the detail modal itself. Its only dependency on the rest of the profile page
+  is typeInfo (see above) - everything else it loads or sends itself via the
+  gameApi service.
 
-  IMPORTANT: Before using this snippet, you must complete Step 2 of the README
-  (Install Web Portal Components), which includes copying inklings-tab.js and
-  inkling-detail-modal.js to your webportal, AND install
-  custom_char_fields.snippet.rb (Step 2 there) so char.custom.inkling_types is
-  populated. The web portal integration is entirely optional - if you're
-  running a MUSH-only game, you do not need this snippet or the components at
-  all.
-}}
+  COMPONENTS: inklings-tab.js and inkling-detail-modal.js are automatically
+  installed via the plugin installer - no manual file copying needed.
+  The web portal integration is entirely optional - if you're running a
+  MUSH-only game, you do not need this snippet or the components at all.
+-->
+
+<div class="tab-pane fade" id="inklings-tab-pane">
+  {{inklings-tab characterId=this.char.id characterName=this.char.name viewerId=this.viewer.id isStaff=this.char.custom.can_manage_inklings isApproved=this.char.is_approved isSelf=(eq this.char.id this.viewer.id) typeInfo=this.char.custom.inkling_types}}
+</div>
