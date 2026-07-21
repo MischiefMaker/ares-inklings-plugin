@@ -532,54 +532,51 @@ module AresMUSH
     # Search across viewable inklings by query text, searching tags first,
     # then titles, then message text (in priority order). Returns results
     # sorted by relevance: tag matches highest, title matches next, text
-    # matches lowest. Only returns inklings the viewer can see.
+    # matches lowest.
+    #
+    # Visibility mirrors can_view_inkling? elsewhere in this file: staff
+    # (can_manage_inklings?) search every inkling in the game, exactly like
+    # +inkling/admin and the admin web page they're searching from; everyone
+    # else is scoped to their own/shared/group inklings, same as
+    # unread_inklings_for. Message text is matched through can_see_message?
+    # so a GM note, another player's personal note, or a private message not
+    # addressed to char can never surface or rank a thread via content the
+    # viewer isn't allowed to read.
     def self.search_inklings(query, char)
       return [] if query.to_s.strip.blank?
 
       query_lower = query.to_s.strip.downcase
 
-      # Get all viewable inklings for this character
-      own = Inkling.find(character_id: char.id).to_a
-      shared = InklingParticipant.find(character_id: char.id).map(&:inkling).compact
-      group = Inkling.all.to_a.select { |i| is_group_participant?(i, char) }
-      viewable = (own + shared + group).uniq(&:id)
+      viewable = if can_manage_inklings?(char)
+        Inkling.all.to_a
+      else
+        own = Inkling.find(character_id: char.id).to_a
+        shared = InklingParticipant.find(character_id: char.id).map(&:inkling).compact
+        group = Inkling.all.to_a.select { |i| is_group_participant?(i, char) }
+        (own + shared + group).uniq(&:id)
+      end
 
       # Score each inkling based on matches (higher scores first)
       scored = viewable.map do |inkling|
         score = 0
-        matches = []
 
-        # Check tags (highest priority - score 100 per match)
-        tags = get_tags(inkling)
-        tags.each do |tag|
-          if tag.downcase.include?(query_lower)
-            score += 100
-            matches << { type: 'tag', value: tag }
-          end
-        end
+        # Tags (highest priority)
+        score += 100 * get_tags(inkling).count { |tag| tag.downcase.include?(query_lower) }
 
-        # Check title (medium priority - score 50 per match)
-        title = inkling.title.to_s.downcase
-        if title.include?(query_lower)
-          score += 50
-          matches << { type: 'title', value: inkling.title }
-        end
+        # Title (medium priority)
+        score += 50 if inkling.title.to_s.downcase.include?(query_lower)
 
-        # Check message text (lowest priority - score 10 per match)
+        # Message text (lowest priority) - only messages this viewer may see
         inkling.messages.to_a.each do |msg|
-          if msg.text.to_s.downcase.include?(query_lower)
-            score += 10
-            matches << { type: 'message', value: msg.text }
-            break if matches.size > 3  # Limit to 3 message matches per inkling
-          end
+          next unless can_see_message?(msg, char)
+          score += 10 if msg.text.to_s.downcase.include?(query_lower)
         end
 
-        score > 0 ? [inkling, score, matches] : nil
+        score > 0 ? [inkling, score] : nil
       end.compact
 
       # Sort by score descending
-      scored.sort_by { |(_i, score, _m)| -score }
-        .map { |inkling, _score, _matches| inkling }
+      scored.sort_by { |(_i, score)| -score }.map(&:first)
     end
 
     # The stable "2.1" style reference for a message or roll: inkling
@@ -1409,6 +1406,8 @@ module AresMUSH
         return InklingsRequestChangesWebHandler
       when "inklings_grant_reward"
         return InklingsGrantRewardWebHandler
+      when "inklings_search"
+        return InklingsSearchWebHandler
       end
       nil
     end

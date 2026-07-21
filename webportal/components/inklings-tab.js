@@ -128,6 +128,16 @@ export default Component.extend({
       this.set('selectedInklingId', id);
     },
 
+    // inkling-search hands back the full result object (it's shared with
+    // admin-inklings.js, whose openDetail needs inkling.character_id too,
+    // since admin rows span multiple characters) - unwrap to just the id
+    // before handing off to this tab's own openDetail, which is also
+    // called directly elsewhere with a bare id (see inklings-tab.hbs's
+    // {{action "openDetail" inkling.id}} on each list row).
+    openSearchResult(inkling) {
+      this.send('openDetail', inkling.id);
+    },
+
     closeDetail() {
       this.set('selectedInklingId', null);
     },
