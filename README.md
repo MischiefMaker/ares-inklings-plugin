@@ -56,9 +56,9 @@ The Inklings tab provides a modern web interface for:
 - **Creating and editing** — Start new threads or add messages without command syntax
 - **Rolling dice** — Attach FS3, custom, or NPC rolls directly
 - **Sharing threads** — Grant access to specific characters or demographics groups
-- **Submitting for review** — Submit your complete thread to staff with one action
-- **Requesting changes after approval** — Ask staff to reopen a completed inkling so you can edit it again
-- **Staff reviews** — View submitted threads, approve/request changes, add GM notes, grant rewards, and reopen (unlock) completed inklings
+- **Submitting for review** — Submit your complete thread to staff with one action; unlocks automatically after each approval, so you can submit again whenever you have the next development ready
+- **Requesting an unlock** — For an inkling still locked from before this behavior changed, ask staff to reopen it (new approvals unlock on their own and don't need this)
+- **Staff reviews** — View submitted threads, approve/request changes, add GM notes, and grant rewards
 
 The profile tab uses two components: `inklings-tab` (the list and "New Inkling" form) and 
 `inkling-detail-modal` (the full thread view, opened by clicking a row). Both install 
@@ -548,6 +548,8 @@ See `help inklings` and `help managing inklings` in-game for full command detail
 
 ## How the Approval Workflow Works
 
+Approving a round and closing an inkling are different things. An inkling can go through many rounds of submit/approve as an ongoing back-and-forth between player and staff - approval means "staff signed off on where this stands right now," not "this initiative is finished." Use `+inkling/close` when there's genuinely nothing more to do.
+
 1. **Draft** — Player creates an inkling and builds it freely. Staff cannot see it. Player can add messages, rolls, and share access anytime.
 
 2. **Submitted** — Player runs `+inkling/submit` to lock the thread and send it to staff as a job. The first submission includes the full thread; a resubmission after revisions only includes what's new since the last submission, not the whole thread again. Thread is now read-only for the player.
@@ -555,12 +557,12 @@ See `help inklings` and `help managing inklings` in-game for full command detail
 3. **Under Review** — Staff can:
    - Reply via `+inkling/advance` or `+inkling/private` for discussion
    - Add GM notes via `+inkling/gm`
-   - Approve via `+inkling/approve` to close the job and mark as approved
+   - Approve via `+inkling/approve` to close the job and mark this round as approved
    - Request changes via `+inkling/needschanges` to unlock the thread for revisions
 
 4. **If Sent Back for Changes** — Thread unlocks, player can edit and resubmit, repeating the review cycle
 
-5. **If Approved** — Thread unlocks, linked job closes. The review cycle is done, but the thread goes back to normal player mode - the player can keep adding to it and run `+inkling/submit` again later if they want another round of staff review.
+5. **If Approved** — Thread unlocks, linked job closes. This round is done, and the thread goes back to normal player mode - the player can keep building on it and run `+inkling/submit` again whenever they have the next development ready for staff. Repeat as many times as the story needs; run `+inkling/close` once there's nothing further to do.
 
 Staff can award rewards during or after review.
 

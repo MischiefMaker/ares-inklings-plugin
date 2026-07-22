@@ -16,7 +16,13 @@ module AresMUSH
     # be attached to any inkling.
     attribute :kind
     attribute :title
-    # "open" or "closed"
+    # "open" or "closed" - the inkling's own lifecycle, independent of
+    # approval_state below. A thread can go through many rounds of
+    # submit/approve (see approval_state) while staying open the whole
+    # time - approving one round doesn't mean the initiative is finished,
+    # just that staff signed off on where it's at right now. Set to
+    # "closed" (see close_inkling) only when there's nothing further to
+    # do on it at all.
     attribute :status
     # Comma-separated group specs (e.g. "Navy" or "Faction:Navy,Marines").
     # Any character whose group membership matches a spec has access, even
@@ -40,15 +46,19 @@ module AresMUSH
     # While locked, non-staff cannot add replies, private replies, or
     # rolls - see check_not_locked in the relevant commands.
     attribute :locked
-    # The review lifecycle for staff approval: "draft" (default -
+    # The status of the MOST RECENT round of staff review, not the
+    # inkling as a whole (see status above for that): "draft" (default -
     # player is still working on it, nothing sent to staff yet),
     # "submitted" (+inkling/submit was run - locked, awaiting a staff
     # decision), "needs_changes" (staff sent it back via
-    # +inkling/needschanges - unlocked, player can revise and
-    # resubmit), or "approved" (staff approved it via +inkling/approve -
-    # unlocked, this review cycle is done but the thread behaves like
-    # ordinary player mode again; +inkling/submit works again if the
-    # player wants another round of review). See
+    # +inkling/needschanges - unlocked, player can revise and resubmit),
+    # or "approved" (staff approved THIS round via +inkling/approve -
+    # unlocked, back to ordinary player mode). "Approved" is deliberately
+    # not a final state: many inklings are an ongoing back-and-forth
+    # between player and staff, each beat submitted and approved in turn,
+    # with more still to come. +inkling/submit works again immediately
+    # after an approval if the player has more to bring to staff -
+    # +inkling/close is the actual "nothing more to do here" signal. See
     # Inklings.submit_inkling / approve_inkling / request_changes.
     attribute :approval_state
 

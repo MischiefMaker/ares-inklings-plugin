@@ -998,23 +998,32 @@ module AresMUSH
     end
 
     # +inkling/approve - the single source of truth for approval.
-    # Staff approve the INKLING (not the job); this closes the linked
-    # job as a consequence via the same Jobs.close_job API +inkling/
-    # close already uses, so there is exactly one place a thread gets
-    # marked approved, never two separate approvals to keep in sync.
-    # There's no confirmed AresMUSH event fired when a Job's status
-    # changes, so the reverse direction (approving via the job itself
-    # auto-approving the inkling) isn't implemented.
+    # Staff approve the current round of the INKLING (not the job); this
+    # closes the linked JOB as a consequence, via the same Jobs.close_job
+    # API the (separate, inkling-level) +inkling/close command also uses -
+    # so there is exactly one place a round gets marked approved, never
+    # two separate approvals to keep in sync. There's no confirmed
+    # AresMUSH event fired when a Job's status changes, so the reverse
+    # direction (approving via the job itself auto-approving the inkling)
+    # isn't implemented.
     #
-    # Approval UNLOCKS the thread (approval_state stays "approved" as the
-    # durable record of the review outcome, but locked goes false, not
-    # true) - this review cycle is done, but the player can keep adding
-    # to the thread normally afterward, exactly like player mode before
-    # the first submission, and can +inkling/submit again later if they
-    # want another round of staff review. There is deliberately no
-    # separate "locked and approved" state left for new approvals to land
-    # in - +inkling/unlock (see unlock_inkling) still exists for reopening
-    # older threads that were approved before this change.
+    # Approval UNLOCKS the thread. Many inklings - especially
+    # staff-initiated ones - play out as an ongoing back-and-forth: staff
+    # nudge, player responds, staff approve that beat, player brings the
+    # next development, and so on, potentially many rounds. Approving one
+    # round is not the same as the initiative being finished - it's staff
+    # signing off on where things stand right now, not a verdict on the
+    # whole thread. So the thread goes right back to ordinary player mode
+    # afterward (approval_state stays "approved" as the durable record of
+    # that round's outcome, but locked goes false, not true), and
+    # +inkling/submit works again immediately if the player has more to
+    # bring to staff. +inkling/close (InklingCloseCmd / InklingApi.close_inkling -
+    # sets Inkling#status to "closed", a separate attribute from
+    # approval_state) is what actually signals nothing further is
+    # expected. There is deliberately no separate "locked and approved"
+    # state left for new approvals to land in - +inkling/unlock (see
+    # unlock_inkling) still exists for reopening older threads that were
+    # approved before this behavior changed.
     def self.approve_inkling(inkling, staff, message = nil)
       note = message.to_s.strip
 
