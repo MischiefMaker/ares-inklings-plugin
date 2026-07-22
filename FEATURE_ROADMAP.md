@@ -102,10 +102,10 @@ Planned enhancements for future releases. Organized by phase and release.
 - **Default**: disabled (0/off) so existing games are unaffected
 
 **In-Game Text Editor for Inkling Messages**
-- Add `+inkling/edit <id>` command that emulates BG/Edit pattern
-- Pulls inkling text into MUD's built-in text editor window (same as `+bg/edit`)
-- Allows multi-line editing in-game without web portal
-- Useful for players on MUSH-only clients, or for quick edits
+- Web: Add edit button to Inkling detail view for inline text editing
+- MUSH: Add `+inkling/edit <id>` command that emulates BG/Edit pattern, pulling text into MUD's built-in editor window
+- Allows multi-line editing both on web portal and for MUSH-only clients
+- Useful for quick edits without switching interfaces
 - Should support editing both public messages (`+inkling/advance`) and private messages
 - Related: verify if BG plugin's text-editor integration is reusable or if pattern needs reimplementation
 
