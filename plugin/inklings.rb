@@ -677,10 +677,17 @@ module AresMUSH
     # previously-linked one has since been closed, since mirroring
     # onto a closed job isn't useful - otherwise mirrors the message
     # onto the existing open job as a comment.
+    #
+    # Returns { job:, error: } rather than just the job (or nil) so
+    # callers that need to explain a failure - see submit_inkling, the
+    # only caller that currently checks it - can surface the real
+    # reason (e.g. an invalid job_category) instead of a generic
+    # message. The other two call sites (delete request flows) are
+    # fire-and-forget and ignore the return value entirely.
     def self.ensure_job(inkling, title, message, enactor)
       if inkling.job && inkling.job.status != "closed"
         mirror_to_job(inkling, message, enactor)
-        return inkling.job
+        return { job: inkling.job, error: nil }
       else
         # Add staff command instructions to the job body
         staff_instructions = "\n\n---\n\nSTAFF ACTIONS:\nUse +inkling/approve #{inkling.id} to approve.\nUse +inkling/needschanges #{inkling.id}=<feedback> to request revisions."
@@ -688,12 +695,12 @@ module AresMUSH
 
         result = Jobs.create_job(self.job_category, title, job_body, enactor)
         if result[:error]
-          Global.logger.error("Inklings: Failed to create job for inkling ##{inkling.id} - #{result[:error]}")
-          return nil
+          Global.logger.error("Inklings: Failed to create job for inkling ##{inkling.id} (submitted by #{enactor.name}) - #{result[:error]}")
+          return { job: nil, error: result[:error] }
         end
         job = result[:job]
         update_inkling(inkling, job: job)
-        return job
+        return { job: job, error: nil }
       end
     end
 
@@ -973,8 +980,12 @@ module AresMUSH
         body = compile_thread_text(inkling)
       end
 
-      job = ensure_job(inkling, title, body, submitter)
-      return { error: "Could not notify staff of this submission - please try again, or contact staff directly if the problem persists." } if !job
+      job_result = ensure_job(inkling, title, body, submitter)
+      job = job_result[:job]
+      if !job
+        reason = job_result[:error].to_s.blank? ? "" : " (#{job_result[:error]})"
+        return { error: "Could not notify staff of this submission#{reason} - please try again, or contact staff directly if the problem persists." }
+      end
 
       # Add a submission note to the thread itself, including the job reference
       InklingMessage.create(
@@ -1339,6 +1350,8 @@ module AresMUSH
           return InklingTagCmd
         elsif cmd.switch_is?("untag")
           return InklingUntagCmd
+        elsif cmd.switch_is?("search")
+          return InklingSearchCmd
         elsif chargen_required_types.any? { |k| cmd.switch_is?("view-#{k}") }
           return InklingViewChargenDraftCmd
         elsif all_kinds.any? { |k| cmd.switch_is?(k) }

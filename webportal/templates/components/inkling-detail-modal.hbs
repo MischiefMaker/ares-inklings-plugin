@@ -197,13 +197,13 @@
             {{/if}}
             <div class="d-flex align-items-center gap-3 flex-wrap">
               <div class="form-check">
-                <input type="checkbox" class="form-check-input" id="inklings-reply-private" checked={{this.replyIsPrivate}} onclick={{action "toggleReplyPrivate"}}>
+                {{input type="checkbox" class="form-check-input" id="inklings-reply-private" checked=this.replyIsPrivate change=(action "toggleReplyPrivate")}}
                 <label class="form-check-label" for="inklings-reply-private">
                   Private (only you and staff can see this)
                 </label>
               </div>
               <div class="form-check">
-                <input type="checkbox" class="form-check-input" id="inklings-reply-personal" checked={{this.replyIsPersonal}} onclick={{action "toggleReplyPersonal"}}>
+                {{input type="checkbox" class="form-check-input" id="inklings-reply-personal" checked=this.replyIsPersonal change=(action "toggleReplyPersonal")}}
                 <label class="form-check-label" for="inklings-reply-personal">
                   Personal Entry (visible only to you)
                 </label>

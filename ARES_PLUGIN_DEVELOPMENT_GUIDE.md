@@ -1543,6 +1543,101 @@ proven to work (this plugin's own `can_manage_inklings`/`inkling_types`):
 
 ---
 
+### Lesson 25: Ember's `{{input}}` helper adds an `ember-checkbox`/`ember-text-field` class that a raw `<input>` tag doesn't - losing it can silently break theme-dependent styling
+
+A web reply form's Private/Personal checkboxes rendered stretched full-width
+with broken label alignment (v3 Bug 001). Both had been converted from
+`{{input type="checkbox" checked=this.foo}}` to raw `<input type="checkbox"
+checked={{this.foo}} onclick={{action "toggle"}}>` in an earlier round, to
+attach a click handler for mutual-exclusivity - the markup itself
+(`.form-check` wrapper, `.form-check-input`/`.form-check-label` classes) was
+otherwise textbook Bootstrap and looked correct on inspection.
+
+**The tell:** a structurally-identical roll-private checkbox a few lines
+above, which still used `{{input}}`, was never reported broken. Same
+wrapper, same classes, same theme - the only difference was helper vs. raw
+tag. That made the helper's own output the prime suspect rather than the
+visible HTML/CSS.
+
+Ember's `{{input}}` component adds its own class (`ember-checkbox` for
+`type="checkbox"`, `ember-text-field` for text inputs) on top of whatever
+`class=` you pass - it doesn't replace it. A theme's CSS can end up keyed to
+that Ember-added class (intentionally or as an accident of what the theme
+author was actually looking at when they wrote the rule), so swapping to a
+raw HTML tag keeps every class you wrote explicitly but silently drops one
+you never knew was there.
+
+- When replacing an Ember `{{input}}`/`{{textarea}}` helper invocation with
+  raw HTML for more control (a custom event hook, `...attributes`, etc.),
+  don't assume the visible `class=` list is the complete picture - the
+  helper may be contributing its own class the surrounding theme depends on.
+- If a raw-tag replacement regresses styling and an equivalent `{{input}}`
+  invocation elsewhere in the same file still renders correctly, that's
+  strong evidence to revert to the helper rather than chase the CSS. The
+  helper's `change=`/`key-up=`/etc. closure-action hooks cover most of what
+  people reach for raw HTML to get anyway (see `{{input type="checkbox"
+  checked=this.foo change=(action "toggle")}}`).
+- Adding an explicit, defensive CSS rule for the property that broke (here:
+  pinning `.form-check-input { width: 1em; height: 1em; }`) is cheap
+  insurance against the same regression recurring for an unrelated reason
+  later, even after finding and fixing the actual root cause.
+
+---
+
+### Lesson 26: Changing a config default in code doesn't migrate servers that already have the old value baked into their setup
+
+`+inkling/submit` and the web Submit button both started failing with a
+generic "Could not notify staff of this submission" error (v3 Bugs 003/004)
+- confirmed as a *regression*, not a pre-existing bug, since the web path
+had worked in an earlier round.
+
+**Root cause, confirmed against real AresMUSH core source
+(`plugins/jobs/public/jobs_api.rb`):** `Jobs.create_job(category, ...)`
+validates `category` against `Jobs.categories` (the game's actually-created
+job categories) and returns `{ error: "Invalid job category ..." }` if it
+doesn't match - it does not auto-create missing categories. A prior "release
+polish" commit had changed this plugin's default `job_category` from
+`"INKLINGS"` to `"Plots"` (config default only, not a live-server value).
+Any server that had already run the plugin's *old* setup instructions
+(`job/createcategory INKLINGS`) but never separately run `job/createcategory
+Plots` would have every submission fail category validation from that
+commit onward - on both MUSH and web, since both call the same
+`Inklings.submit_inkling` → `ensure_job` → `Jobs.create_job` path, which is
+exactly why the two bugs shared one identical, generic error message.
+
+This compounds Lesson 18 (config auto-merge is unreliable) one level
+further: even a *code-level default* isn't something you can casually rename
+and expect existing installs to follow, because the thing the default names
+(a job category) is manually created, one-time, real state on the live
+server - not something `plugin/install` provisions. Changing what a default
+points at is effectively the same as changing the config value itself, for
+every server that's relying on the default rather than setting it
+explicitly.
+
+- Treat a default value that names external, manually-provisioned state
+  (a job category, a channel, a role) as a breaking change if you rename it,
+  even though it reads like an internal cleanup ("polish", "matches shipped
+  config"). Grep the README/install docs for the old value before renaming
+  a default - if setup instructions reference it, existing installs are
+  depending on it.
+- When a shared helper like `ensure_job` swallows a downstream error into a
+  bare `nil`/generic message, the two symptoms it produces on different
+  interfaces (MUSH command failure text, a web button that silently "does
+  nothing") can look unrelated until you trace both back to the one call
+  site. Preferring `{ result:, error: }`-shaped returns over sentinel `nil`
+  throughout a call chain - as `submit_inkling` already did one level up,
+  which is why threading it through `ensure_job` too was a small change - is
+  what makes that trace possible instead of guesswork.
+- A web action that discards `response.error` on failure without showing it
+  anywhere (`if (response.error) { return; }`) will present as "the button
+  doesn't work" for *any* server-side failure, not just this one. Once a
+  component already injects a `flashMessages` service and uses it for
+  client-side validation, reusing it for server-error responses is a
+  one-line fix with an outsized effect on how "broken" a regression looks
+  from the outside.
+
+---
+
 ## 9. Plugin Review Checklist
 
 Before considering a plugin (or a plugin change) complete:

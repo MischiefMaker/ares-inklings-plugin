@@ -223,3 +223,53 @@ Verified correct against source and against the Round 2 Bug 007 unified review U
 Approving an Inkling left it locked.
 
 Resolution: `approve_inkling` now unlocks the Inkling (`locked: "false"`) on approval, restoring normal player interaction. This reflects the clarified workflow model: approval signs off on the most recent round, not the Inkling as a whole - `+inkling/close` is the actual "nothing more to do" signal, allowing an ongoing back-and-forth between player and staff.
+
+---
+
+## Round 3 (v3)
+
+Defects discovered during the third round of alpha testing. Closed out as of this round - Round 4 starts a fresh Bug 001.
+
+### Bug 001 — Private and Personal Checkboxes Render Incorrectly
+
+**Status: Fixed (unconfirmed)**
+
+The Private and Personal Entry checkboxes in the web reply form rendered stretched, with incorrect dimensions and poor label alignment.
+
+Root cause: the Round 1 Bug 007 refactor that made Private/Personal mutually exclusive switched these two checkboxes from Ember's `{{input}}` helper to raw `<input>` tags (to attach an `onclick` handler). The structurally-identical roll-private checkbox a few lines above, which was never reported broken, still uses `{{input}}` - the strongest signal that the helper (which auto-adds an `ember-checkbox` class the theme likely keys off of) is what the raw tags were missing.
+
+Resolution: reverted both checkboxes to the `{{input}}` helper, using its `change=` closure-action hook to keep the existing mutual-exclusivity logic (`toggleReplyPrivate`/`toggleReplyPersonal`) instead of the raw `onclick` attribute. Also added an explicit `.form-check-input { width: 1em; height: 1em; flex-shrink: 0; }` rule scoped to `.inklings-tab` in `inklings.scss` as a defensive backstop against this class of regression recurring.
+
+### Bug 002 — `inkling/search` Not Recognized
+
+**Status: Fixed (unconfirmed)**
+
+`+inkling/search <text>` returned "Command ... is not recognized" even though `InklingSearchCmd` existed, was fully implemented, and was documented in the help file.
+
+Root cause: `InklingSearchCmd` was written but its switch was never added to `Inklings.get_cmd_handler`'s dispatch chain - the command class existed but nothing routed to it.
+
+Resolution: added `elsif cmd.switch_is?("search"); return InklingSearchCmd` to the dispatcher.
+
+### Bug 003 — Web Submit for Review Regressed
+
+**Status: Fixed (unconfirmed)**
+
+The web Submit for Review button stopped working; confirmed as a regression (previously worked).
+
+### Bug 004 — MUSH Submission Fails While Notifying Staff
+
+**Status: Fixed (unconfirmed)**
+
+`inkling/submit` failed with a generic "Could not notify staff of this submission" error.
+
+**Bugs 003 and 004 share one root cause**, per this round's instruction to refactor shared causes rather than patch symptoms: both the web Submit button and `+inkling/submit` route through the same `Inklings.submit_inkling` → `ensure_job` → `Jobs.create_job` path. `Jobs.create_job` validates its `category` argument against the game's actually-configured job categories and returns an error if it doesn't match (confirmed against AresMUSH core source) - and a prior "Release polish" commit (`e37b00f`) silently changed the plugin's default `job_category` from `"INKLINGS"` to `"Plots"`. A server that had already created the old `INKLINGS` category (per the plugin's own old setup instructions) but never separately ran `job/createcategory Plots` would have every submission fail category validation from that point on - explaining both the web regression and the MUSH failure with the same generic, unhelpful error message on both sides.
+
+Resolution:
+
+* `ensure_job` now returns `{ job:, error: }` instead of just a job-or-nil, so its one real caller (`submit_inkling`) can propagate the *actual* reason (e.g. "Invalid job category Plots. Valid options are: ...") instead of a generic message. The other two fire-and-forget call sites (delete-request flows) were unaffected since they already ignored the return value.
+* `submit_inkling`'s error message now includes that real reason in parentheses, surfaced automatically on both MUSH (`InklingSubmitCmd` already forwards `result[:error]` via `client.emit_failure`) and web.
+* The web `submitInkling` action now shows the returned error via the existing `flashMessages` service (matching the pattern already used elsewhere in this component) instead of silently doing nothing on failure - the missing piece that made the button look "broken" rather than just failing quietly.
+* Server-side logging (`Global.logger.error`) now includes the submitter's name alongside the inkling ID for faster diagnosis.
+* Added `plugin/spec/submit_inkling_spec.rb` as the requested regression coverage: pins both the success path (job linked, thread locked, submission marker left) and the failure path (real error reason surfaced, thread left unlocked/unsubmitted with no partial state, failure logged).
+
+This does not by itself guarantee `job/createcategory Plots` has been run on any given live server - that remains a documented one-time setup step (see README's Job Category section) - but a misconfigured category (or any other `Jobs.create_job` failure) is no longer a silent, undiagnosable dead end on either interface.

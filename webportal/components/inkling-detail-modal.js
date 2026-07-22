@@ -409,6 +409,7 @@ export default Component.extend({
         inkling_id: this.inklingId
       }, null).then((response) => {
         if (response.error) {
+          this.flashMessages.danger(response.error);
           return;
         }
         this.loadDetail();

@@ -467,6 +467,14 @@ The job category Inklings uses for submitted threads:
 job_category: Plots
 ```
 
+**If you change this value (or you're upgrading and it changed between versions you installed),
+the named category must actually exist in-game** (`job/createcategory <name>`) **before
+`+inkling/submit` or the web Submit button will work.** `Jobs.create_job` validates the category
+and rejects anything not already created - it does not create categories automatically. A
+mismatch here (e.g. the category was renamed in a plugin update but the old one is what your
+game actually has) surfaces as "Could not notify staff of this submission" on both MUSH and web,
+since both paths share the same submission code. See "Upgrading an Existing Install" above.
+
 ### Bonus XP (Optional)
 
 Configure optional periodic XP awards for characters who create certain inkling types each cron cycle:
@@ -511,6 +519,7 @@ Requires the FS3Skills plugin to be installed.
 | `+inkling/close <id>` | Close the thread |
 | `+inkling/delete <id>` | Request staff approval to delete (closes thread and creates staff job) |
 | `+inkling/requestunlock <id>=<reason>` | Request staff to reopen a completed inkling |
+| `+inkling/search <text>` | Search your visible inklings by tag, then title, then message text |
 | `+inkling/view-secret`, `+inkling/view-goal` | View your current chargen draft (unapproved characters only, MUSH-only) |
 
 ### Staff Commands

@@ -137,6 +137,16 @@ textarea.form-control {
     padding: 0;
   }
 
+  // Pin standard Bootstrap checkbox dimensions explicitly. Guards the
+  // Private/Personal reply-form checkboxes (and any other .form-check-input
+  // in the modal) against stretching to fill their flex-row container if
+  // a broader input rule ever applies again.
+  .form-check-input {
+    width: 1em;
+    height: 1em;
+    flex-shrink: 0;
+  }
+
   // Tags row inside the Shared With card - smaller than a standalone
   // badge so a handful of tags reads as compact inline metadata next to
   // Owner/Players/Groups, not a separate row of full-size chips.
