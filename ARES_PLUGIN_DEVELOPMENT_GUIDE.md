@@ -1485,6 +1485,64 @@ custom parser:**
 
 ---
 
+### Lesson 24: The web portal's profile page never sends a separate "viewer" object to the client - viewer-relative data must be computed server-side and threaded through the custom-fields hook
+
+`profile-custom.snippet.hbs` referenced `this.viewer.id` for two things - a
+`viewerId` argument and an `isSelf` comparison
+(`eq this.char.id this.viewer.id`) - since the snippet was first written.
+Both were silently broken the entire time: a non-staff, fully-approved
+character's own "New Inkling" button never appeared, because `isSelf` could
+never be true.
+
+**Confirmed against the user's real, live parent template** (the one that
+invokes this component): only `@char` and `@game` are ever passed down -
+`<ProfileCustom @char={{this.char}} @game={{this.game}}
+@onReloadChar={{this.reloadChar}} />`. No `@viewer`/`@character`-as-viewer
+argument exists anywhere in the chain. This matches the base `ares-webportal`
+source (`app/templates/char.hbs`) exactly: every profile sub-component
+(`ProfileDemographics`, `ProfileSystem`, etc.) receives `@char` only.
+Viewer-relative permissions are computed server-side and baked directly
+into the `char` payload instead (`char.can_manage`, `char.can_approve`) -
+Ares' own pattern is "the server decides what the viewer is allowed to see
+and hands the client a pre-resolved answer," not "hand the client both
+objects and let it compare them."
+
+**Same failure shape as Lesson 19 and the `is_approved` bug two lessons
+above it**: a client-side reference to something that doesn't exist renders
+as empty/`undefined`, not an error - so `this.viewer.id` produced no visible
+symptom, no console warning, nothing to grep for. It just silently made
+every comparison against it false, forever, for every character.
+
+**The fix, and the general pattern it establishes:** the `get_fields_for_viewing(char, viewer)`
+hook already receives BOTH the profile subject and the viewer as Ruby
+parameters, server-side - the server has known "who's asking" the entire
+time. Route that data through the same `custom` fields channel already
+proven to work (this plugin's own `can_manage_inklings`/`inkling_types`):
+`fields[:viewer_id] = viewer ? viewer.id : nil`, then reference
+`this.char.custom.viewer_id` client-side, never a raw `this.viewer`.
+
+- **Before assuming ANY object is available in an Ember template just
+  because it would be convenient, find the actual invocation that renders
+  that template and read its argument list.** A plausible-sounding
+  property name (`viewer`, alongside an already-real `char`) is not
+  evidence it exists - `char` being real proved nothing about `viewer`.
+- **If a value the client needs isn't in the payload the base game sends,
+  the fix is almost always "compute it server-side and add it to `custom`
+  via `get_fields_for_viewing`"** - not inventing a new API endpoint, not
+  trying to derive it from other client-side data. This hook is the
+  general-purpose escape hatch for exactly this class of problem.
+- When a bug report comes from a live, already-installed site, and the
+  repo's own reference copy of a file looks correct: **ask for the literal
+  rendered HTML** (or a temporary inline debug line printing the suspect
+  properties: `{{this.isStaff}} {{this.isSelf}} {{this.isApproved}}`)
+  before proposing more fixes blind. A real boolean `false` renders as the
+  text "false"; `undefined`/`null` render as nothing - that distinction
+  alone (as it did here) can immediately rule out entire categories of
+  hypothesis (stale install vs. wrong field name vs. missing object)
+  without needing shell access to the user's server at all.
+
+---
+
 ## 9. Plugin Review Checklist
 
 Before considering a plugin (or a plugin change) complete:
