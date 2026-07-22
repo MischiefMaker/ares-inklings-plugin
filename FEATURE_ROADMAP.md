@@ -69,6 +69,14 @@ Planned enhancements for future releases. Organized by phase and release.
 - Provides parity with MUSH command set; staff don't need command line for common actions
 - Keep destructive actions (`delete`, `reset`) on MUSH only or behind confirmation dialogs
 
+**Admin Visibility: Submitted Status Indicator and Filter**
+- Add visual indicator (e.g., `*` or flag icon) on web admin list and `+inkling/admin` MUSH output for inklings awaiting staff response
+- Extend admin list view/command with status filter options: `open`, `closed`, `submitted`, `all`
+- Web: dropdown or button group to filter by status (default shows all open + submitted)
+- MUSH: `+inkling/admin submitted` shows only submitted inklings awaiting review
+- Highlights workload for staff and makes it easy to focus on pending reviews
+- Integrates with existing admin list views without redesign
+
 **Inspirations — Optional Submission Currency**
 - Optional currency system ("Inspirations") to gatekeep and encourage quality submissions
 - **Accrual**: players earn Inspirations automatically at a configurable rate (e.g., 1/week, 5/month) via Cron job
