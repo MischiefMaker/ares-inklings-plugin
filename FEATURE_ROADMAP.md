@@ -139,6 +139,16 @@ Planned enhancements for future releases. Organized by phase and release.
 - Speeds up creating similar types of inklings
 - Configurable per-type or per-character
 
+**Tag Navigation and Discovery**
+- Display tags as clickable links when viewing an Inkling (web and MUSH)
+- Clicking a tag opens a modal/list of all Inklings with that tag (respects visibility/permissions)
+- Results use standard Inkling summary/index format
+- Selecting an Inkling from list opens detail modal
+- Reuse existing search and modal components where practical
+- MUSH command: `+inkling/bytag <tag>` returns index of visible Inklings with tag
+- Both interfaces share same canonical tag lookup logic and normalization rules (case-insensitive, trimmed)
+- Improves discoverability and navigation across web and MUSH
+
 ### Staff / Admin
 
 **Bulk Actions on Inklings List**
