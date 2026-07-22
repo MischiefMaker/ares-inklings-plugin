@@ -186,6 +186,16 @@
               </div>
             {{/if}}
             {{textarea class="form-control mb-2" value=this.replyText placeholder="Add a reply..." rows="3"}}
+            {{#if (and this.isStaff this.replyIsPrivate this.detail.shared_with.participants.length)}}
+              <div class="mb-2" style="max-width: 300px;">
+                <label for="inklings-reply-private-target" class="form-label small mb-1">Private to:</label>
+                <select id="inklings-reply-private-target" class="form-select form-select-sm" onchange={{action "setReplyPrivateTarget" value="target.value"}}>
+                  {{#each this.detail.shared_with.participants as |participant|}}
+                    <option value={{participant.id}} selected={{eq participant.id this.replyPrivateTarget}}>{{participant.name}}</option>
+                  {{/each}}
+                </select>
+              </div>
+            {{/if}}
             <div class="d-flex align-items-center gap-3 flex-wrap">
               <div class="form-check">
                 <input type="checkbox" class="form-check-input" id="inklings-reply-private" checked={{this.replyIsPrivate}} onclick={{action "toggleReplyPrivate"}}>

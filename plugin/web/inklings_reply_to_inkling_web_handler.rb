@@ -12,7 +12,8 @@ module AresMUSH
           request.enactor,
           request.args["text"],
           is_private: request.args["is_private"] ? true : false,
-          is_personal: request.args["is_personal"] ? true : false)
+          is_personal: request.args["is_personal"] ? true : false,
+          private_target_id: request.args["private_target_id"])
       end
     end
   end

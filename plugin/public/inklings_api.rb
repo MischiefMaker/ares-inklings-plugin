@@ -295,7 +295,7 @@ module AresMUSH
       end
 
       # Web endpoint: reply_to_inkling
-      def self.reply_to_inkling(char_id, inkling_id, viewer, text, is_private: false, is_personal: false)
+      def self.reply_to_inkling(char_id, inkling_id, viewer, text, is_private: false, is_personal: false, private_target_id: nil)
         char = Character[char_id]
         return { error: "Character not found" } if !char
 
@@ -316,6 +316,21 @@ module AresMUSH
 
         is_staff = Inklings.can_manage_inklings?(viewer)
 
+        # An explicit target only makes sense for a staff-authored private
+        # reply - mirrors +inkling/private's <name>/<text> targeting
+        # (InklingPrivateCmd), which is likewise staff-only. Validated
+        # against the same participant set the web reply form's dropdown is
+        # populated from (Inklings.addressable_participants), so a stale or
+        # tampered-with target_id can't address someone without access.
+        explicit_target = nil
+        if is_staff && is_private && private_target_id.present?
+          explicit_target = Character[private_target_id]
+          return { error: "Character not found" } if !explicit_target
+          unless Inklings.addressable_participants(inkling).any? { |c| c.id == explicit_target.id }
+            return { error: "#{explicit_target.name} does not have access to this inkling." }
+          end
+        end
+
         if is_staff && !is_private && !is_personal
           last_msg = inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }.last
           is_private = true if last_msg && last_msg.is_private.to_s == "true"
@@ -323,13 +338,18 @@ module AresMUSH
 
         recipient_ids = ""
         # Only staff can set explicit recipients for private messages.
-        # For staff, inherit from the previous message or default to the inkling creator.
+        # An explicit target (see above) wins; otherwise inherit from the
+        # previous message, or default to the inkling owner.
         # For players, private messages are always staff-only (recipient_ids stays empty) -
         # this ensures players cannot inadvertently share their private messages with the creator.
         if is_private && is_staff
-          last_msg = inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }.last
-          recipient_ids = last_msg&.private_recipient_ids.to_s.presence ||
-            (last_msg&.author ? last_msg.author.id : inkling.character.id)
+          if explicit_target
+            recipient_ids = explicit_target.id
+          else
+            last_msg = inkling.messages.to_a.sort_by { |m| Inklings.time_value(m.created_at) }.last
+            recipient_ids = last_msg&.private_recipient_ids.to_s.presence ||
+              (last_msg&.author ? last_msg.author.id : inkling.character.id)
+          end
         elsif is_private && !is_staff
           # Double-check: non-staff players can never have recipient IDs for private messages
           recipient_ids = ""
@@ -632,7 +652,12 @@ module AresMUSH
       def self.format_shared_with(inkling)
         {
           players: Inklings.shared_with_names(inkling).join(", "),
-          groups: Inklings.shared_group_list(inkling).join(", ")
+          groups: Inklings.shared_group_list(inkling).join(", "),
+          # {id, name} pairs (owner + explicit participants, not
+          # group-expanded) - powers the web reply form's private-target
+          # dropdown (see inkling-detail-modal.js). players/groups above
+          # are just display strings and have no IDs to build a picker from.
+          participants: Inklings.addressable_participants(inkling).map { |c| { id: c.id, name: c.name } }
         }
       end
 

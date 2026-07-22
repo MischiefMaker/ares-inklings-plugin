@@ -46,6 +46,12 @@ export default Component.extend({
   replyText: '',
   replyIsPrivate: false,
   replyIsPersonal: false,
+  // Staff-only: who a private reply's recipient should be, mirroring
+  // +inkling/private <id>=<name>/<text>'s optional target on the MUSH side
+  // (InklingPrivateCmd). Defaulted to the inkling's owner once detail loads
+  // (see loadDetail) - matches the server's own default when no explicit
+  // target is sent (InklingApi.reply_to_inkling).
+  replyPrivateTarget: null,
   tagInput: '',
   shareTarget: '',
   shareGroupTarget: '',
@@ -99,6 +105,7 @@ export default Component.extend({
       replyText: '',
       replyIsPrivate: false,
       replyIsPersonal: false,
+      replyPrivateTarget: null,
       tagInput: '',
       shareTarget: '',
       shareGroupTarget: '',
@@ -125,6 +132,14 @@ export default Component.extend({
         return;
       }
       this.setProperties({ detail: response.inkling, isOpen: true });
+      // Default the private-reply target to the owner, same as the
+      // server does when no explicit target is sent - only set once per
+      // load (resetFormState already cleared it) so re-selecting a
+      // different participant isn't clobbered by a later loadDetail call
+      // triggered by some other action in this same open modal.
+      if (!this.replyPrivateTarget && response.inkling.character_id) {
+        this.set('replyPrivateTarget', response.inkling.character_id);
+      }
       if (this.onUpdate) {
         this.onUpdate(response.inkling);
       }
@@ -150,6 +165,10 @@ export default Component.extend({
       if (this.replyIsPersonal) {
         this.set('replyIsPrivate', false);
       }
+    },
+
+    setReplyPrivateTarget(id) {
+      this.set('replyPrivateTarget', id);
     },
 
     close() {
@@ -195,7 +214,8 @@ export default Component.extend({
         char_id: this.characterId,
         inkling_id: this.inklingId,
         text: this.replyText,
-        is_private: this.replyIsPrivate
+        is_private: this.replyIsPrivate,
+        private_target_id: (this.isStaff && this.replyIsPrivate) ? this.replyPrivateTarget : null
       }, null).then((response) => {
         if (response.error) {
           return;

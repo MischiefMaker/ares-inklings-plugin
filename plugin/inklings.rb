@@ -412,27 +412,39 @@ module AresMUSH
       { new_specs: new_specs, notified: notified.uniq.sort }
     end
 
-    # Character names shown in the "Shared With" section of a thread:
-    # the thread's subject character (unless they're staff) plus anyone
-    # explicitly added as a participant, either directly or via a
-    # matching group (via +inkling/share or +inkling/group) - excluding
-    # any staff members. Staff always have access regardless of
-    # sharing, so listing them here would just be noise (and could
-    # inadvertently out a staff alt).
-    def self.shared_with_names(inkling)
-      names = []
+    # Characters who can be picked as an explicit private-message
+    # recipient: the thread's subject character (unless staff) plus
+    # anyone explicitly added as a participant (unless staff) - excluding
+    # any staff members, same as shared_with_names below. Deliberately
+    # does NOT expand group shares into individual characters - a group
+    # spec (e.g. "Faction:Navy") isn't a fixed list to pick one name from
+    # the way an explicit share is. Backs both shared_with_names (MUSH/web
+    # display) and the web reply form's private-target dropdown (see
+    # InklingApi.format_shared_with's participants key and
+    # InklingApi.reply_to_inkling's private_target_id) - +inkling/private
+    # already lets staff name an explicit target on the MUSH side (see
+    # InklingPrivateCmd); this is what the web picker validates against
+    # for parity.
+    def self.addressable_participants(inkling)
+      participants = []
 
       if inkling.character && !can_manage_inklings?(inkling.character)
-        names << inkling.character.name
+        participants << inkling.character
       end
 
       InklingParticipant.find(inkling_id: inkling.id).each do |p|
         next if !p.character
         next if can_manage_inklings?(p.character)
-        names << p.character.name
+        participants << p.character
       end
 
-      names.uniq.sort
+      participants.uniq(&:id).sort_by(&:name)
+    end
+
+    # Character names shown in the "Shared With" section of a thread -
+    # see addressable_participants for exactly who counts.
+    def self.shared_with_names(inkling)
+      addressable_participants(inkling).map(&:name)
     end
 
     # Group specs shared on this inkling (e.g. ["Navy", "Faction:Marines"]),
