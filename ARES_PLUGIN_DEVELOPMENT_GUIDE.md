@@ -137,6 +137,16 @@ order:
    disagree, the source wins — the tutorial is describing a version of Ares
    that may no longer exist.
 
+   **`AresMUSH/aresmush` and `AresMUSH/ares-webportal` are read-only
+   reference material — always.** Fetch and read them freely to verify
+   real behavior (that's the whole point of this step), but never write to
+   them: no commits, no branches, no forks, no pull requests against
+   either repo. This project's job is a third-party plugin that consumes
+   that source, not a contribution to it — any change belongs in
+   `ares-inklings-plugin` (this repo), reflected either in the plugin code
+   itself or, when the fix genuinely lives in a shared file the game owner
+   already customizes, in `custom-install/`.
+
 3. **Compare bundled plugins.** Core plugins like Jobs (`plugins/jobs/` in
    `aresmush`, plus `app/routes/job*.js` / `app/controllers/job*.js` /
    `app/templates/job*.hbs` in `ares-webportal`) show the full Route +
