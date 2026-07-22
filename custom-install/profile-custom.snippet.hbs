@@ -29,11 +29,24 @@
     custom-install/custom_char_fields.snippet.rb (Step 2) or the type
     dropdown will be empty and staff won't see their permission override.
 
+  APPROVAL STATUS - char.custom.is_approved, NOT char.is_approved:
+  - The base character data the web portal sends for a profile page has
+    no "is_approved"/"approved" field at all (confirmed against
+    plugins/profile/web/character_request_handler.rb's profile_data hash -
+    it isn't in there). "isApproved=this.char.is_approved" below would
+    silently be undefined for every character, all the time - not a typo
+    you'd notice, since undefined just renders as nothing, not an error.
+  - Approval status must come through the SAME get_fields_for_viewing hook
+    as the other custom fields on this line (can_manage_inklings,
+    inkling_types) - see custom_char_fields.snippet.rb, which now also
+    sets fields[:is_approved] = char.is_approved?. Reference it as
+    this.char.custom.is_approved, not this.char.is_approved.
+
   WEB PORTAL OPTIONAL:
   - This component is entirely optional - if you're running MUSH-only,
     you do not need this snippet or the related components at all.
 -->
 
 <div class="tab-pane fade" id="inklings-tab-pane">
-  {{inklings-tab characterId=this.char.id characterName=this.char.name viewerId=this.viewer.id isStaff=this.char.custom.can_manage_inklings isApproved=this.char.is_approved isSelf=(eq this.char.id this.viewer.id) typeInfo=this.char.custom.inkling_types}}
+  {{inklings-tab characterId=this.char.id characterName=this.char.name viewerId=this.viewer.id isStaff=this.char.custom.can_manage_inklings isApproved=this.char.custom.is_approved isSelf=(eq this.char.id this.viewer.id) typeInfo=this.char.custom.inkling_types}}
 </div>
