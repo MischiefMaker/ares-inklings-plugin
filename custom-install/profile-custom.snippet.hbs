@@ -22,7 +22,13 @@
   PROPERTY NAMES:
   - These must match the property names used in your profile-custom.hbs
   - If your profile uses "character" instead of "char", update all instances
-  - See the rest of your profile-custom.hbs to find the correct names
+  - If profile-custom.hbs is otherwise empty (nothing to compare against),
+    check whatever file invokes it instead - e.g. profile.hbs or profile-
+    system.hbs, wherever you see <ProfileCustom @char={{...}} ... /> (or the
+    older {{profile-custom char=... }} syntax) - the argument name used
+    there (@char / @character) is the one this component actually receives.
+    Do NOT assume a "viewer" argument exists just because "char" does - see
+    VIEWER IDENTITY below.
 
   REQUIRED BACKEND SETUP:
   - You must also install the get_fields_for_viewing hook from
@@ -42,11 +48,32 @@
     sets fields[:is_approved] = char.is_approved?. Reference it as
     this.char.custom.is_approved, not this.char.is_approved.
 
+  VIEWER IDENTITY - there is no "this.viewer" object:
+  - Confirmed against the real base template (the one that invokes this
+    component, e.g. <ProfileCustom @char={{this.char}} @game={{this.game}}
+    @onReloadChar={{this.reloadChar}} />): only "char" (the profile being
+    viewed) and "game" get passed down. There is no separate "viewer"
+    character object anywhere in this component or its parent - Ares
+    computes viewer-relative permissions server-side and bakes them
+    directly into the char payload (e.g. char.can_manage, char.can_approve)
+    instead of shipping a second character object for the client to
+    compare against. "this.viewer.id" below would always be undefined,
+    which silently makes both viewerId and isSelf wrong for every
+    character, every time - the same "undefined renders as nothing, not an
+    error" trap as the is_approved issue above.
+  - The logged-in viewer's id must come through the SAME
+    get_fields_for_viewing hook (it already receives both char AND viewer
+    as Ruby method parameters server-side, even though the client never
+    sees a viewer object) - see custom_char_fields.snippet.rb, which now
+    also sets fields[:viewer_id] = viewer ? viewer.id : nil. Reference it
+    as this.char.custom.viewer_id, not this.viewer.id, in BOTH the
+    viewerId argument and the isSelf comparison below.
+
   WEB PORTAL OPTIONAL:
   - This component is entirely optional - if you're running MUSH-only,
     you do not need this snippet or the related components at all.
 -->
 
 <div class="tab-pane fade" id="inklings-tab-pane">
-  {{inklings-tab characterId=this.char.id characterName=this.char.name viewerId=this.viewer.id isStaff=this.char.custom.can_manage_inklings isApproved=this.char.custom.is_approved isSelf=(eq this.char.id this.viewer.id) typeInfo=this.char.custom.inkling_types}}
+  {{inklings-tab characterId=this.char.id characterName=this.char.name viewerId=this.char.custom.viewer_id isStaff=this.char.custom.can_manage_inklings isApproved=this.char.custom.is_approved isSelf=(eq this.char.id this.char.custom.viewer_id) typeInfo=this.char.custom.inkling_types}}
 </div>

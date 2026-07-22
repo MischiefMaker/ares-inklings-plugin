@@ -31,6 +31,7 @@ def self.get_fields_for_viewing(char, viewer)
   fields[:inkling_types] = Inklings::InklingApi.creatable_type_options(viewer)
   fields[:can_manage_inklings] = Inklings.can_manage_inklings?(viewer)
   fields[:is_approved] = char.is_approved?
+  fields[:viewer_id] = viewer ? viewer.id : nil
   return fields
 end
 
@@ -39,17 +40,18 @@ end
 # ===========================================================================
 #
 # If other plugins (or your own code) already added fields to this method,
-# add ONLY these 3 lines inside the method, AFTER "fields = {}" and
+# add ONLY these 4 lines inside the method, AFTER "fields = {}" and
 # BEFORE the "return fields" line:
 #
 #      fields[:inkling_types] = Inklings::InklingApi.creatable_type_options(viewer)
 #      fields[:can_manage_inklings] = Inklings.can_manage_inklings?(viewer)
 #      fields[:is_approved] = char.is_approved?
+#      fields[:viewer_id] = viewer ? viewer.id : nil
 #
-# NOTE: if another plugin's fields already include an "is_approved" key,
-# you do NOT need to add it a second time - it returns the same value
-# regardless of which plugin computes it (char.is_approved? has no
-# per-plugin variation), so a duplicate would just be redundant, not wrong.
+# NOTE: if another plugin's fields already include an "is_approved" or
+# "viewer_id" key, you do NOT need to add it a second time - both return
+# the same value regardless of which plugin computes them, so a duplicate
+# would just be redundant, not wrong.
 #
 # Your method should then look something like:
 #
@@ -59,6 +61,7 @@ end
 #        fields[:inkling_types] = Inklings::InklingApi.creatable_type_options(viewer)
 #        fields[:can_manage_inklings] = Inklings.can_manage_inklings?(viewer)
 #        fields[:is_approved] = char.is_approved?
+#        fields[:viewer_id] = viewer ? viewer.id : nil
 #        return fields
 #      end
 
