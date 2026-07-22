@@ -349,6 +349,39 @@ server restart to take effect (separate from the web portal restart above):
 See [Shutting Down and Restarting the Game](https://www.aresmush.com/tutorials/manage/shutdown.html)
 for more detail, including what to do if the game won't shut down normally.
 
+### Upgrading an Existing Install
+
+Re-running `plugin/install https://github.com/MischiefMaker/ares-inklings-plugin`
+picks up the latest plugin code and **automatically re-copies** the auto-installed
+web portal files (`inklings-tab.js`/`.hbs`, `inkling-detail-modal.js`/`.hbs`,
+`inkling-search.js`/`.hbs`, `inkling-create-form.js`/`.hbs`, and `inklings.scss`).
+If a feature that should exist (a button, a field, correct layout) is missing
+after an update, re-run `plugin/install` and restart the web portal first - most
+staleness issues are fixed by that alone.
+
+**It does NOT touch anything you pasted manually** from `custom-install/*.snippet.*`
+into your own `ares-webportal`/`aresmush` files - `profile-custom.hbs`,
+`admin-inklings`-related snippets, `chargen-custom.hbs`, `custom_char_fields.rb`,
+`custom_approval.rb`, `custom_app_review.rb`, etc. Those are one-time, hand-merged
+edits by design (the installer can't safely overwrite a file you've also customized
+for other plugins), so **a plugin update can silently drift out of sync with what
+you pasted months or years ago.**
+
+**Symptom this causes:** a web feature works for staff/admins but not for ordinary
+players, or a piece of data that should be passed to a component is missing/blank,
+even though the underlying component code is fully up to date. This means the
+argument list on your manually-pasted invocation is outdated - one or more
+arguments the current code expects were added to the snippet after you originally
+pasted it.
+
+**Fix:** after any plugin update, diff each file you manually edited in
+`custom-install/` against what you have installed, and re-merge anything that's
+changed - most often, this means comparing the exact argument list on a component
+invocation line (e.g. `{{inklings-tab characterId=... isApproved=... isSelf=...}}`)
+character-by-character against the current snippet, since a missing keyword
+argument fails silently (it's just `undefined`/`false` in the component) rather
+than throwing an error.
+
 ## Configuration
 
 Edit `game/config/inklings.yml` in your **aresmush** folder to customize the plugin. Key settings:
