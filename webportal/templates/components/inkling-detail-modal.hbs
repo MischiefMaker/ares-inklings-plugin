@@ -38,32 +38,31 @@
       {{/if}}
 
       {{#if this.detail.shared_with}}
-        {{#if (or this.detail.shared_with.players.length this.detail.shared_with.groups.length this.detail.tags.length this.isStaff (eq this.detail.character_id this.viewerId))}}
-          <div class="card card-body mb-3">
-            <h6 class="mb-2">Shared With</h6>
-            {{#if this.detail.shared_with.players.length}}
-              <div class="small"><strong>Players:</strong> {{this.detail.shared_with.players}}</div>
+        <div class="card card-body mb-3">
+          <div class="small mb-2"><strong>Owner:</strong> {{this.detail.character_name}}</div>
+          <h6 class="mb-2">Shared With</h6>
+          {{#if this.detail.shared_with.players.length}}
+            <div class="small"><strong>Players:</strong> {{this.detail.shared_with.players}}</div>
+          {{/if}}
+          {{#if this.detail.shared_with.groups.length}}
+            <div class="small"><strong>Groups:</strong> {{this.detail.shared_with.groups}}</div>
+          {{/if}}
+          <div class="small d-flex align-items-center gap-1 flex-wrap mt-1 inkling-tags-row">
+            <strong>Tags:</strong>
+            {{#if this.detail.tags.length}}
+              {{#each this.detail.tags as |tag|}}
+                <span class="badge text-bg-secondary tag-badge-sm">
+                  {{tag}}
+                  {{#if (or this.isStaff (eq this.detail.character_id this.viewerId))}}
+                    <button type="button" class="btn-close btn-close-white ms-1" {{action "removeTag" tag}} aria-label="Remove tag"></button>
+                  {{/if}}
+                </span>
+              {{/each}}
+            {{else}}
+              <span class="text-muted">none</span>
             {{/if}}
-            {{#if this.detail.shared_with.groups.length}}
-              <div class="small"><strong>Groups:</strong> {{this.detail.shared_with.groups}}</div>
-            {{/if}}
-            <div class="small d-flex align-items-center gap-1 flex-wrap mt-1 inkling-tags-row">
-              <strong>Tags:</strong>
-              {{#if this.detail.tags.length}}
-                {{#each this.detail.tags as |tag|}}
-                  <span class="badge text-bg-secondary tag-badge-sm">
-                    {{tag}}
-                    {{#if (or this.isStaff (eq this.detail.character_id this.viewerId))}}
-                      <button type="button" class="btn-close btn-close-white ms-1" {{action "removeTag" tag}} aria-label="Remove tag"></button>
-                    {{/if}}
-                  </span>
-                {{/each}}
-              {{else}}
-                <span class="text-muted">none</span>
-              {{/if}}
-            </div>
           </div>
-        {{/if}}
+        </div>
       {{/if}}
 
       {{#if this.detail.rolls.length}}
@@ -228,8 +227,8 @@
           {{/if}}
 
           {{#if (and (not this.isStaff) this.isApproved (eq this.detail.character_id this.viewerId) (not this.detail.locked))}}
-            <div class="alert alert-warning">
-              <p>So far this hasn't been sent to staff. Submit when you're ready for them to see it - you won't get a response until you do.</p>
+            <div class="alert alert-secondary">
+              <p>This Inkling is currently in player mode. Use the Submit button (or <code>+inkling/submit</code> on the MUSH) if this Inkling requires a staff response.</p>
               <button type="button" class="btn btn-primary" {{action "submitInkling"}}>Submit for Review</button>
             </div>
           {{/if}}

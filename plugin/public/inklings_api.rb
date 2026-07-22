@@ -30,19 +30,12 @@ module AresMUSH
           return { error: "Not authorized" }
         end
 
-        # Query explicitly by character_id rather than char.inklings
-        # (a reverse-collection macro) - see the note in
-        # InklingListCmd for why this is safer.
-        #
-        # shared/group_matched key off char.id (whose tab this is), not
-        # viewer.id (who's looking at it) - those only coincide for a
-        # self-view. When staff open someone else's tab, keying off
-        # viewer.id pulled in inklings shared with the STAFF MEMBER's
-        # own character and mixed them into the target's list.
-        own = Inkling.find(character_id: char.id).to_a
-        shared = InklingParticipant.find(character_id: char.id).map(&:inkling).compact
-        group_matched = Inkling.all.to_a.select { |i| Inklings.is_group_participant?(i, char) }
-        inklings = (own + shared + group_matched).uniq(&:id)
+        # Inklings.accessible_inklings_for keys off char.id (whose tab this
+        # is), not viewer.id (who's looking at it) - those only coincide
+        # for a self-view. When staff open someone else's tab, keying off
+        # viewer.id would pull in inklings shared with the STAFF MEMBER's
+        # own character and mix them into the target's list.
+        inklings = Inklings.accessible_inklings_for(char)
 
         inklings = case status_filter
         when "closed"

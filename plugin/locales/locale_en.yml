@@ -14,7 +14,7 @@ en:
     thread_is_locked: "This inkling has been submitted and is locked until staff respond."
     already_submitted: "This inkling has already been submitted and is awaiting a staff response."
     submitted_success: "Your inkling has been submitted to staff for review. You'll be notified when they respond."
-    not_yet_submitted_notice: "%xyThis Inkling is not currently under review.%xn Use +inkling/submit %{id} whenever you want staff to review it."
+    not_yet_submitted_notice: "%xhThis Inkling is currently in player mode.%xn Use +inkling/submit %{id} if this Inkling requires a staff response."
     thread_closed_msg: "Inkling closed."
     closed_via_inkling: "This job was closed automatically because the linked inkling was closed."
     advance_added: "Update added."

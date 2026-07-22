@@ -21,12 +21,14 @@ module AresMUSH
 
       def handle
         ClassTargetFinder.with_a_character(self.target_name, client, enactor) do |model|
-          # Query explicitly by character_id rather than using
-          # model.inklings (a reverse-collection macro). That macro was
-          # found to sometimes return the enactor's own threads instead
-          # of the target's, so an explicit query removes any ambiguity
-          # about which character's threads we're pulling.
-          inklings = Inkling.find(character_id: model.id).to_a
+          # Inklings.accessible_inklings_for (owned + shared + group) -
+          # the same canonical query the web profile
+          # (InklingApi.get_inklings) and +inklings already use. Previously
+          # this queried model.id's owned inklings only, which silently
+          # dropped anything shared with model - inconsistent with what
+          # staff would see on model's own web profile tab for the exact
+          # same character.
+          inklings = Inklings.accessible_inklings_for(model)
             .sort_by { |i| Inklings.time_value(i.created_at) }.reverse
 
           drafts = model.is_approved? ? [] : Inklings.chargen_drafts(model)
@@ -55,7 +57,8 @@ module AresMUSH
             unread = i.player_unread == "true"
             count_text = "#{i.messages.to_a.size} msg(s)#{unread ? "%xh*%xn" : ""}"
             lock_text = i.locked == "true" ? " %xh%crLOCKED%xn" : ""
-            "##{i.id} [#{Inklings.color_type(i.kind.upcase)}] #{Inklings.color_title(title)} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} #{job_ref} - #{count_text}#{lock_text}"
+            shared_text = i.character == model ? "" : " %xh%cySHARED%xn"
+            "##{i.id} [#{Inklings.color_type(i.kind.upcase)}] #{Inklings.color_title(title)} (#{i.status}) #{Inklings.format_time(i.created_at, '%m/%d')} #{job_ref} - #{count_text}#{lock_text}#{shared_text}"
           end
           list.concat(inkling_lines)
 

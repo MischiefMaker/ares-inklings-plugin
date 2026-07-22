@@ -560,7 +560,7 @@ See `help inklings` and `help managing inklings` in-game for full command detail
 
 4. **If Sent Back for Changes** — Thread unlocks, player can edit and resubmit, repeating the review cycle
 
-5. **If Approved** — Thread remains locked (review complete), linked job closes
+5. **If Approved** — Thread unlocks, linked job closes. The review cycle is done, but the thread goes back to normal player mode - the player can keep adding to it and run `+inkling/submit` again later if they want another round of staff review.
 
 Staff can award rewards during or after review.
 

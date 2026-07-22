@@ -92,7 +92,7 @@ You can also manage your inklings through the character profile on the web porta
 
 ## Tips
 
-- **Don't forget to submit:** Building up a thread doesn't notify staff - run `+inkling/submit <id>` when you actually want a response
+- **Player mode is normal:** an inkling stays in player mode - build it up on your own time - until you run `+inkling/submit <id>`, which is only needed if the inkling requires a staff response
 - **Be specific:** Include details about what you're working on or what you need
 - **Check regularly:** Staff may reply to your requests with guidance or plot opportunities
 - **Use the right type:** Choosing the appropriate inkling type helps staff prioritize

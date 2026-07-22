@@ -7,15 +7,7 @@ module AresMUSH
       include CommandHandler
 
       def handle
-        # Query explicitly by character_id rather than enactor.inklings
-        # (a reverse-collection macro) - see the note in
-        # InklingListCmd for why this is safer.
-        own_inklings = Inkling.find(character_id: enactor.id).to_a
-        shared_inklings = InklingParticipant.find(character_id: enactor.id)
-          .map(&:inkling).compact
-        group_inklings = Inkling.all.to_a.select { |i| Inklings.is_group_participant?(i, enactor) }
-
-        inklings = (own_inklings + shared_inklings + group_inklings).uniq(&:id)
+        inklings = Inklings.accessible_inklings_for(enactor)
 
         if cmd.switch_is?("closed")
           inklings = inklings.select { |i| i.status == "closed" }

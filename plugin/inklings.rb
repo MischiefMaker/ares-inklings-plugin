@@ -539,17 +539,32 @@ module AresMUSH
       !earliest_unread_time(inkling, char).nil?
     end
 
-    # Every inkling char has access to (own, explicitly shared, or via
-    # a matching group) with unread content, oldest-unread-first - the
-    # queue +inkling/new works through. No staff special-casing: this
-    # only looks at inklings char can actually reach as a participant,
-    # same scope +inklings already uses.
-    def self.unread_inklings_for(char)
+    # Every inkling char can access: owned, explicitly shared (via
+    # InklingParticipant), or reachable through a matching demographics
+    # group share (see is_group_participant?). The single canonical
+    # source of truth for "what inklings can this character see" - no
+    # staff special-casing, since this only answers the participant-scope
+    # question, not the staff-sees-everything question (callers that need
+    # staff to see every inkling, like the admin list, use
+    # all_inklings_query instead). Used by both MUSH commands (+inklings,
+    # +inkling/list) and the web profile (InklingApi.get_inklings), and
+    # reused internally by unread_inklings_for/search_inklings below, so
+    # per-character list logic can't drift between callers - see the
+    # +inkling/list bug this fixed, where a separate hand-rolled
+    # owned-only query silently dropped shared/group inklings that the
+    # web profile (and +inklings) already included correctly.
+    def self.accessible_inklings_for(char)
       own = Inkling.find(character_id: char.id).to_a
       shared = InklingParticipant.find(character_id: char.id).map(&:inkling).compact
       group = Inkling.all.to_a.select { |i| is_group_participant?(i, char) }
+      (own + shared + group).uniq(&:id)
+    end
 
-      candidates = (own + shared + group).uniq(&:id).select { |i| i.status == "open" }
+    # Every inkling char has access to (own, explicitly shared, or via
+    # a matching group) with unread content, oldest-unread-first - the
+    # queue +inkling/new works through.
+    def self.unread_inklings_for(char)
+      candidates = accessible_inklings_for(char).select { |i| i.status == "open" }
 
       candidates.map { |i| [i, earliest_unread_time(i, char)] }
         .reject { |(_i, time)| time.nil? }
@@ -587,10 +602,7 @@ module AresMUSH
       viewable = if can_manage_inklings?(char)
         Inkling.all.to_a
       else
-        own = Inkling.find(character_id: char.id).to_a
-        shared = InklingParticipant.find(character_id: char.id).map(&:inkling).compact
-        group = Inkling.all.to_a.select { |i| is_group_participant?(i, char) }
-        (own + shared + group).uniq(&:id)
+        accessible_inklings_for(char)
       end
 
       # Score each inkling based on matches (higher scores first)
@@ -904,7 +916,7 @@ module AresMUSH
       job_line = inkling.job ? "\n\n(Linked job ##{inkling.job.id}, status #{inkling.job.status})" : ""
 
       submit_reminder = (!can_manage_inklings?(viewer) && inkling.character == viewer && inkling.locked != "true" && inkling.status != "closed") ?
-        "\n\n%xyThis Inkling is not currently under review.%xn Use +inkling/submit #{inkling.id} whenever you want staff to review it." : ""
+        "\n\n%xhThis Inkling is currently in player mode.%xn Use +inkling/submit #{inkling.id} if this Inkling requires a staff response." : ""
 
       unlock_note = (inkling.locked == "true" && inkling.approval_state == "approved" && inkling.character == viewer) ?
         "\n\n%xhNeed this reopened? Use +inkling/requestunlock #{inkling.id}=<reason> to contact staff.%xn" : ""
@@ -993,6 +1005,16 @@ module AresMUSH
     # There's no confirmed AresMUSH event fired when a Job's status
     # changes, so the reverse direction (approving via the job itself
     # auto-approving the inkling) isn't implemented.
+    #
+    # Approval UNLOCKS the thread (approval_state stays "approved" as the
+    # durable record of the review outcome, but locked goes false, not
+    # true) - this review cycle is done, but the player can keep adding
+    # to the thread normally afterward, exactly like player mode before
+    # the first submission, and can +inkling/submit again later if they
+    # want another round of staff review. There is deliberately no
+    # separate "locked and approved" state left for new approvals to land
+    # in - +inkling/unlock (see unlock_inkling) still exists for reopening
+    # older threads that were approved before this change.
     def self.approve_inkling(inkling, staff, message = nil)
       note = message.to_s.strip
 
@@ -1024,7 +1046,7 @@ module AresMUSH
       close_message = note.blank? ? "Inkling approved." : note
       Jobs.close_job(staff, inkling.job, close_message) if inkling.job
 
-      update_inkling(inkling, locked: "true", approval_state: "approved")
+      update_inkling(inkling, locked: "false", approval_state: "approved")
       notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been approved. Use +inkling #{inkling.id} to view it.", inkling: inkling)
 
       dispatch_inkling_approved(inkling, staff)

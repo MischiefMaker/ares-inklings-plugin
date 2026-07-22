@@ -31,23 +31,24 @@ module AresMUSH
     # on this thread.
     attribute :player_unread
     # "true"/"false" - whether the thread is locked pending a staff
-    # response. Set by +inkling/submit (see Inklings.submit_inkling)
-    # and by +inkling/approve; cleared by +inkling/needschanges (see
-    # Inklings.request_changes). Ordinary staff replies
+    # response. Set by +inkling/submit (see Inklings.submit_inkling);
+    # cleared by both +inkling/approve and +inkling/needschanges (see
+    # Inklings.approve_inkling / request_changes). Ordinary staff replies
     # (+inkling/advance, +inkling/private, or a reply pulled in from
     # the linked job) do NOT change this - only the explicit review
-    # actions below do, since a reply is not the same thing as a
-    # decision. While locked, non-staff cannot add replies, private
-    # replies, or rolls - see check_not_locked in the relevant
-    # commands.
+    # actions do, since a reply is not the same thing as a decision.
+    # While locked, non-staff cannot add replies, private replies, or
+    # rolls - see check_not_locked in the relevant commands.
     attribute :locked
     # The review lifecycle for staff approval: "draft" (default -
     # player is still working on it, nothing sent to staff yet),
     # "submitted" (+inkling/submit was run - locked, awaiting a staff
     # decision), "needs_changes" (staff sent it back via
     # +inkling/needschanges - unlocked, player can revise and
-    # resubmit), or "approved" (staff approved it via
-    # +inkling/approve - locked, this review cycle is done). See
+    # resubmit), or "approved" (staff approved it via +inkling/approve -
+    # unlocked, this review cycle is done but the thread behaves like
+    # ordinary player mode again; +inkling/submit works again if the
+    # player wants another round of review). See
     # Inklings.submit_inkling / approve_inkling / request_changes.
     attribute :approval_state
 
