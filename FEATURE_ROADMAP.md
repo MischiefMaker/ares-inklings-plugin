@@ -33,16 +33,21 @@ Planned enhancements for future releases. Organized by phase and release.
 - Requires Scenes plugin to be installed; degrades gracefully if absent
 - Staff can remove scene links with: `+inkling/unlink-scene <inkling_id>=<scene_id>`
 
-**Ownerless Inklings for Later Distribution**
-- Allow staff to create an Inkling with no owner assigned yet, for distribution later
-- Two possible mechanisms to evaluate:
-  - No owner at creation time - staff assign an owner (or share it) once a recipient is decided
-  - Or: create with a placeholder/staff owner, then reassign/share to the real recipient later
-- Useful for staff pre-writing prompts, hooks, or plot seeds before deciding (or before a player is available to decide) who they go to
+**Unassigned Inklings for Later Distribution (via placeholder NPC owner)**
+- Lets staff pre-write prompts, hooks, or plot seeds before deciding (or before a player is available to decide) who they go to
+- Preferred mechanism: a dedicated placeholder character (e.g. named "Storyteller") holds these Inklings until a real recipient is chosen, rather than making `Inkling#character` nullable
+  - Avoids the larger risk of the null-owner approach: `Inkling#character` is currently assumed non-nil throughout the model and most permission/notification logic (`shared_with_names`, `is_participant?`, chargen conversion, etc.) - a placeholder character satisfies all of that with zero model changes
+  - Staff create the Inkling normally with "Storyteller" as the owner, then use `+inkling/reassign` (see below) to move it to the real player once decided
+  - The placeholder character would need to be a real, staff-created Character record (a one-time setup step, similar to a game's existing "House"/OOC utility character if it has one) - document this as an install/setup step, not something the plugin creates automatically
+- Web UI: no new UI needed beyond what `+inkling/reassign` requires (below) - creating "for" the placeholder character works through the existing Add Inkling flow
 - Distinct from Clone Inkling to Multiple Players (below): this is about a single Inkling with deferred ownership, not immediately duplicating to several players
-- Architecturally significant: `Inkling#character` (the owning player) is currently a required reference throughout the model and most permission/notification logic (`shared_with_names`, `is_participant?`, chargen conversion, etc.) - making it optional needs a careful audit of every place that assumes it's always present, not just the creation form
-- Web UI: Add Inkling form gets an "assign later" option in place of picking an owner; admin list needs a way to show/filter ownerless Inklings
-- MUSH: `+inkling/admin` create flow needs the same option; a way to later assign/share an ownerless Inkling to a player
+
+**`+inkling/reassign` — Change an Inkling's Owner**
+- New command: `+inkling/reassign <inkling_id>=<new_owner>`
+- Changes `Inkling#character` (the owning player) to a different character, staff only
+- Enables the placeholder-NPC workflow above (move from "Storyteller" to the real recipient), and independently useful for correcting a mistakenly-assigned owner or transferring an Inkling if needed
+- Needs its own design pass on side effects: should the previous owner keep access as a participant (demoted to "shared") or lose access entirely; whether unread/notification state should reset for the new owner; whether reassigning a submitted/locked Inkling should be blocked or allowed
+- Web equivalent: reassign control in the admin detail modal (staff only)
 
 **Clone Inkling to Multiple Players**
 - New command: `+inkling/clone <inkling_id>=<player1>,<player2>,<player3>`
