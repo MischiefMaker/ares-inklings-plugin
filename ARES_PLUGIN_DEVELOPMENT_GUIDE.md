@@ -1106,16 +1106,14 @@ Each of these happened on this project — concretely, not hypothetically.
       about, grep the guide itself before "fixing" it** — the fact was
       sitting in §2 the entire time this session diagnosed and "fixed" the
       same code.
-    - **A MUSH-colorized field (ansi `%x` codes) reused as both MUSH output
-      and stored data will leak raw escape sequences into any web JSON built
-      from it.** `InklingRoll#result` is intentionally built with ansi codes
-      because it's also interpolated straight into MUSH text elsewhere
-      (`+inkling <id>`, the submitted-thread transcript) — so stripping ansi
-      at the source would break that. The fix belongs at the render edge:
-      Ares's web portal already ships an `{{ansi-format}}` Handlebars helper
-      for exactly this (alongside `local-date`, `title`, `link-to`) — wrap the
-      field in the template (`{{ansi-format roll.result}}`) rather than
-      inventing Ruby-side ansi-stripping or a custom parser.
+    - **(Later corrected — see Lesson 23.) A MUSH-colorized field (`%x`
+      codes) reused as both MUSH output and stored data will leak raw
+      escape sequences into any web JSON built from it; the fix is to wrap
+      it in `{{ansi-format}}` at render time.** The "leaks raw markup"
+      diagnosis was right, but the fix was wrong: `{{ansi-format}}` parses
+      real ANSI terminal escapes, not AresMUSH's own `%x` markup — a
+      different format entirely, confirmed by reading the helper's actual
+      source. See Lesson 23 for the real fix.
     - **A `public/*_api.rb` method that takes both `char_id` (whose page this
       is) and `viewer` (who's looking at it) must use the right one for each
       query, and it's easy to default to `viewer` for everything.**
@@ -1410,6 +1408,80 @@ handler reads `event.char_id` and `event.client`) - both fetched from the live
   - a live fetch of the actual handler source is real verification, not a
     plausible-sounding guess with a disclaimer attached. Try this before
     reaching for scaffolding-with-a-warning.
+
+---
+
+### Lesson 23: Two different "color code" systems exist - AresMUSH `%x` markup and real ANSI escapes - and `{{ansi-format}}` only understands the latter
+
+A user reported inkling roll entries showing on the web (badges, title) but
+the roll *result* (e.g. "Good (7)") rendering as nothing. The template
+already wrapped it in `{{ansi-format roll.result}}`, per §8 item 15's
+`%x`-codes bullet (see the corrected version above) - which turned out to be
+precisely the wrong fix, not a stale-install problem.
+
+**Root cause, confirmed against real source (raw.githubusercontent.com):**
+- `FS3Skills.print_dice` (`plugins/fs3skills/helpers/formatting.rb`) embeds
+  AresMUSH's own `%x<code>...%xn` markup directly in the string it returns
+  (e.g. `"%xg7%xn"`) - this is a MUSH-source-level convention
+  (https://aresmush.com/tutorials/code/formatting.html), interpreted by the
+  MUSH server's own emit pipeline when writing to a connected client.
+- `ares-webportal`'s `{{ansi-format}}` helper (`app/helpers/ansi-format.js`)
+  is a thin wrapper: `ansi_up.ansi_to_html(text, { use_classes: true })`.
+  `ansi_up` parses **real ANSI terminal escape sequences** (`\e[32m` etc.) -
+  a completely different, unrelated format. `%xg` is not an escape sequence
+  to it; the text just passes through unrecognized, so the "colored" text
+  effectively disappears or renders as junk instead of the intended value.
+  These two systems share the vague idea "color codes for text" and nothing
+  else - don't infer that a plausible-sounding helper name handles a given
+  markup format without reading its actual implementation.
+
+**The real, confirmed fix - two matched pairs of official converters, not a
+custom parser:**
+- `Website.format_input_for_html(text)` / `Website.format_input_for_mush(text)`
+  (`plugins/website/public/website_api.rb`) convert MUSH's `%r` line-break
+  markup to/from a real `\n`, in each direction. This project already used
+  the pair correctly for chargen draft title/text
+  (`custom_char_fields.snippet.rb`), but had NOT applied it anywhere in the
+  Inkling message/reply/GM-note/approval-feedback pipeline - so a
+  MUSH-typed multi-line reply lost its line breaks on web display (and a
+  web-typed, multi-line reply lost them in the MUSH-side transcript/emit
+  output), the exact same class of bug as the `%x` one, just for `%r`
+  instead. **Confirmed against a real core plugin**:
+  `plugins/jobs/web/job_reply_request_handler.rb` calls
+  `Website.format_input_for_mush(reply)` on the way in, before saving -
+  this project's `InklingApi.reply_to_inkling`/`add_gm_note`/`create_inkling`/
+  `approve_inkling`/`request_changes_inkling` now do the same on the way in,
+  and `InklingApi.format_message`/`Inklings.chargen_drafts` call
+  `format_input_for_html` on the way out.
+- `Website.format_output_for_html(text)` (same file) wraps
+  `AresMUSH::MushFormatter.format(text)`, which converts **both** `%r` and
+  `%x` codes into real HTML (with actual colors) in one pass - the correct
+  call for text that genuinely has color markup, like `print_dice`'s output.
+  Not adopted for `InklingRoll#result` in this pass - it returns literal
+  HTML, which needs an explicit unescaped-render on the Ember side (a
+  `{{{triple-mustache}}}`/`htmlSafe` pattern not yet confirmed against this
+  project's Ember version) - `roll.result` is instead stripped of `%x`
+  codes server-side (`Inklings.strip_color_codes`) for now: correct plain
+  text, no color, pending that follow-up.
+- The critical distinction driving which pair to use: is the field
+  **user-typed free text** that might contain a line break (`%r` only -
+  `format_input_for_html`/`_mush`), or **system-generated text with actual
+  color markup** (`%r` and/or `%x` - `format_output_for_html`)? Don't reach
+  for the color-capable converter on plain free text (it returns HTML,
+  forcing an unescaped-render decision you don't need to make), and don't
+  reach for the line-break-only converter on something with real `%x` in it
+  (colors will render as literal junk).
+- **Watch for the MUSH-vs-web call-site split.** `Website.format_input_for_mush`
+  belongs ONLY at a web-exclusive entry point (a `public/*_api.rb` method
+  only ever called by a web handler) - never inside a method also called
+  directly from a MUSH command with already-`%r`-form text (e.g.
+  `Inklings.approve_inkling`/`request_changes`, called by both
+  `InklingApproveCmd`/`InklingNeedsChangesCmd` *and*
+  `InklingApi.approve_inkling`/`request_changes_inkling`). Converting inside
+  the shared method would double-process MUSH-typed input. Put the
+  conversion in the web-only wrapper, immediately before it calls into the
+  shared method - same principle as Lesson 6's viewer/actor distinction,
+  applied to which caller a piece of text already came from.
 
 ---
 

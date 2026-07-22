@@ -57,6 +57,22 @@ module AresMUSH
       "%xm#{text}%xn"
     end
 
+    # Strips AresMUSH's %x<code> markup (e.g. %xg, %xh, %xn) from text built
+    # for MUSH display, for use in web JSON. This is a different thing from
+    # real ANSI terminal escape codes (\e[32m etc.) - the web portal's own
+    # {{ansi-format}} Handlebars helper wraps the ansi_up JS library, which
+    # only understands the latter and does nothing with %x markup, so
+    # %x-coded text sent to it renders as literal "%xg...%xn" junk (or,
+    # depending on ansi_up's handling of the bare "%" characters, silently
+    # nothing) instead of the intended text. Some FS3Skills-formatted
+    # strings (e.g. InklingRoll#result, built via FS3Skills.print_dice) are
+    # %x-coded because they're also used as-is in MUSH output/transcripts
+    # (see compile_thread_text) - this only strips it for the read-only web
+    # copy, the stored value is untouched.
+    def self.strip_color_codes(text)
+      text.to_s.gsub(/%x[a-zA-Z]/, "")
+    end
+
     # Title used when a player explicitly submits an inkling for staff
     # review (see +inkling/submit / Inklings.submit_inkling).
     # Deliberately short and free of the inkling ID / redundant
@@ -164,11 +180,11 @@ module AresMUSH
           label: kind_label(kind),
           color: (type_config[kind] || {})["color"] || "secondary",
           title: title,
-          # Raw, not run through format_markdown_for_html - matches how
-          # inkling message text is already handled elsewhere (see
-          # format_inkling_summary / inkling-detail-modal.hbs's
-          # {{msg.text}}): plain text, escaped by the template on render.
-          text: text
+          # Stored as %r (MUSH line-break markup - see
+          # custom_char_fields.snippet.rb's format_input_for_mush on save);
+          # format_input_for_html converts it back to real newlines for
+          # display here, same convention as InklingApi.format_message.
+          text: Website.format_input_for_html(text)
         }
       end
       drafts
@@ -617,7 +633,11 @@ module AresMUSH
         ref: event_ref(roll.inkling, roll.seq),
         roll_type: roll.roll_type,
         roll_spec: roll.roll_spec,
-        result: roll.result,
+        # See strip_color_codes - roll.result may contain AresMUSH %x
+        # markup (from FS3Skills.print_dice); stripped here so the web
+        # portal shows the plain roll text instead of raw %x junk or
+        # nothing, without touching the stored value MUSH output still uses.
+        result: strip_color_codes(roll.result),
         result_value: roll.result_value,
         character: roll.character ? roll.character.name : nil,
         character_id: roll.character ? roll.character.id : nil,

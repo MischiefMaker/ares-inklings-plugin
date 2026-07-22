@@ -158,6 +158,13 @@ module AresMUSH
         return { error: "Inkling title cannot be empty" } if title.to_s.blank?
         return { error: "Inkling text cannot be empty" } if text.to_s.blank?
 
+        # Store MUSH-formatted (real newlines from the web textarea become
+        # %r) - idempotent when text is already %r-form (e.g. the chargen
+        # draft text convert_chargen_drafts passes through here already
+        # went through this same conversion when it was originally saved -
+        # see custom_char_fields.snippet.rb).
+        text = Website.format_input_for_mush(text)
+
         inkling = Inkling.create(
           kind: kind,
           title: title,
@@ -313,6 +320,11 @@ module AresMUSH
         # silently picking one, so the client's checkbox state and the stored
         # message can never disagree about which was actually applied.
         return { error: "A reply cannot be both Private and Personal - choose one." } if is_private && is_personal
+
+        # Store MUSH-formatted (real newlines from the web textarea become
+        # %r), matching format_message's format_input_for_html on the way
+        # back out - see the comment there.
+        text = Website.format_input_for_mush(text)
 
         is_staff = Inklings.can_manage_inklings?(viewer)
 
@@ -667,7 +679,13 @@ module AresMUSH
           ref: Inklings.event_ref(message.inkling, message.seq),
           author: message.author ? message.author.name : "Unknown",
           author_id: message.author ? message.author.id : nil,
-          text: message.text,
+          # Stored text is MUSH-formatted (%r for line breaks - see
+          # reply_to_inkling's matching format_input_for_mush on the way
+          # in), same convention as the chargen draft fields
+          # (custom_char_fields.snippet.rb). format_input_for_html converts
+          # %r back to real newlines, which .message-text's white-space:
+          # pre-wrap (inklings.scss) then renders as actual line breaks.
+          text: Website.format_input_for_html(message.text),
           created_at: message.created_at,
           is_staff: message.is_staff == "true",
           is_private: message.is_private == "true",
@@ -741,6 +759,8 @@ module AresMUSH
         return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
         return { error: "Text cannot be empty" } if text.to_s.blank?
 
+        text = Website.format_input_for_mush(text)
+
         InklingMessage.create(
           inkling: inkling,
           author: viewer,
@@ -766,6 +786,11 @@ module AresMUSH
         return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
         return { error: "Inkling not submitted for review" } if inkling.approval_state != "submitted"
 
+        # Web-only normalization - Inklings.approve_inkling is also called
+        # directly from InklingApproveCmd (MUSH), where a message is
+        # already %r-form and must NOT be converted again here.
+        message = Website.format_input_for_mush(message) if message
+
         Inklings.approve_inkling(inkling, viewer, message)
 
         { inkling: format_inkling_detail(inkling, viewer) }
@@ -779,6 +804,9 @@ module AresMUSH
         return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
         return { error: "Inkling not submitted for review" } if inkling.approval_state != "submitted"
         return { error: "Feedback cannot be empty" } if feedback.to_s.blank?
+
+        # Web-only normalization - see the matching comment in approve_inkling.
+        feedback = Website.format_input_for_mush(feedback)
 
         Inklings.request_changes(inkling, viewer, feedback)
 
