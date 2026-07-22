@@ -311,3 +311,41 @@ Fixed by adding `approval_state: inkling.approval_state` to `format_inkling_summ
 **Status: Fixed (unconfirmed)**
 
 `+inkling/admin` gave no indication further pages existed. Added a hint line after the rendered list - "More pages are available (page X of Y). Use `+inkling/adminN` to view page N." (no space before the page number, matching the actual command syntax) - shown only when `cmd.page` is less than the total page count computed from the same line-based pagination `BorderedPagedListTemplate` already uses, so it's never wrong relative to what the template just rendered, and never shown on the final page or for an out-of-range page.
+
+---
+
+## Round 5 (v5)
+
+Defects and one explicitly-approved workflow addition from the fifth round of alpha testing (the general feature freeze does not apply to Bug 002, per this round's own instructions).
+
+### Bug 001 — Web Approval Comment Creates Duplicate Inkling Entries
+
+**Status: Fixed (unconfirmed)**
+
+Approving with a comment created the comment twice: once as the canonical `[Approved]` entry, once again moments later as a generic `[staff]` reply with identical text.
+
+**Root cause, confirmed against real AresMUSH core source:** `Inklings.approve_inkling` (the one canonical service both MUSH's `InklingApproveCmd` and the web's `InklingApi.approve_inkling` already called - no duplicate business logic between the two interfaces to begin with) creates exactly one `[Approved]` `InklingMessage`, then calls `Jobs.close_job(staff, inkling.job, close_message)` to close the linked job. `Jobs.close_job` posts that same `close_message` as a job comment (a `JobReply`) as a side effect (`Jobs.change_job_status` → `Jobs.comment`, confirmed against source). The next time the inkling is viewed - which happens immediately when the web modal reloads after approval - `Inklings.sync_job_replies` (called on every view, MUSH and web alike) mirrors any not-yet-mirrored `JobReply` into the thread as a new, generic message. That mirrored copy of the same text was the duplicate. This affected both interfaces equally; it just surfaced first on web because the modal reloads (and therefore re-syncs) right after the action, where MUSH would only show it on the next `+inkling <id>`.
+
+Fixed by capturing the `[Approved]` message `approve_inkling` already creates, and after `Jobs.close_job` returns, linking the `JobReply` it just posted to that message via `source_job_reply` - `sync_job_replies`' own dedup check (`InklingMessage.find(source_job_reply_id:)`) then correctly treats it as already-mirrored instead of creating a second copy. No change was needed to `Jobs.close_job` itself or to either caller. Also added a `reviewSubmitting` guard (disables the Submit Review button and ignores a re-click while a request is in flight) as the requested protection against a duplicate submission from repeated clicks - server-side, `approve_inkling`'s existing `approval_state == "submitted"` precondition already rejected a genuine duplicate attempt on its own. Added `plugin/spec/approve_inkling_spec.rb` covering the with-comment, without-comment, and post-fix-reload cases, plus that status/approval_state/job only change once.
+
+### Bug 002 — Add Admin Reopen Action and Remove Irreversibility Warning
+
+**Status: Fixed (unconfirmed)**
+
+Explicitly approved as a workflow addition despite the feature freeze. Staff had no way to reopen a closed Inkling, and the web close confirmation claimed closing "cannot be undone."
+
+Added one canonical `Inklings.reopen_inkling(inkling, staff)` service, invoked from both a new MUSH command and a new web handler - same pattern as every other staff review action in this plugin (approve/needschanges/unlock all already work this way):
+
+* **MUSH:** `+inkling/reopen <id>` (`InklingReopenCmd`) - staff-only (`can_manage_inklings?`), validates the Inkling exists and is currently closed (rejects an already-open Inkling with a clear message), documented under the existing `help manage_inklings` topic (no new command-specific topic created).
+* **Web:** a "Reopen Inkling" button in the shared detail modal, shown only for staff and only when `status == "closed"`, disabled and re-entrancy-guarded while the request is in flight, refreshing both the modal and the surrounding list on success via the same `onUpdate` mechanism every other action already uses, with `flashMessages` success/error feedback.
+* **What reopening touches:** only `Inkling#status` (back to `"open"`) plus one new `message_type: "reopened"` audit entry naming who did it. `locked`/`approval_state` are deliberately left exactly as they were at closure - they already correctly describe whatever review round was last in progress, and reopening doesn't re-litigate that round's outcome. No prior messages, rolls, participants, tags, or sharing are touched.
+* **Linked job:** if the job was closed along with the Inkling, reopening moves it back to the game's configured `jobs.default_status` via `Jobs.change_job_status` (the standard Ares status-transition API, also used internally by `Jobs.close_job`) - the same job stays linked, a second one is never created. If no default status is configured, the Inkling still reopens; the job's status is left alone and a diagnostic is logged and posted to the job rather than guessing a status name that might not exist for that game.
+* **Duplicate-mirroring, again:** `Jobs.change_job_status` (and the no-default-status fallback's `mirror_to_job`) both post a job comment exactly like `Jobs.close_job` does, which would have reintroduced Bug 001's exact failure mode for the reopen entry - caught before shipping and fixed with the same `source_job_reply` linking technique.
+* **Irreversibility wording:** the only place in the plugin that claimed closing "cannot be undone" was the web close confirmation dialog (`inkling-detail-modal.js`) - reworded to mention the Reopen Inkling button instead. Audited the rest of the plugin (MUSH messages, other confirm dialogs, help files, README, locale strings) for the same phrasing - the only other "cannot be undone" is Delete's, which is intentionally left as-is since deletion remains genuinely permanent and was never in scope here.
+* **Also fixed as part of this work:** README.md's in-game help pointer read `help managing inklings`, which was never a real topic (the real one, used consistently everywhere else in the codebase, is `help manage_inklings`) - corrected. The Inkling model's `status` doc comment referenced a nonexistent `close_inkling` method - corrected to name the real command/API and mention reopening.
+
+**Also discovered and fixed while wiring up the new REOPENED badge (not part of the original bug list, but directly blocking it):** `InklingApi.format_message` never included `message_type` in its serialized output at all - meaning the SUBMITTED/APPROVED/NEEDS CHANGES/REWARD badges in the web modal have silently never rendered, on any inkling, ever (same missing-serializer-field shape as Round 4's Lesson 28). Fixed by adding the field; covered by `plugin/spec/format_message_spec.rb`.
+
+Added `plugin/spec/reopen_inkling_spec.rb` covering: status restored to open, locked/approval_state untouched, exactly one reopen audit entry, prior messages preserved, the linked job reopening (not duplicating), no duplicate mirrored reply from either job-update path, and the no-default-status diagnostic fallback. Added Lesson 29 to the dev guide.
+
+**Known follow-up (not fixed, out of scope for this round):** `Inklings.unlock_inkling` and `Inklings.request_changes` both call `mirror_to_job` with a real comment the same way `approve_inkling` used to - they likely have the identical latent duplicate-mirroring bug Bug 001 fixed for approval, just not yet reported. Worth auditing in a future round.

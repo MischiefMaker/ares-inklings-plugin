@@ -21,8 +21,10 @@ module AresMUSH
     # submit/approve (see approval_state) while staying open the whole
     # time - approving one round doesn't mean the initiative is finished,
     # just that staff signed off on where it's at right now. Set to
-    # "closed" (see close_inkling) only when there's nothing further to
-    # do on it at all.
+    # "closed" (InklingCloseCmd / InklingApi.close_inkling) only when
+    # there's nothing further to do on it at all - not a one-way door,
+    # though: staff can restore it to "open" with +inkling/reopen /
+    # Inklings.reopen_inkling if that turns out to be premature.
     attribute :status
     # Comma-separated group specs (e.g. "Navy" or "Faction:Navy,Marines").
     # Any character whose group membership matches a spec has access, even

@@ -551,6 +551,7 @@ Requires the FS3Skills plugin to be installed.
 | `+inkling/approve <id>` | Approve a submitted inkling and close the job |
 | `+inkling/needschanges <id>=<feedback>` | Send back for revisions |
 | `+inkling/unlock <id>` | Reopen a completed inkling for further editing |
+| `+inkling/reopen <id>` | Reopen a *closed* inkling (sets status back to open) - distinct from `+inkling/unlock` above, which reopens a locked thread without touching closed status |
 | `+inkling/reward <id>=<type>:<amount>` | Award XP, FS3 skills, or custom rewards (e.g., `xp:5` or `fs3_skill:Occult:1`) — XP is applied automatically; FS3 skills must be applied manually |
 | `+inkling/list <char>` | List all of a character's threads |
 | `+inkling/admin` | List every Inkling in the game, any owner (`/closed`, `/all` for status; see the Admin Inklings Page below for the web equivalent) |
@@ -568,7 +569,7 @@ usual MUSH/web parity, for two different reasons:
   restricted to the `manage_game` permission - deliberately kept off the web
   UI rather than given a "delete everything" button there.
 
-See `help inklings` and `help managing inklings` in-game for full command details.
+See `help inklings` and `help manage_inklings` in-game for full command details.
 
 ## How the Approval Workflow Works
 
@@ -589,6 +590,8 @@ Approving a round and closing an inkling are different things. An inkling can go
 5. **If Approved** — Thread unlocks, linked job closes. This round is done, and the thread goes back to normal player mode - the player can keep building on it and run `+inkling/submit` again whenever they have the next development ready for staff. Repeat as many times as the story needs; run `+inkling/close` once there's nothing further to do.
 
 Staff can award rewards during or after review.
+
+Closing isn't final: staff can reopen a closed inkling with `+inkling/reopen <id>` (MUSH) or the Reopen Inkling button in the admin web modal, restoring it to normal player mode with its full history intact. If closing also closed the linked job, reopening restores that too rather than creating a new one.
 
 ## Known Limitations
 

@@ -403,6 +403,21 @@ module AresMUSH
         { inkling: format_inkling_summary(inkling, viewer) }
       end
 
+      # POST /api/characters/:char_id/inklings/:inkling_id/reopen (v5) -
+      # staff only, mirrors InklingReopenCmd. Both call the one canonical
+      # Inklings.reopen_inkling.
+      def self.reopen_inkling(inkling_id, viewer)
+        inkling = Inklings.find_inkling(inkling_id)
+        return { error: "Inkling not found" } if !inkling
+
+        return { error: "Not authorized" } if !Inklings.can_manage_inklings?(viewer)
+        return { error: "That inkling isn't closed" } if !Inklings.closed?(inkling)
+
+        Inklings.reopen_inkling(inkling, viewer)
+
+        { inkling: format_inkling_detail(inkling, viewer) }
+      end
+
       # POST /api/characters/:char_id/inklings/:inkling_id/submit
       # Locks the thread and sends its full contents to a single staff
       # job - see Inklings.submit_inkling. Building up a thread does
@@ -680,6 +695,7 @@ module AresMUSH
           # %r back to real newlines, which .message-text's white-space:
           # pre-wrap (inklings.scss) then renders as actual line breaks.
           text: Website.format_input_for_html(message.text),
+          message_type: message.message_type,
           created_at: message.created_at,
           is_staff: message.is_staff == "true",
           is_private: message.is_private == "true",

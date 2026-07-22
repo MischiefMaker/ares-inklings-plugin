@@ -839,6 +839,8 @@ module AresMUSH
         tags << "Needs Changes"
       when "reward"
         tags << "Reward"
+      when "reopened"
+        tags << "Reopened"
       end
 
       tags << "staff" if message.is_staff == "true" && message.message_type.to_s.empty?
@@ -1044,7 +1046,7 @@ module AresMUSH
     def self.approve_inkling(inkling, staff, message = nil)
       note = message.to_s.strip
 
-      if !note.blank?
+      approval_message = if !note.blank?
         InklingMessage.create(
           inkling: inkling,
           author: staff,
@@ -1070,7 +1072,21 @@ module AresMUSH
       end
 
       close_message = note.blank? ? "Inkling approved." : note
-      Jobs.close_job(staff, inkling.job, close_message) if inkling.job
+      if inkling.job
+        Jobs.close_job(staff, inkling.job, close_message)
+        # Jobs.close_job posts close_message as a job comment (a JobReply)
+        # as a side effect (see AresMUSH's Jobs.change_job_status) - left
+        # alone, the next sync_job_replies (called whenever this inkling
+        # is viewed, on both MUSH and web) would mirror that same comment
+        # back into the thread as a second, generic [staff] message,
+        # duplicating the [Approved] entry above verbatim (this was v5
+        # Bug 001). Claim the new JobReply as already-mirrored by the
+        # approval message itself, so sync_job_replies' own dedup check
+        # (InklingMessage.find(source_job_reply_id:)) skips it instead of
+        # creating a real duplicate.
+        latest_reply = JobReply.find(job_id: inkling.job.id).to_a.max_by { |r| r.id.to_i }
+        approval_message.update(source_job_reply: latest_reply) if latest_reply
+      end
 
       update_inkling(inkling, locked: "false", approval_state: "approved")
       notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been approved. Use +inkling #{inkling.id} to view it.", inkling: inkling)
@@ -1145,6 +1161,71 @@ module AresMUSH
 
       update_inkling(inkling, locked: "false", approval_state: "needs_changes", player_unread: "true")
       notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been unlocked. You can now make edits and resubmit - use +inkling #{inkling.id} to view it.", inkling: inkling)
+    end
+
+    # +inkling/reopen (v5) - staff reopens a CLOSED inkling, i.e. restores
+    # Inkling#status to "open". Not to be confused with +inkling/unlock
+    # above, which reopens a LOCKED thread for editing - status and
+    # locked/approval_state are independent attributes (see the model's
+    # own doc comments), and reopening deliberately only touches status.
+    # locked/approval_state are left exactly as they were at closure -
+    # they already correctly describe whatever review round was last in
+    # progress, and reopening doesn't re-litigate that round's outcome,
+    # it just makes the thread active again. The canonical service both
+    # InklingReopenCmd (MUSH) and the web reopen handler call, so there
+    # is exactly one place this transition happens.
+    def self.reopen_inkling(inkling, staff)
+      reopen_message = InklingMessage.create(
+        inkling: inkling,
+        author: staff,
+        text: "Reopened by #{staff.name}.",
+        created_at: Time.now,
+        seq: next_event_seq(inkling),
+        is_staff: "true",
+        is_private: "false",
+        is_gm_note: "false",
+        is_personal: "false",
+        private_recipient_ids: "",
+        message_type: "reopened")
+
+      if inkling.job && Jobs.closed_statuses.include?(inkling.job.status)
+        reopen_status = Global.read_config("jobs", "default_status")
+        if reopen_status
+          # Jobs.change_job_status is the standard Ares API for moving a
+          # job between statuses (used internally by Jobs.close_job
+          # itself) - reusing it here, rather than writing job.status
+          # directly, keeps this consistent with however a real status
+          # change is supposed to behave (it also posts its own comment
+          # recording the change). Reopening into the game's own
+          # configured default/initial status is the closest existing
+          # concept to "active" a job has - there's no dedicated
+          # Jobs.reopen_job API to call instead.
+          Jobs.change_job_status(staff, inkling.job, reopen_status, "Reopened via the linked inkling.")
+        else
+          # No configured default status to reopen into - guessing a
+          # status name that might not exist for this game would risk
+          # leaving the job in a worse state than just leaving it alone.
+          # The inkling itself still reopens either way; only the linked
+          # job's own status is left for staff to fix by hand.
+          Global.logger.error("Inklings: Could not reopen linked job ##{inkling.job.id} for inkling ##{inkling.id} - no jobs.default_status configured.")
+          mirror_to_job(inkling, "This inkling was reopened, but its linked job's status could not be automatically restored (no default job status is configured) - please check the linked job manually.", staff)
+        end
+
+        # Both branches above post a JobReply as a side effect (Jobs.
+        # change_job_status via Jobs.comment, and mirror_to_job directly) -
+        # left alone, the next sync_job_replies would mirror that same
+        # comment back into the thread as a second, generic [staff]
+        # message duplicating the [Reopened] entry above (the exact v5 Bug
+        # 001 failure mode, which turns out to apply here too). Claim it
+        # as already-mirrored, same fix as approve_inkling.
+        latest_reply = JobReply.find(job_id: inkling.job.id).to_a.max_by { |r| r.id.to_i }
+        reopen_message.update(source_job_reply: latest_reply) if latest_reply
+      end
+
+      update_inkling(inkling, status: "open")
+      notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been reopened. Use +inkling #{inkling.id} to view it.", inkling: inkling)
+
+      dispatch_inkling_reopened(inkling, staff)
     end
 
     # +inkling/reward - records a reward in the generic InklingReward
@@ -1346,6 +1427,8 @@ module AresMUSH
           return InklingRewardCmd
         elsif cmd.switch_is?("close")
           return InklingCloseCmd
+        elsif cmd.switch_is?("reopen")
+          return InklingReopenCmd
         elsif cmd.switch_is?("personal")
           return InklingPersonalCmd
         elsif cmd.switch_is?("requestunlock")
@@ -1498,6 +1581,8 @@ module AresMUSH
         return InklingsReplyToInklingWebHandler
       when "inklings_close_inkling"
         return InklingsCloseInklingWebHandler
+      when "inklings_reopen_inkling"
+        return InklingsReopenInklingWebHandler
       when "inklings_delete_inkling"
         return InklingsDeleteInklingWebHandler
       when "inklings_share_inkling"
@@ -1677,6 +1762,12 @@ module AresMUSH
       Global.dispatcher.dispatch("inkling:rewarded", inkling, reward) if Global.dispatcher.respond_to?(:dispatch)
     rescue => e
       Global.logger.warn("Inklings: Could not dispatch inkling:rewarded - #{e.message}")
+    end
+
+    def self.dispatch_inkling_reopened(inkling, staff)
+      Global.dispatcher.dispatch("inkling:reopened", inkling, staff) if Global.dispatcher.respond_to?(:dispatch)
+    rescue => e
+      Global.logger.warn("Inklings: Could not dispatch inkling:reopened - #{e.message}")
     end
 
     # --- AresMUSH Hook: Chargen App Review ---

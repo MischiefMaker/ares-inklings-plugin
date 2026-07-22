@@ -94,6 +94,7 @@
               {{#if (eq msg.message_type "approved")}}<span class="badge text-bg-success">APPROVED</span>{{/if}}
               {{#if (eq msg.message_type "needs_changes")}}<span class="badge text-bg-warning">NEEDS CHANGES</span>{{/if}}
               {{#if (eq msg.message_type "reward")}}<span class="badge text-bg-info">REWARD</span>{{/if}}
+              {{#if (eq msg.message_type "reopened")}}<span class="badge text-bg-success">REOPENED</span>{{/if}}
               {{#if (and msg.is_staff (not msg.message_type))}}<span class="badge text-bg-danger">STAFF</span>{{/if}}
               {{#if msg.is_gm_note}}<span class="badge text-bg-danger">GM</span>{{/if}}
               {{#if msg.is_personal}}<span class="badge text-bg-info">PRIVATE TO YOU</span>{{/if}}
@@ -264,7 +265,9 @@
               <label class="form-check-label" for="inklings-review-needs-changes">Needs Changes</label>
             </div>
             {{textarea class="form-control mb-2" value=this.reviewMessage placeholder=(if (eq this.reviewDecision "needs_changes") "Explain what needs to change (required)..." "Optional note to include with the approval...") rows="3"}}
-            <button type="button" class="btn btn-primary" {{action "submitReview"}}>Submit Review</button>
+            <button type="button" class="btn btn-primary" disabled={{this.reviewSubmitting}} {{action "submitReview"}}>
+              {{if this.reviewSubmitting "Submitting..." "Submit Review"}}
+            </button>
           </div>
         {{/if}}
       {{/if}}
@@ -281,6 +284,15 @@
             <button type="button" class="btn btn-secondary" {{action "shareGroup"}}>Share with Group</button>
           </div>
           <button type="button" class="btn btn-warning" {{action "closeInkling"}}>Close Inkling</button>
+        </div>
+      {{/if}}
+
+      {{#if (and (eq this.detail.status "closed") this.isStaff)}}
+        <hr>
+        <div class="d-flex gap-2 flex-wrap align-items-center mb-2">
+          <button type="button" class="btn btn-success" disabled={{this.reopenSubmitting}} {{action "reopenInkling"}}>
+            {{if this.reopenSubmitting "Reopening..." "Reopen Inkling"}}
+          </button>
         </div>
       {{/if}}
 

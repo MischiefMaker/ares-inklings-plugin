@@ -1729,6 +1729,63 @@ correct on inspection - the bug is invisible until you check what the
 
 ---
 
+### Lesson 29: A "close/change status with a message" Jobs API silently posts that message as its own comment - mirroring it back in later duplicates it
+
+Approving an Inkling with a comment showed the comment twice (v5 Bug 001):
+once as the canonical `[Approved]` entry this plugin creates directly, once
+again moments later as a generic `[staff]` reply with identical text. The
+bug report's own guess - "the web handler creates a staff reply and then
+passes the same text to the approval workflow" - was wrong in a useful way:
+reading the actual web handler showed it never creates a second reply at
+all. The real cause was one level removed.
+
+**Confirmed against real AresMUSH core source:** `Jobs.close_job(enactor,
+job, message)` calls `Jobs.change_job_status(enactor, job, status,
+message)`, which does `Jobs.comment(job, enactor, message, false)` as a
+side effect - it posts `message` as an ordinary `JobReply` in addition to
+changing the job's status. This plugin already has a mechanism that pulls
+job comments back into the Inkling thread
+(`Inklings.sync_job_replies`, called every time an inkling is viewed, on
+both MUSH and web) precisely so staff replying via the linked job still
+reaches the player. That mechanism doesn't know the comment it's mirroring
+back in is the *same text* this plugin already recorded directly moments
+earlier - it just sees an unmirrored `JobReply` and mirrors it, exactly as
+designed. Two separately-correct behaviors compose into a duplicate.
+
+This pattern recurred immediately while building the reopen feature in the
+same round (v5 Bug 002): `Jobs.change_job_status` - the standard API for
+moving a job to any status, reused to reopen the linked job - posts a
+comment via the exact same path, so the reopen audit entry would have been
+duplicated the same way if not caught before shipping.
+
+- **Any call into a Jobs API that accepts a message/comment parameter
+  should be treated as "this will also create a JobReply,"** even if nothing
+  in the calling code creates one explicitly. `create_job`, `close_job`,
+  and `change_job_status` all do this. If this plugin also records that
+  same content directly (as `approve_inkling` and `reopen_inkling` both
+  do), and `sync_job_replies` is in play, that's a duplicate waiting to
+  surface the next time the thread is viewed - not immediately, which is
+  part of what made it easy to miss originally.
+- **The fix is to claim the JobReply as already-mirrored, not to suppress
+  it or stop passing a message to the Jobs API.** After the Jobs call
+  returns, look up the newest `JobReply` on the job
+  (`JobReply.find(job_id:).max_by { |r| r.id.to_i }`) and set it as the
+  `source_job_reply` on the message this plugin already created.
+  `sync_job_replies`'s own dedup check
+  (`InklingMessage.find(source_job_reply_id:).any?`) then skips it
+  naturally. This preserves the real Jobs API's normal behavior (including
+  whatever it does with `admin_only`, timestamps, etc.) instead of
+  fighting it.
+- **When fixing one call site of a shared pattern, grep for every other
+  call site before declaring it done.** `mirror_to_job` (this plugin's own
+  wrapper around `Jobs.comment`) is used by `unlock_inkling` and
+  `request_changes` the same uncaught way `approve_inkling` used to be -
+  not fixed in this round (out of the reported scope), but flagged as a
+  near-certain latent duplicate for a future round rather than assumed
+  fine because it wasn't reported yet.
+
+---
+
 ## 9. Plugin Review Checklist
 
 Before considering a plugin (or a plugin change) complete:

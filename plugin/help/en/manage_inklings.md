@@ -55,6 +55,9 @@ Grant a reward to the inkling's subject character. Examples: `+inkling/reward 14
 **`+inkling/delete <id>`**
 Staff: deletes an inkling thread immediately and permanently. Players: no longer deletes directly - instead closes the thread and files a job asking staff to review and approve a permanent deletion. Approving the job means a staff member then runs `+inkling/delete` themselves to actually carry it out.
 
+**`+inkling/reopen <id>`**
+Reopens a closed inkling (sets status back to open). Not the same as `+inkling/unlock` above - that reopens a *locked* thread for editing without touching whether it's closed; `+inkling/reopen` is for a thread that was closed with `+inkling/close` and needs to become active again. Preserves the thread's full history and adds a record of who reopened it and when. If the linked job was closed along with the inkling, it's reopened too using the game's standard job status handling - the same job stays linked, a new one is never created.
+
 **`+inkling/reset`**
 Permanently deletes every inkling thread, message, and roll for every character. Restricted to the `manage_game` permission (Coders/Admins only), not general Inklings staff. Must be entered twice within 60 seconds to confirm - the first entry just arms it and shows a warning.
 

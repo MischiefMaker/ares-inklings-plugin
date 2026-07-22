@@ -17,6 +17,8 @@ en:
     submitted_success: "Your inkling has been submitted to staff for review. You'll be notified when they respond."
     not_yet_submitted_notice: "%xhThis Inkling is currently in player mode.%xn Use +inkling/submit %{id} if this Inkling requires a staff response."
     thread_closed_msg: "Inkling closed."
+    reopen_success: "Inkling reopened."
+    inkling_not_closed: "That inkling isn't closed."
     closed_via_inkling: "This job was closed automatically because the linked inkling was closed."
     advance_added: "Update added."
     advance_added_auto_private: "Update added (marked private to match the previous message)."

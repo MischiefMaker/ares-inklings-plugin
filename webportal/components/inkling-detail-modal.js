@@ -42,6 +42,7 @@ export default Component.extend({
   isOpen: false,
   detail: null,
   loading: false,
+  reopenSubmitting: false,
 
   replyText: '',
   replyIsPrivate: false,
@@ -68,6 +69,7 @@ export default Component.extend({
   // explanation are entered together, in the same place, before submitting.
   reviewDecision: 'approve',
   reviewMessage: '',
+  reviewSubmitting: false,
 
   didReceiveAttrs() {
     this._super(...arguments);
@@ -116,7 +118,9 @@ export default Component.extend({
       rollResult: '',
       rollIsPrivate: false,
       reviewDecision: 'approve',
-      reviewMessage: ''
+      reviewMessage: '',
+      reviewSubmitting: false,
+      reopenSubmitting: false
     });
   },
 
@@ -284,6 +288,18 @@ export default Component.extend({
     // already requires feedback); an approval message is optional, same
     // as +inkling/approve.
     submitReview() {
+      // Guards against a duplicate approval/needs-changes submission from
+      // a repeated click or a slow retry while the first request is still
+      // in flight (v5 Bug 001) - the button is disabled via
+      // this.reviewSubmitting in the template while this is true. The
+      // server independently rejects a genuine duplicate too (approve_inkling/
+      // request_changes_inkling both require approval_state == "submitted",
+      // which only the first call still sees), so this is belt-and-suspenders
+      // UX rather than the only thing preventing a duplicate.
+      if (this.reviewSubmitting) {
+        return;
+      }
+
       let decision = this.reviewDecision;
       let message = (this.reviewMessage || '').trim();
 
@@ -291,6 +307,8 @@ export default Component.extend({
         this.flashMessages.danger('Please explain what needs to change before submitting.');
         return;
       }
+
+      this.set('reviewSubmitting', true);
 
       let request = decision === 'needs_changes'
         ? this.gameApi.requestOne('inklings_request_changes', {
@@ -308,6 +326,8 @@ export default Component.extend({
         }
         this.setProperties({ reviewDecision: 'approve', reviewMessage: '' });
         this.loadDetail();
+      }).finally(() => {
+        this.set('reviewSubmitting', false);
       });
     },
 
@@ -417,7 +437,7 @@ export default Component.extend({
     },
 
     closeInkling() {
-      if (!window.confirm('Close this inkling? This cannot be undone.')) {
+      if (!window.confirm('Close this inkling? Staff can reopen it later with the Reopen Inkling button if needed.')) {
         return;
       }
       this.gameApi.requestOne('inklings_close_inkling', {
@@ -431,6 +451,35 @@ export default Component.extend({
         if (this.onUpdate) {
           this.onUpdate(response.inkling);
         }
+      });
+    },
+
+    // Staff-only (v5) - reopens a closed inkling via the same canonical
+    // Inklings.reopen_inkling service +inkling/reopen uses. reopenSubmitting
+    // guards the button against a duplicate reopen from a repeated click
+    // or slow retry, mirroring submitReview's reviewSubmitting guard -
+    // the server independently rejects a genuine duplicate too, since
+    // reopen_inkling requires the inkling to still be closed.
+    reopenInkling() {
+      if (this.reopenSubmitting) {
+        return;
+      }
+      this.set('reopenSubmitting', true);
+
+      this.gameApi.requestOne('inklings_reopen_inkling', {
+        inkling_id: this.inklingId
+      }, null).then((response) => {
+        if (response.error) {
+          this.flashMessages.danger(response.error);
+          return;
+        }
+        this.flashMessages.success('Inkling reopened.');
+        this.set('detail', response.inkling);
+        if (this.onUpdate) {
+          this.onUpdate(response.inkling);
+        }
+      }).finally(() => {
+        this.set('reopenSubmitting', false);
       });
     },
 
