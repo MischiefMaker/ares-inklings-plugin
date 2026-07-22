@@ -61,7 +61,11 @@ module AresMUSH
       end
 
       def handle
-        Inklings.submit_inkling(inkling, enactor)
+        result = Inklings.submit_inkling(inkling, enactor)
+        if result[:error]
+          client.emit_failure result[:error]
+          return
+        end
         client.emit_success t('inklings.submitted_success')
       end
     end

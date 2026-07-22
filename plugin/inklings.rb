@@ -852,6 +852,8 @@ module AresMUSH
       shared_lines << "Players: #{shared_names.map { |n| color_name(n) }.join(", ")}" if shared_names.any?
       group_list = shared_group_list(inkling)
       shared_lines << "Groups: #{group_list.join(", ")}" if group_list.any?
+      tag_list = get_tags(inkling)
+      shared_lines << "Tags: #{tag_list.join(", ")}" if tag_list.any?
       shared_with_line = shared_lines.any? ? "\n\n[Shared With]\n#{shared_lines.join("\n")}" : ""
 
       lock_tag = ""
@@ -907,6 +909,14 @@ module AresMUSH
     # the previously-linked job was closed (e.g. after
     # +inkling/needschanges), a new one is created, since that
     # represents a finished round of review.
+    # Returns { success: true, job: job } on success, or { error: "..." }
+    # if the linked job couldn't be created. On failure, the thread is
+    # deliberately left as-is (not locked, not marked "submitted") rather
+    # than silently proceeding - ensure_job already logs the underlying
+    # cause, but a job failure means staff were never actually notified,
+    # so locking the thread anyway would strand the player in a "submitted,
+    # awaiting review" state nobody is actually reviewing, with
+    # +inkling/submit blocked from retrying (see check_not_already_locked).
     def self.submit_inkling(inkling, submitter)
       title = submission_job_title(submitter, inkling.kind)
       prior_seq = last_submission_seq(inkling)
@@ -920,13 +930,13 @@ module AresMUSH
       end
 
       job = ensure_job(inkling, title, body, submitter)
+      return { error: "Could not notify staff of this submission - please try again, or contact staff directly if the problem persists." } if !job
 
       # Add a submission note to the thread itself, including the job reference
-      job_ref = job ? " Linked Job ##{job.id}." : ""
       InklingMessage.create(
         inkling: inkling,
         author: submitter,
-        text: "Submitted for review.#{job_ref}",
+        text: "Submitted for review. Linked Job ##{job.id}.",
         created_at: Time.now,
         seq: next_event_seq(inkling),
         is_staff: "false",
@@ -939,6 +949,8 @@ module AresMUSH
       update_inkling(inkling, locked: "true", approval_state: "submitted")
 
       dispatch_inkling_submitted(inkling)
+
+      { success: true, job: job }
     end
 
     # +inkling/approve - the single source of truth for approval.
@@ -981,7 +993,7 @@ module AresMUSH
       Jobs.close_job(staff, inkling.job, close_message) if inkling.job
 
       update_inkling(inkling, locked: "true", approval_state: "approved")
-      notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been approved. Use +inkling #{inkling.id} to view it.")
+      notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been approved. Use +inkling #{inkling.id} to view it.", inkling: inkling)
 
       dispatch_inkling_approved(inkling, staff)
     end
@@ -1009,7 +1021,7 @@ module AresMUSH
       Jobs.close_job(staff, inkling.job, "Changes requested. Player to revise and resubmit.") if inkling.job
 
       update_inkling(inkling, player_unread: "true", locked: "false", approval_state: "needs_changes")
-      notify_player(inkling.character, "<inklings> Staff have requested changes on your inkling ##{inkling.id}. Use +inkling #{inkling.id} to view their feedback.")
+      notify_player(inkling.character, "<inklings> Staff have requested changes on your inkling ##{inkling.id}. Use +inkling #{inkling.id} to view their feedback.", inkling: inkling)
 
       dispatch_inkling_needs_changes(inkling, staff)
     end
@@ -1031,7 +1043,7 @@ module AresMUSH
 
       mirror_to_job(inkling, "[Unlock Request] #{player.name} requested to reopen this inkling: #{reason}", player) if inkling.job
 
-      notify_player(inkling.character, "<inklings> Your unlock request for inkling ##{inkling.id} has been sent to staff.")
+      notify_player(inkling.character, "<inklings> Your unlock request for inkling ##{inkling.id} has been sent to staff.", inkling: inkling)
     end
 
     # +inkling/unlock - Staff reopens a completed inkling for further editing.
@@ -1052,7 +1064,7 @@ module AresMUSH
       mirror_to_job(inkling, "Inkling unlocked. Player may now edit.", staff) if inkling.job
 
       update_inkling(inkling, locked: "false", approval_state: "needs_changes", player_unread: "true")
-      notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been unlocked. You can now make edits and resubmit - use +inkling #{inkling.id} to view it.")
+      notify_player(inkling.character, "<inklings> Your inkling ##{inkling.id} has been unlocked. You can now make edits and resubmit - use +inkling #{inkling.id} to view it.", inkling: inkling)
     end
 
     # +inkling/reward - records a reward in the generic InklingReward
@@ -1110,14 +1122,23 @@ module AresMUSH
         private_recipient_ids: visibility == "all" ? "" : character.id,
         message_type: "reward")
 
-      notify_player(character, "<inklings> You have received a reward on inkling ##{inkling.id}: #{summary}. Use +inkling #{inkling.id} to view it.")
+      notify_player(character, "<inklings> You have received a reward on inkling ##{inkling.id}: #{summary}. Use +inkling #{inkling.id} to view it.", inkling: inkling)
 
       reward = InklingReward.find(inkling_id: inkling.id).last
       dispatch_inkling_rewarded(inkling, reward) if reward
     end
 
-    def self.notify_player(char, message)
+    # inkling: optional - when given, also persists an offline notification
+    # via Login.notify (the same AresMUSH notification infrastructure Jobs
+    # uses - see Jobs.create_job's own Login.notify(c, :job, ...) call).
+    # That records a LoginNotice the player sees in the web portal's
+    # Notifications tab whether or not they're currently online, unlike
+    # emit_ooc_if_logged_in below, which only reaches an already-connected
+    # client. Omitted (nil) only for notifications with no single inkling
+    # to reference.
+    def self.notify_player(char, message, inkling: nil)
       Login.emit_ooc_if_logged_in(char, message)
+      Login.notify(char, :inkling, message, inkling.id) if inkling && Login.respond_to?(:notify)
     end
 
     # Centralized "new message" notice - every place a reply/message lands
@@ -1128,7 +1149,7 @@ module AresMUSH
     # all (plain module code, not a CommandHandler), so they silently drifted
     # to a duplicate string with no ID. One helper, always includes the ID.
     def self.notify_new_message(char, inkling)
-      notify_player(char, "<inklings> You have a new message on inkling ##{inkling.id}. Use +inkling #{inkling.id} to view it.")
+      notify_player(char, "<inklings> You have a new message on inkling ##{inkling.id}. Use +inkling #{inkling.id} to view it.", inkling: inkling)
     end
 
     # Centralized "shared with you" notice, for both individual shares
@@ -1136,7 +1157,7 @@ module AresMUSH
     # (+inkling/group) - same wording, just "with you" vs "with your group".
     def self.notify_shared(char, inkling, sharer_name, with_group: false)
       target = with_group ? "with your group" : "with you"
-      notify_player(char, "<inklings> #{color_name(sharer_name)} has shared an inkling #{target}. Use +inkling #{inkling.id} to view it.")
+      notify_player(char, "<inklings> #{color_name(sharer_name)} has shared an inkling #{target}. Use +inkling #{inkling.id} to view it.", inkling: inkling)
     end
 
     # "You have a new inkling" notice for inklings staff create on a
@@ -1144,7 +1165,7 @@ module AresMUSH
     # helper (rather than folding into notify_new_message) since it's a
     # distinct event - a brand-new thread, not a message on an existing one.
     def self.notify_new_inkling(char, inkling)
-      notify_player(char, "<inklings> You have a new inkling (##{inkling.id}). Use +inkling #{inkling.id} to view it.")
+      notify_player(char, "<inklings> You have a new inkling (##{inkling.id}). Use +inkling #{inkling.id} to view it.", inkling: inkling)
     end
 
     # Character names a private message's recipient IDs resolve to, for
@@ -1223,6 +1244,8 @@ module AresMUSH
           return InklingGroupCmd
         elsif cmd.switch_is?("roll")
           return InklingRollCmd
+        elsif cmd.switch_is?("rollprivate")
+          return InklingRollPrivateCmd
         elsif cmd.switch_is?("comment")
           return InklingCommentCmd
         elsif cmd.switch_is?("new")
@@ -1343,8 +1366,12 @@ module AresMUSH
         title = char.send("inkling_#{kind}_title")
         text = char.send("inkling_#{kind}_text")
 
-        # Only create if draft data exists
-        next if title.to_s.blank? && text.to_s.blank?
+        # Only create once both halves of the draft are present - a title
+        # is required (create_inkling itself rejects a blank one), so a
+        # text-only draft is incomplete, not ready to convert. Left as a
+        # draft rather than attempted-and-failed; AppReviewApi.app_review_lines
+        # already flags this same incomplete state to staff before approval.
+        next if title.to_s.blank? || text.to_s.blank?
 
         begin
           # character is both the owner and the creator of this Inkling

@@ -308,6 +308,11 @@ module AresMUSH
         return { error: "This inkling is closed" } if inkling.status == "closed"
         return { error: "This inkling has been submitted and is locked until staff respond." } if inkling.locked == "true" && !Inklings.can_manage_inklings?(viewer) && !is_personal
         return { error: "Reply text cannot be empty" } if text.to_s.blank?
+        # Personal (author-only, hidden even from staff) and Private (author +
+        # staff) are mutually exclusive visibility levels - reject rather than
+        # silently picking one, so the client's checkbox state and the stored
+        # message can never disagree about which was actually applied.
+        return { error: "A reply cannot be both Private and Personal - choose one." } if is_private && is_personal
 
         is_staff = Inklings.can_manage_inklings?(viewer)
 
@@ -391,7 +396,8 @@ module AresMUSH
         return { error: "This inkling is closed" } if inkling.status == "closed"
         return { error: "This inkling has already been submitted and is awaiting a staff response." } if inkling.locked == "true"
 
-        Inklings.submit_inkling(inkling, viewer)
+        result = Inklings.submit_inkling(inkling, viewer)
+        return { error: result[:error] } if result[:error]
 
         { inkling: format_inkling_summary(inkling, viewer) }
       end

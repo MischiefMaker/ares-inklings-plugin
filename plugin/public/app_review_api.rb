@@ -29,11 +29,17 @@ module AresMUSH
         Inklings.chargen_required_types.each do |kind|
           next unless char.respond_to?("inkling_#{kind}_text")
           text = char.send("inkling_#{kind}_text")
+          # A title is also required (see Inklings.convert_chargen_drafts,
+          # which needs both to actually create the Inkling on approval) -
+          # text-only was previously treated as complete here, which let a
+          # blank-titled draft show a green "OK!" and pass review, only to
+          # silently fail to convert into a real Inkling later.
+          title = char.respond_to?("inkling_#{kind}_title") ? char.send("inkling_#{kind}_title") : nil
 
           field_label = Inklings.kind_label(kind)
           check_label = t('inklings.chargen_checking_inklings', types: field_label)
 
-          if text.to_s.blank?
+          if text.to_s.blank? || title.to_s.blank?
             review_lines << Chargen.format_review_status(check_label, t(message_key, missing: field_label))
           else
             review_lines << Chargen.format_review_status(check_label, t('chargen.ok'))

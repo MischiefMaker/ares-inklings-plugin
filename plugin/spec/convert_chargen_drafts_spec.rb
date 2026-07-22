@@ -85,6 +85,39 @@ module AresMUSH
         end
       end
 
+      context "title missing but text present" do
+        before do
+          char.update(inkling_secret_title: nil, inkling_secret_text: "This is my secret")
+          char.update(inkling_goal_title: "Goal", inkling_goal_text: "Goal text")
+        end
+
+        it "does not attempt creation for a draft with no title, and preserves it" do
+          expect(Inklings::InklingApi).not_to receive(:create_inkling)
+            .with(anything, anything, "secret", anything, anything)
+          allow(Inklings::InklingApi).to receive(:create_inkling)
+            .with(char.id, char, "goal", "Goal text", "Goal")
+            .and_return({})
+
+          Inklings.convert_chargen_drafts(char)
+
+          expect(char.reload.inkling_secret_title).to be_nil
+          expect(char.reload.inkling_secret_text).to eq("This is my secret")
+        end
+      end
+
+      context "text missing but title present" do
+        before do
+          char.update(inkling_secret_title: "Secret", inkling_secret_text: nil)
+        end
+
+        it "does not attempt creation for a draft with no text, and preserves it" do
+          expect(Inklings::InklingApi).not_to receive(:create_inkling)
+          Inklings.convert_chargen_drafts(char)
+
+          expect(char.reload.inkling_secret_title).to eq("Secret")
+        end
+      end
+
       context "mixed populated and blank" do
         before do
           char.update(inkling_secret_title: "Secret", inkling_secret_text: "Secret text")

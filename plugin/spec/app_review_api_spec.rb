@@ -31,8 +31,8 @@ module AresMUSH
           allow(Inklings).to receive(:chargen_enabled?).and_return(true)
           allow(Inklings).to receive(:chargen_required_types).and_return(["secret", "goal"])
           allow(Global).to receive(:read_config).with("inklings", "chargen_required").and_return(true)
-          char.update(inkling_secret_text: "My secret")
-          char.update(inkling_goal_text: "My goal")
+          char.update(inkling_secret_title: "My Secret", inkling_secret_text: "My secret")
+          char.update(inkling_goal_title: "My Goal", inkling_goal_text: "My goal")
           allow(Inklings).to receive(:kind_label).with("secret").and_return("Secret")
           allow(Inklings).to receive(:kind_label).with("goal").and_return("Goal")
         end
@@ -40,6 +40,25 @@ module AresMUSH
         it "returns empty array when all required fields are complete" do
           result = Inklings::AppReviewApi.app_review_lines(char)
           expect(result).to eq([])
+        end
+      end
+
+      context "chargen required, title missing but text present" do
+        before do
+          allow(Inklings).to receive(:chargen_enabled?).and_return(true)
+          allow(Inklings).to receive(:chargen_required_types).and_return(["secret", "goal"])
+          allow(Global).to receive(:read_config).with("inklings", "chargen_required").and_return(true)
+          char.update(inkling_secret_title: nil, inkling_secret_text: "My secret")
+          char.update(inkling_goal_title: "My Goal", inkling_goal_text: "My goal")
+          allow(Inklings).to receive(:kind_label).with("secret").and_return("Secret")
+          allow(Inklings).to receive(:kind_label).with("goal").and_return("Goal")
+          allow(Chargen).to receive(:format_review_status) { |severity, msg| "#{severity}: #{msg}" }
+        end
+
+        it "returns red error when title is blank even though text is filled in" do
+          result = Inklings::AppReviewApi.app_review_lines(char)
+          expect(result).not_to be_empty
+          expect(result[0]).to include("error:")
         end
       end
 
@@ -128,7 +147,8 @@ module AresMUSH
           allow(Global).to receive(:read_config).with("inklings", "chargen_required").and_return(true)
           allow(char).to receive(:respond_to?).with("inkling_secret_text").and_return(false)
           allow(char).to receive(:respond_to?).with("inkling_goal_text").and_return(true)
-          char.update(inkling_goal_text: "My goal")
+          allow(char).to receive(:respond_to?).with("inkling_goal_title").and_return(true)
+          char.update(inkling_goal_title: "My Goal", inkling_goal_text: "My goal")
           allow(Inklings).to receive(:kind_label).with("goal").and_return("Goal")
           allow(Chargen).to receive(:format_review_status) { |severity, msg| "#{severity}: #{msg}" }
         end

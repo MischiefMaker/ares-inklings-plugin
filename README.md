@@ -84,6 +84,12 @@ is saved as a draft on the character, survives navigating away and coming back, 
 be edited later from their profile. When the character is approved, each filled-in draft
 is converted into a real Inkling automatically.
 
+**Reviewing before you submit:** the Secret & Goal tab always shows your full current
+draft text (not a summary) in the same title/description fields you typed it into, so
+you can return to that tab anytime before final submission to read back exactly what
+you wrote. On the MUSH, `+inkling/view-secret` and `+inkling/view-goal` show the same
+full draft text.
+
 Players who prefer the MUSH client over the web portal can fill in the same draft with
 `+inkling/secret <title>/<text>` and `+inkling/goal <title>/<text>` — before approval,
 these two commands write to the same draft used by the web form (not a real Inkling).
@@ -462,6 +468,7 @@ Requires the FS3Skills plugin to be installed.
 | `+inkling/advance <id>=<text>` | Add a public message |
 | `+inkling/private <id>=<text>` | Add a message visible to specific participants + staff |
 | `+inkling/roll <id>=<roll>` | Attach a dice roll |
+| `+inkling/rollprivate <id>=<roll>` | Attach a dice roll visible only to you and staff |
 | `+inkling/submit <id>` | Submit to staff for review (locks the thread) |
 | `+inkling/share <id>=<char>,<char>` | Grant access to specific characters |
 | `+inkling/group <id>=<group>` | Grant access to a demographics group |

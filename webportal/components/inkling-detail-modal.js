@@ -22,6 +22,15 @@ export default Component.extend({
   characterId: null,
   viewerId: null,
   isStaff: false,
+  // Whether the viewer's own character is approved. Only meaningful for
+  // non-staff (staff bypass the approval requirement everywhere server-side -
+  // see Inklings.can_manage_inklings? / can_manage_inklings? checks in
+  // InklingApi/RollsApi). Used purely to hide reply/roll/submit controls a
+  // non-staff, unapproved viewer couldn't actually use - the server-side
+  // checks are the real enforcement (e.g. InklingApi.reply_to_inkling,
+  // RollsApi.add_roll both reject unapproved non-staff callers regardless
+  // of what the client sends).
+  isApproved: false,
   onClose: null,
   onUpdate: null,
   onDelete: null,
@@ -47,6 +56,12 @@ export default Component.extend({
   npcName: '',
   rollResult: '',
   rollIsPrivate: false,
+
+  // Staff review form (approve/needs-changes) - one unified control instead
+  // of two separate window.prompt-driven buttons, so the decision and its
+  // explanation are entered together, in the same place, before submitting.
+  reviewDecision: 'approve',
+  reviewMessage: '',
 
   didReceiveAttrs() {
     this._super(...arguments);
@@ -92,7 +107,9 @@ export default Component.extend({
       rollSpec: '',
       npcName: '',
       rollResult: '',
-      rollIsPrivate: false
+      rollIsPrivate: false,
+      reviewDecision: 'approve',
+      reviewMessage: ''
     });
   },
 
@@ -117,6 +134,24 @@ export default Component.extend({
   },
 
   actions: {
+    // Private and Personal are mutually exclusive visibility levels (see
+    // InklingApi.reply_to_inkling's matching server-side rejection) -
+    // checking one clears the other, so the two checkboxes can never both
+    // end up checked in the UI.
+    toggleReplyPrivate() {
+      this.toggleProperty('replyIsPrivate');
+      if (this.replyIsPrivate) {
+        this.set('replyIsPersonal', false);
+      }
+    },
+
+    toggleReplyPersonal() {
+      this.toggleProperty('replyIsPersonal');
+      if (this.replyIsPersonal) {
+        this.set('replyIsPrivate', false);
+      }
+    },
+
     close() {
       this.setProperties({ isOpen: false, detail: null });
       this._loadedId = null;
@@ -218,32 +253,40 @@ export default Component.extend({
       });
     },
 
-    approveInkling() {
-      if (!window.confirm('Approve this inkling?')) {
-        return;
-      }
-      this.gameApi.requestOne('inklings_approve_inkling', {
-        inkling_id: this.inklingId
-      }, null).then((response) => {
-        if (response.error) {
-          return;
-        }
-        this.loadDetail();
-      });
+    setReviewDecision(decision) {
+      this.set('reviewDecision', decision);
     },
 
-    requestChanges() {
-      let feedback = window.prompt('Enter feedback for revision:');
-      if (!feedback || !feedback.trim()) {
+    // Single entry point for the staff review form - decision (Approved /
+    // Needs Changes) plus one message field, submitted together. Needs
+    // Changes requires non-blank explanatory text (mirrors
+    // InklingNeedsChangesCmd's required_args on the MUSH side, which
+    // already requires feedback); an approval message is optional, same
+    // as +inkling/approve.
+    submitReview() {
+      let decision = this.reviewDecision;
+      let message = (this.reviewMessage || '').trim();
+
+      if (decision === 'needs_changes' && !message) {
+        this.flashMessages.danger('Please explain what needs to change before submitting.');
         return;
       }
-      this.gameApi.requestOne('inklings_request_changes', {
-        inkling_id: this.inklingId,
-        feedback: feedback.trim()
-      }, null).then((response) => {
+
+      let request = decision === 'needs_changes'
+        ? this.gameApi.requestOne('inklings_request_changes', {
+          inkling_id: this.inklingId,
+          feedback: message
+        }, null)
+        : this.gameApi.requestOne('inklings_approve_inkling', {
+          inkling_id: this.inklingId,
+          message: message || null
+        }, null);
+
+      request.then((response) => {
         if (response.error) {
           return;
         }
+        this.setProperties({ reviewDecision: 'approve', reviewMessage: '' });
         this.loadDetail();
       });
     },

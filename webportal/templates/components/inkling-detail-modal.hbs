@@ -25,30 +25,20 @@
       <p>Loading...</p>
     {{else if this.detail}}
 
-      {{#if (or this.detail.locked this.detail.tags.length)}}
-        <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
-          {{#if this.detail.locked}}
-            {{#if (eq this.detail.approval_state "approved")}}
-              <span class="badge text-bg-secondary">LOCKED - Completed</span>
-            {{else if (eq this.detail.approval_state "submitted")}}
-              <span class="badge text-bg-secondary">LOCKED - Awaiting Staff Review</span>
-            {{else}}
-              <span class="badge text-bg-secondary">LOCKED</span>
-            {{/if}}
+      {{#if this.detail.locked}}
+        <div class="mb-3">
+          {{#if (eq this.detail.approval_state "approved")}}
+            <span class="badge text-bg-secondary">LOCKED - Completed</span>
+          {{else if (eq this.detail.approval_state "submitted")}}
+            <span class="badge text-bg-secondary">LOCKED - Awaiting Staff Review</span>
+          {{else}}
+            <span class="badge text-bg-secondary">LOCKED</span>
           {{/if}}
-          {{#each this.detail.tags as |tag|}}
-            <span class="badge text-bg-secondary">
-              {{tag}}
-              {{#if (or this.isStaff (eq this.detail.character_id this.viewerId))}}
-                <button type="button" class="btn-close btn-close-white ms-1" {{action "removeTag" tag}} aria-label="Remove tag"></button>
-              {{/if}}
-            </span>
-          {{/each}}
         </div>
       {{/if}}
 
       {{#if this.detail.shared_with}}
-        {{#if (or this.detail.shared_with.players.length this.detail.shared_with.groups.length)}}
+        {{#if (or this.detail.shared_with.players.length this.detail.shared_with.groups.length this.detail.tags.length this.isStaff (eq this.detail.character_id this.viewerId))}}
           <div class="card card-body mb-3">
             <h6 class="mb-2">Shared With</h6>
             {{#if this.detail.shared_with.players.length}}
@@ -57,6 +47,21 @@
             {{#if this.detail.shared_with.groups.length}}
               <div class="small"><strong>Groups:</strong> {{this.detail.shared_with.groups}}</div>
             {{/if}}
+            <div class="small d-flex align-items-center gap-1 flex-wrap mt-1 inkling-tags-row">
+              <strong>Tags:</strong>
+              {{#if this.detail.tags.length}}
+                {{#each this.detail.tags as |tag|}}
+                  <span class="badge text-bg-secondary tag-badge-sm">
+                    {{tag}}
+                    {{#if (or this.isStaff (eq this.detail.character_id this.viewerId))}}
+                      <button type="button" class="btn-close btn-close-white ms-1" {{action "removeTag" tag}} aria-label="Remove tag"></button>
+                    {{/if}}
+                  </span>
+                {{/each}}
+              {{else}}
+                <span class="text-muted">none</span>
+              {{/if}}
+            </div>
           </div>
         {{/if}}
       {{/if}}
@@ -117,6 +122,7 @@
             This inkling has been submitted and is locked until staff respond. You'll be notified here when they do.
           </div>
         {{else}}
+          {{#if (or this.isStaff this.isApproved)}}
           <div class="mb-3">
             {{#unless this.showRollForm}}
               <button type="button" class="btn btn-success" {{action "toggleRollForm"}}>+ Add Roll</button>
@@ -182,13 +188,13 @@
             {{textarea class="form-control mb-2" value=this.replyText placeholder="Add a reply..." rows="3"}}
             <div class="d-flex align-items-center gap-3 flex-wrap">
               <div class="form-check">
-                {{input type="checkbox" class="form-check-input" id="inklings-reply-private" checked=this.replyIsPrivate}}
+                <input type="checkbox" class="form-check-input" id="inklings-reply-private" checked={{this.replyIsPrivate}} onclick={{action "toggleReplyPrivate"}}>
                 <label class="form-check-label" for="inklings-reply-private">
                   Private (only you and staff can see this)
                 </label>
               </div>
               <div class="form-check">
-                {{input type="checkbox" class="form-check-input" id="inklings-reply-personal" checked=this.replyIsPersonal}}
+                <input type="checkbox" class="form-check-input" id="inklings-reply-personal" checked={{this.replyIsPersonal}} onclick={{action "toggleReplyPersonal"}}>
                 <label class="form-check-label" for="inklings-reply-personal">
                   Personal Entry (visible only to you)
                 </label>
@@ -196,6 +202,11 @@
               <button type="button" class="btn btn-success" {{action "submitReply"}}>Add Entry</button>
             </div>
           </div>
+          {{else}}
+          <div class="alert alert-secondary">
+            Your character must be approved before you can reply or add rolls here.
+          </div>
+          {{/if}}
 
           {{#if (or this.isStaff (eq this.detail.character_id this.viewerId))}}
             <div class="mb-3">
@@ -206,7 +217,7 @@
             </div>
           {{/if}}
 
-          {{#if (and (not this.isStaff) (eq this.detail.character_id this.viewerId) (not this.detail.locked))}}
+          {{#if (and (not this.isStaff) this.isApproved (eq this.detail.character_id this.viewerId) (not this.detail.locked))}}
             <div class="alert alert-warning">
               <p>So far this hasn't been sent to staff. Submit when you're ready for them to see it - you won't get a response until you do.</p>
               <button type="button" class="btn btn-primary" {{action "submitInkling"}}>Submit for Review</button>
@@ -226,15 +237,27 @@
         <hr>
         <div class="d-flex gap-2 flex-wrap mb-2">
           <button type="button" class="btn btn-secondary" {{action "addGmNote"}}>+ GM Note</button>
-          {{#if (eq this.detail.approval_state "submitted")}}
-            <button type="button" class="btn btn-success" {{action "approveInkling"}}>Approve</button>
-            <button type="button" class="btn btn-warning" {{action "requestChanges"}}>Request Changes</button>
-          {{/if}}
           {{#if (and this.detail.locked (eq this.detail.approval_state "approved"))}}
             <button type="button" class="btn btn-warning" {{action "unlockInkling"}}>Unlock</button>
           {{/if}}
           <button type="button" class="btn btn-info" {{action "grantReward"}}>Grant Reward</button>
         </div>
+
+        {{#if (eq this.detail.approval_state "submitted")}}
+          <div class="card card-body mb-2">
+            <h6 class="mb-2">Review</h6>
+            <div class="form-check">
+              <input type="radio" class="form-check-input" id="inklings-review-approve" name="inklings-review-decision" checked={{eq this.reviewDecision "approve"}} onclick={{action "setReviewDecision" "approve"}}>
+              <label class="form-check-label" for="inklings-review-approve">Approved</label>
+            </div>
+            <div class="form-check mb-2">
+              <input type="radio" class="form-check-input" id="inklings-review-needs-changes" name="inklings-review-decision" checked={{eq this.reviewDecision "needs_changes"}} onclick={{action "setReviewDecision" "needs_changes"}}>
+              <label class="form-check-label" for="inklings-review-needs-changes">Needs Changes</label>
+            </div>
+            {{textarea class="form-control mb-2" value=this.reviewMessage placeholder=(if (eq this.reviewDecision "needs_changes") "Explain what needs to change (required)..." "Optional note to include with the approval...") rows="3"}}
+            <button type="button" class="btn btn-primary" {{action "submitReview"}}>Submit Review</button>
+          </div>
+        {{/if}}
       {{/if}}
 
       {{#if (and (eq this.detail.status "open") (or this.isStaff (eq this.detail.character_id this.viewerId)))}}

@@ -61,6 +61,9 @@ Add a new update to the inkling thread. This does *not* notify staff by itself -
 **`+inkling/roll <id>=<roll command>`**
 Attach a roll to the inkling thread. Example: `+inkling/roll 14=Firearms+Reflexes`
 
+**`+inkling/rollprivate <id>=<roll command>`**
+Attach a roll visible only to you and staff, same as `+inkling/roll` but private. Example: `+inkling/rollprivate 14=Firearms+Reflexes`
+
 **`+inkling/private <id>=<text>`**
 Add a private entry to any inkling thread. Private entries are visible only to you and staff — other participants in the thread cannot see them. Like `+inkling/advance`, this doesn't notify staff by itself.
 
