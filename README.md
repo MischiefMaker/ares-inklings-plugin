@@ -316,10 +316,10 @@ menu link never changes who can actually use the page.
 **In-game:**
 
 ```
-job/categoryroles Plots=<staff roles that should see inkling jobs>
+job/categoryroles PLOT=<staff roles that should see inkling jobs>
 ```
 
-(The `Plots` job category typically already exists in Ares. If it doesn't, create it first with `job/createcategory Plots`.)
+(The `PLOT` job category typically already exists in Ares - note the exact case; job categories are matched case-sensitively. If it doesn't, create it first with `job/createcategory PLOT`.)
 
 **Verify permissions:**
 
@@ -381,6 +381,13 @@ invocation line (e.g. `{{inklings-tab characterId=... isApproved=... isSelf=...}
 character-by-character against the current snippet, since a missing keyword
 argument fails silently (it's just `undefined`/`false` in the component) rather
 than throwing an error.
+
+**`game/config/inklings.yml` is also not reliably re-merged** on an upgrade if you've
+already customized it - `plugin/install` may or may not pick up a changed default for
+a key you already have set. Don't assume a config default shown in this README (e.g.
+`job_category`) took effect just because you re-ran `plugin/install`; open the file
+and check the live value if a default is documented as having changed between
+versions you've installed.
 
 ## Configuration
 
@@ -464,8 +471,13 @@ and let players create those Inklings normally after approval.
 The job category Inklings uses for submitted threads:
 
 ```yaml
-job_category: Plots
+job_category: PLOT
 ```
+
+**Job categories are matched case-sensitively** - `PLOT`, `Plot`, and `plot` are three different
+categories as far as AresMUSH is concerned, and only the exact one you configure (and have
+actually created in-game) will work. AresMUSH's own built-in categories are upper-case, which is
+why the default here is `PLOT` and not `Plots`/`plots`.
 
 **If you change this value (or you're upgrading and it changed between versions you installed),
 the named category must actually exist in-game** (`job/createcategory <name>`) **before
@@ -473,7 +485,10 @@ the named category must actually exist in-game** (`job/createcategory <name>`) *
 and rejects anything not already created - it does not create categories automatically. A
 mismatch here (e.g. the category was renamed in a plugin update but the old one is what your
 game actually has) surfaces as "Could not notify staff of this submission" on both MUSH and web,
-since both paths share the same submission code. See "Upgrading an Existing Install" above.
+since both paths share the same submission code, and the server log will name the exact category
+that failed lookup. See "Upgrading an Existing Install" above - **if you already have a working,
+differently-named category configured, keep it. Don't blindly copy this file's sample value over
+your own.**
 
 ### Bonus XP (Optional)
 

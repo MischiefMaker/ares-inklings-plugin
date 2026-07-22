@@ -23,8 +23,11 @@ module AresMUSH
         self.reward_spec = args.arg2
       end
 
-      def required_args
-        [self.id, self.reward_spec]
+      # No required_args - see v4 Bug 001 audit; points at the real
+      # `help manage_inklings` topic instead of a nonexistent per-switch one.
+      def check_valid_format
+        return t('dispatcher.invalid_syntax', :cmd => 'manage_inklings') if self.id.blank? || self.reward_spec.blank?
+        nil
       end
 
       def inkling

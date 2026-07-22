@@ -14,8 +14,11 @@ module AresMUSH
         self.raw_text = trim_arg(args.arg2)
       end
 
-      def required_args
-        [self.id, self.raw_text]
+      # No required_args - see v4 Bug 001 audit; points at the real
+      # `help inklings` topic instead of a nonexistent per-switch one.
+      def check_valid_format
+        return t('dispatcher.invalid_syntax', :cmd => 'inklings') if self.id.blank? || self.raw_text.blank?
+        nil
       end
 
       # Memoized so check_valid_inkling, check_can_reply,
@@ -76,7 +79,7 @@ module AresMUSH
         end
 
         if text.blank?
-          client.emit_failure t('dispatcher.invalid_syntax')
+          client.emit_failure t('dispatcher.invalid_syntax', :cmd => 'inklings')
           return
         end
 

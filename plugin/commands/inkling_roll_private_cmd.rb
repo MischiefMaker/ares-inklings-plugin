@@ -20,8 +20,11 @@ module AresMUSH
         self.roll_command = trim_arg(args.arg2)
       end
 
-      def required_args
-        [self.id, self.roll_command]
+      # No required_args - see v4 Bug 001 audit; points at the real
+      # `help inklings` topic instead of a nonexistent per-switch one.
+      def check_valid_format
+        return t('dispatcher.invalid_syntax', :cmd => 'inklings') if self.id.blank? || self.roll_command.blank?
+        nil
       end
 
       def check_roll_system

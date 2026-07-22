@@ -10,8 +10,12 @@ module AresMUSH
         self.target_name = titlecase_arg(cmd.args)
       end
 
-      def required_args
-        [self.target_name]
+      # No required_args - its generic failure message pointed at a
+      # nonexistent "help inkling/list" topic (v4 Bug 001). This is a
+      # staff-only command, so the real topic is `help manage_inklings`.
+      def check_valid_format
+        return t('dispatcher.invalid_syntax', :cmd => 'manage_inklings') if self.target_name.blank?
+        nil
       end
 
       def check_can_view

@@ -20,8 +20,12 @@ module AresMUSH
         self.message = trim_arg(args.arg2)
       end
 
-      def required_args
-        [self.id]
+      # No required_args - the framework's own generic failure message
+      # points at a nonexistent "help inkling/approve" topic (see v4
+      # Bug 001 audit). The real one is `help manage_inklings`.
+      def check_valid_format
+        return t('dispatcher.invalid_syntax', :cmd => 'manage_inklings') if self.id.blank?
+        nil
       end
 
       # Memoized so the checks below and handle don't each

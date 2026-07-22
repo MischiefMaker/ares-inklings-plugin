@@ -8,10 +8,17 @@ inklings:
   manage_permission: manage_apps
 
   # Job category used for jobs Inklings creates to notify staff of
-  # player activity (new threads, replies, deletions). Create this
-  # category in-game with: job/createcategory Plots
-  # and set access roles with: job/categoryroles Plots=<roles>
-  job_category: Plots
+  # player activity (new threads, replies, deletions). Job categories are
+  # matched by AresMUSH with an exact, case-sensitive comparison, so this
+  # must match your actual category name exactly - AresMUSH's own
+  # built-in categories are upper-case, hence "PLOT" here.
+  # Create this category in-game with: job/createcategory PLOT
+  # and set access roles with: job/categoryroles PLOT=<roles>
+  # If you already have a different category configured, leave this
+  # value alone when upgrading - do not blindly re-copy this file over
+  # your own customized config (see README's "Upgrading an Existing
+  # Install" section).
+  job_category: PLOT
 
   # Turns the chargen-inkling integration on or off. The chargen feature is
   # fixed to two types - secret and goal - which players fill in on the

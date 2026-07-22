@@ -11,8 +11,11 @@ module AresMUSH
         self.query = cmd.args
       end
 
-      def required_args
-        [self.query]
+      # No required_args - see v4 Bug 001 audit; points at the real
+      # `help inklings` topic instead of a nonexistent per-switch one.
+      def check_valid_format
+        return t('dispatcher.invalid_syntax', :cmd => 'inklings') if self.query.blank?
+        nil
       end
 
       def check_approved

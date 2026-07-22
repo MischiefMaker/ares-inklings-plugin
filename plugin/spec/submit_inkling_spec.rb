@@ -54,12 +54,12 @@ module AresMUSH
     context "when Jobs.create_job fails (e.g. an unconfigured job category)" do
       before do
         allow(Jobs).to receive(:create_job)
-          .and_return({ job: nil, error: "Invalid job category Plots. Valid options are: General." })
+          .and_return({ job: nil, error: "Invalid job category PLOT. Valid options are: General." })
       end
 
       it "returns an error that includes the real underlying reason" do
         result = Inklings.submit_inkling(inkling, submitter)
-        expect(result[:error]).to include("Invalid job category Plots")
+        expect(result[:error]).to include("Invalid job category PLOT")
       end
 
       it "does not lock the thread or change its approval state" do

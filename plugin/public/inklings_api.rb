@@ -635,6 +635,7 @@ module AresMUSH
           roll_count: visible_rolls.size,
           player_unread: viewer && inkling.character != viewer ? false : inkling.player_unread == "true",
           locked: inkling.locked == "true",
+          approval_state: inkling.approval_state,
           tags: tags,
           tags_label: tags.join(", "),
           linked_job: inkling.job ? { id: inkling.job.id, status: inkling.job.status } : nil

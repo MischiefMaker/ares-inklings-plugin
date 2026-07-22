@@ -4,6 +4,7 @@ en:
     inklings_title: "Your Inklings"
     inklings_title_for: "%{name}'s Inklings"
     admin_title: "All Inklings (Admin)"
+    admin_more_pages: "More pages are available (page %{current} of %{total}). Use `+inkling/admin%{next_page}` to view page %{next_page}."
     no_inklings: "You don't have any inklings to show."
     no_inklings_for: "%{name} doesn't have any inklings yet."
     no_linked_job: "no linked job"

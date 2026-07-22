@@ -61,8 +61,19 @@ module AresMUSH
         # each inkling contributes the two lines above - 50 lines gives
         # the same 25-inklings-per-page as every other paginated inkling
         # list in this plugin (InklingsCmd, InklingListCmd).
-        template = BorderedPagedListTemplate.new list, cmd.page, 50, t('inklings.admin_title')
+        per_page = 50
+        template = BorderedPagedListTemplate.new list, cmd.page, per_page, t('inklings.admin_title')
         client.emit template.render
+
+        # BorderedPagedListTemplate itself gives no indication that
+        # further pages exist (v4 Bug 004) - only shown for a genuinely
+        # valid current page, so an out-of-range page (already handled
+        # by the template's own validation) never gets a hint appended.
+        total_pages = (list.length.to_f / per_page).ceil
+        if cmd.page >= 1 && cmd.page < total_pages
+          client.emit t('inklings.admin_more_pages',
+            :current => cmd.page, :total => total_pages, :next_page => cmd.page + 1)
+        end
       end
     end
   end

@@ -30,8 +30,12 @@ module AresMUSH
         self.text = trim_arg(title_and_text[1])
       end
 
-      def required_args
-        [self.title, self.text]
+      # No required_args - see v4 Bug 001: its generic failure message
+      # points at a nonexistent per-switch help topic instead of the
+      # real `help inklings`.
+      def check_valid_format
+        return t('dispatcher.invalid_syntax', :cmd => 'inklings') if self.title.blank? || self.text.blank?
+        nil
       end
 
       def check_valid_kind

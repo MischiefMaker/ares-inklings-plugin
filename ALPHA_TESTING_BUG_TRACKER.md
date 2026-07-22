@@ -273,3 +273,41 @@ Resolution:
 * Added `plugin/spec/submit_inkling_spec.rb` as the requested regression coverage: pins both the success path (job linked, thread locked, submission marker left) and the failure path (real error reason surfaced, thread left unlocked/unsubmitted with no partial state, failure logged).
 
 This does not by itself guarantee `job/createcategory Plots` has been run on any given live server - that remains a documented one-time setup step (see README's Job Category section) - but a misconfigured category (or any other `Jobs.create_job` failure) is no longer a silent, undiagnosable dead end on either interface.
+
+---
+
+## Round 4 (v4)
+
+Defects discovered during the fourth round of alpha testing. Closed out as of this round - Round 5 starts a fresh Bug 001.
+
+### Bug 001 — Outdated Help Reference in `inkling/list` Error Message
+
+**Status: Fixed (unconfirmed)**
+
+`+inkling/list` with an invalid format returned "See `help inkling/list`" - a topic that doesn't exist. The plugin consolidates player docs into `help inklings` and staff docs into `help manage_inklings`.
+
+Audited the whole plugin: 21 of 25 command classes relied on the bare `required_args` check, whose generic framework failure message points at a nonexistent per-switch topic (`help inkling/<switch>`) - only `InklingStartCmd` and `InklingCreateCmd` had already worked around this (from an earlier round), by omitting `required_args` entirely and adding an explicit `check_valid_format` that calls `t('dispatcher.invalid_syntax', :cmd => 'inklings')` instead. Applied that same established pattern to all 21 remaining commands, routing each to the correct real topic - `manage_inklings` for the 6 staff-only commands (`approve`, `gm`, `list`, `needschanges`, `reward`, `unlock`), `inklings` for the other 15. Also fixed `InklingCommentCmd`, which had both `required_args` *and* its own better custom message - the generic one was winning for blank input since `required_args` is checked first; removed `required_args` there too. Fixed a second bare `dispatcher.invalid_syntax` call (no `:cmd` at all) in `InklingPrivateCmd`.
+
+### Bug 002 — Incorrect Default Job Category
+
+**Status: Fixed (unconfirmed)**
+
+The default `job_category` was `"Plots"` (title case); AresMUSH's real default category is `"PLOT"` (upper-case), and the lookup is an exact, case-sensitive match - `Jobs.create_job` rejects anything that doesn't match exactly.
+
+Changed the default in `Inklings.job_category`, `game/config/inklings.yml`'s shipped sample, and every README reference to `PLOT`. Did **not** add any runtime uppercasing/transformation of the configured value - an admin's exact configuration is always respected as-is. Added an explicit note to the README and to `game/config/inklings.yml`'s own comments telling upgraders not to blindly re-copy the sample value over an already-customized config (config isn't reliably re-merged - see Round 3's Lesson 26). The diagnostic-on-failure work from Round 3 Bug 004 already covers "log a clear diagnostic warning when the category can't be found." Added Lesson 27 to the dev guide.
+
+### Bug 003 — Admin Review Buttons Still Missing on Web Modal
+
+**Status: Fixed (unconfirmed)**
+
+Approve/Needs Changes were reported missing specifically on the admin page, "despite the previous implementation attempt." Audited the full rendering pipeline (permissions reaching the client, status serialization, component identity, template presence, action wiring, server-side handlers) rather than re-guessing at a targeted fix.
+
+**Root cause, and it wasn't admin-specific:** `InklingApi.format_inkling_summary` - the one serializer both `format_inkling_detail` and every list endpoint build on - never included `approval_state` in its output. `this.detail.approval_state` was `undefined` on every page, always, for every inkling - so `{{#if (eq this.detail.approval_state "submitted")}}` silently never matched, with no console error or server error to point at it (same failure shape as Round 2's Lesson 24, one level removed - see the new Lesson 28). This also explains two other conditions that were quietly dead the whole time: the player's "Request Unlock" button and staff's own "Unlock" button, both gated on `approval_state == "approved"`.
+
+Fixed by adding `approval_state: inkling.approval_state` to `format_inkling_summary` - the single shared serializer, so every consumer (admin list, profile list, search results, and both detail views) inherits the fix at once instead of patching the admin page in isolation. The review card's own action wiring, permission checks, and server-side handlers (`inklings_approve_inkling`/`inklings_request_changes` → `InklingApi.approve_inkling`/`request_changes_inkling`, both already `can_manage_inklings?`-gated and already re-validating `approval_state == "submitted"` server-side against duplicate/stale submissions) were already correct from the prior round's work - nothing else needed to change. Added `plugin/spec/format_inkling_summary_spec.rb` pinning the field's presence on both the summary and merged detail payloads. Added Lesson 28 to the dev guide.
+
+### Bug 004 — `inkling/admin` Should Display Pagination Hint
+
+**Status: Fixed (unconfirmed)**
+
+`+inkling/admin` gave no indication further pages existed. Added a hint line after the rendered list - "More pages are available (page X of Y). Use `+inkling/adminN` to view page N." (no space before the page number, matching the actual command syntax) - shown only when `cmd.page` is less than the total page count computed from the same line-based pagination `BorderedPagedListTemplate` already uses, so it's never wrong relative to what the template just rendered, and never shown on the final page or for an out-of-range page.

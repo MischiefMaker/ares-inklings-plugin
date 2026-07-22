@@ -27,10 +27,12 @@ module AresMUSH
         self.ref = cmd.args.to_s.strip
       end
 
-      def required_args
-        [self.ref]
-      end
-
+      # No required_args - a blank ref used to fall through to the
+      # framework's generic failure message pointing at a nonexistent
+      # "help inkling/comment" topic (v4 Bug 001) before check_valid_format
+      # below ever ran. The regex here already rejects blank input too,
+      # so removing required_args means every malformed case - blank or
+      # not - gets this command's own, more useful message instead.
       def check_valid_format
         return t('inklings.comment_invalid_format') unless self.ref.to_s =~ REF_FORMAT
         nil

@@ -1638,6 +1638,87 @@ explicitly.
 
 ---
 
+### Lesson 27: AresMUSH job categories are matched with an exact, case-sensitive string comparison - and the built-in defaults are upper-case
+
+Lesson 26 already covered *renaming* a job category default as a breaking
+change; a follow-up round of testing (v4 Bug 002) found the replacement
+value itself was wrong in a different way: it was `"Plots"` (title case),
+but AresMUSH's real default categories are upper-case (`PLOT`), and
+`Jobs.create_job`'s category lookup is an exact string match - `"Plots"`,
+`"plots"`, and `"PLOT"` are three unrelated strings to it, not
+case-insensitive variants of the same category.
+
+- When a default value names something that has to match a real,
+  externally-defined string exactly (a job category, a permission name, a
+  channel name), verify the *exact* casing against real source or an actual
+  running game - don't assume title-case because it "reads" more like a
+  normal config value. Guessing plausible-looking casing for a string that
+  gets `==`-compared somewhere is the same class of mistake as guessing a
+  file path; it fails silently and case-sensitively.
+- Never uppercase (or otherwise transform) a configured value at runtime to
+  "correct" it. An admin's exact configuration must be respected even if it
+  doesn't match the shipped default's casing - transforming it silently
+  would just trade one invisible mismatch for another, and would break any
+  admin who deliberately created a differently-cased category on purpose.
+- When a lookup like this can fail, make the failure diagnostic instead of
+  generic: surface the exact string that was looked up and, if the
+  underlying API provides it (as `Jobs.create_job` does - see Lesson 26),
+  what the valid options actually are. That turns a silent case-sensitivity
+  trap into a message that tells the admin exactly what to fix.
+
+---
+
+### Lesson 28: A field missing from a shared serializer breaks every template condition that reads it, on every page that uses it - and looks like a UI bug, not a data bug
+
+Staff reported the web modal's Approve/Needs Changes controls were
+completely missing on the admin page (v4 Bug 003) - "despite the previous
+implementation attempt," per the bug report, implying the earlier round's
+work (the unified review card, confirmed correct by reading the template
+and the two web handlers it calls) simply didn't work. The template
+condition gating the card was `{{#if (eq this.detail.approval_state
+"submitted")}}` - correct-looking, and the same shape as several other
+conditions in the same file that also silently never fired: the player's
+"Request Unlock" button, and staff's own "Unlock" button.
+
+**Root cause:** `InklingApi.format_inkling_summary` - the one serializer
+both the detail view and every list view build on - never included
+`approval_state` in its output hash at all. Every `this.detail.
+approval_state` read on the client was `undefined`, forever, on every page,
+for every inkling. `format_inkling_detail` merges on top of
+`format_inkling_summary`, so the bug propagated to it automatically - fixing
+one call site fixed every consumer.
+
+This is the same failure shape as Lesson 24 (a raw `false` renders as text,
+`undefined`/`null` render as nothing) one level removed: there the missing
+thing was a whole object (`viewer`) the client assumed existed; here it was
+one field silently absent from an otherwise-correct, otherwise-complete
+payload. Both produce a `{{#if}}` that's always false with zero console
+error, zero server error, and a template/component that reads entirely
+correct on inspection - the bug is invisible until you check what the
+*data* actually contains, not what the code that reads it says.
+
+- When a reported "control is missing" bug survives a full read of the
+  component/template that should render it (correct classes, correct
+  nesting, correct action wiring - as it did here), stop reading the
+  client and go verify what the *payload* actually contains for the field
+  the condition depends on. A field a template reads but a serializer
+  never sets is invisible from either side in isolation: the template
+  looks right, and the serializer's omission isn't an error, just an
+  absence.
+- Prefer checking a real server response (or the shared serializer's
+  source directly) over re-reading the same template a second time. Ares'
+  own `{{#if (eq ...)}}` pattern gives no signal - no `undefined` warning,
+  no key-not-found error - when the left-hand side was never set.
+- If a bug report frames something as page-specific ("missing on the admin
+  page") but the actual broken condition lives in a component shared
+  across pages, verify whether it's really page-specific before scoping
+  the fix that narrowly - here it wasn't (the same missing field affects
+  every page using the shared modal), and fixing the one shared serializer
+  method fixed every affected condition at once instead of patching the
+  admin page in isolation.
+
+---
+
 ## 9. Plugin Review Checklist
 
 Before considering a plugin (or a plugin change) complete:

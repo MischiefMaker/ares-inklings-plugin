@@ -665,11 +665,17 @@ module AresMUSH
     end
 
     # Fixed job category so inkling-linked jobs land on their own board.
-    # Defaults to "Plots" (see game/config/inklings.yml, which ships
-    # with that value set explicitly) - override job_category in
-    # inklings.yml if your game uses a different category name.
+    # Defaults to "PLOT" (see game/config/inklings.yml, which ships with
+    # that value set explicitly) - override job_category in inklings.yml
+    # if your game uses a different category name. Job categories are
+    # matched by Jobs.create_job with an EXACT, case-sensitive string
+    # comparison (see Lesson 27 in the dev guide) - AresMUSH's own
+    # default categories are upper-case, hence "PLOT" and not "Plots"/
+    # "plots". Never uppercase (or otherwise transform) the configured
+    # value here - an admin who deliberately named their category
+    # something else entirely must be respected exactly as configured.
     def self.job_category
-      Global.read_config("inklings", "job_category") || "Plots"
+      Global.read_config("inklings", "job_category") || "PLOT"
     end
 
     # Makes sure the given inkling has a linked job, so staff are
