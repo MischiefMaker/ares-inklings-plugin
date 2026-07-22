@@ -33,6 +33,17 @@ Planned enhancements for future releases. Organized by phase and release.
 - Requires Scenes plugin to be installed; degrades gracefully if absent
 - Staff can remove scene links with: `+inkling/unlink-scene <inkling_id>=<scene_id>`
 
+**Ownerless Inklings for Later Distribution**
+- Allow staff to create an Inkling with no owner assigned yet, for distribution later
+- Two possible mechanisms to evaluate:
+  - No owner at creation time - staff assign an owner (or share it) once a recipient is decided
+  - Or: create with a placeholder/staff owner, then reassign/share to the real recipient later
+- Useful for staff pre-writing prompts, hooks, or plot seeds before deciding (or before a player is available to decide) who they go to
+- Distinct from Clone Inkling to Multiple Players (below): this is about a single Inkling with deferred ownership, not immediately duplicating to several players
+- Architecturally significant: `Inkling#character` (the owning player) is currently a required reference throughout the model and most permission/notification logic (`shared_with_names`, `is_participant?`, chargen conversion, etc.) - making it optional needs a careful audit of every place that assumes it's always present, not just the creation form
+- Web UI: Add Inkling form gets an "assign later" option in place of picking an owner; admin list needs a way to show/filter ownerless Inklings
+- MUSH: `+inkling/admin` create flow needs the same option; a way to later assign/share an ownerless Inkling to a player
+
 **Clone Inkling to Multiple Players**
 - New command: `+inkling/clone <inkling_id>=<player1>,<player2>,<player3>`
 - Creates a fresh copy of the inkling for each listed player as the owner
@@ -76,6 +87,13 @@ Planned enhancements for future releases. Organized by phase and release.
 - MUSH: `+inkling/admin submitted` shows only submitted inklings awaiting review
 - Highlights workload for staff and makes it easy to focus on pending reviews
 - Integrates with existing admin list views without redesign
+
+**`+inkling/review` — Dedicated Pending-Review Queue Command**
+- New MUSH command: `+inkling/review` shows staff every Inkling currently awaiting a staff response (`approval_state: "submitted"`), across all characters
+- One-word shortcut to "what needs my attention right now," instead of remembering a filter flag - same spirit as `+inkling/new` for players' own unread queue
+- Closely related to the already-roadmapped Admin Visibility: Submitted Status Indicator and Filter (above) - both surface the same underlying "submitted" query; consider implementing them together so `+inkling/admin submitted` and `+inkling/review` share one canonical query method rather than two separate implementations
+- Web equivalent: could reuse the admin page's `submitted` filter (see Admin Visibility above) rather than needing a separate view
+- Sort oldest-first so the longest-waiting submissions surface first, mirroring the design intent of Admin Visibility's indicator
 
 **Inspirations — Optional Submission Currency**
 - Optional currency system ("Inspirations") to gatekeep and encourage quality submissions
