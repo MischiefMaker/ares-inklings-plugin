@@ -18,6 +18,8 @@ When practical, implementations should:
 
 ## Bug 001 — Offline Notifications
 
+**Status: Fixed**
+
 (As previously documented.)
 
 New Inklings should generate offline notifications visible in the web Notifications tab using the same AresMUSH notification infrastructure as Jobs.
@@ -25,6 +27,8 @@ New Inklings should generate offline notifications visible in the web Notificati
 ---
 
 ## Bug 002 — Hidden Actions for Unapproved Players
+
+**Status: Fixed**
 
 (As previously documented.)
 
@@ -34,6 +38,8 @@ Unapproved players currently see Add Reply and Add Roll even though those action
 
 ## Bug 003 — Personal vs Private Replies
 
+**Status: Fixed**
+
 (As previously documented.)
 
 Personal and Private are mutually exclusive visibility states. Selecting one should deselect the other, with server-side validation preventing invalid combinations.
@@ -41,6 +47,8 @@ Personal and Private are mutually exclusive visibility states. Selecting one sho
 ---
 
 ## Bug 004 — Require Inkling Titles
+
+**Status: Fixed**
 
 (As previously documented.)
 
@@ -50,6 +58,8 @@ Require a non-blank title when creating Inklings from both Chargen and the stand
 
 ## Bug 005 — Chargen Secret/Goal Review
 
+**Status: Fixed**
+
 (As previously documented.)
 
 Players need a documented way to review the complete contents of chargen Secrets and Goals before submission. Prefer displaying the full text in the web chargen draft review.
@@ -58,6 +68,8 @@ Players need a documented way to review the complete contents of chargen Secrets
 
 ## Bug 006 — Roll Results Missing from Web Modal
 
+**Status: Fixed**
+
 (As previously documented.)
 
 Rolls appear in `inkling #` on the MUSH but are missing from the web Inkling modal.
@@ -65,6 +77,8 @@ Rolls appear in `inkling #` on the MUSH but are missing from the web Inkling mod
 ---
 
 ## Bug 007 — Shared Web Inkling Modal
+
+**Status: Fixed**
 
 The profile and admin pages currently expose different Inkling functionality.
 
@@ -94,6 +108,8 @@ For review:
 
 ## Bug 008 — Missing New Inkling Button
 
+**Status: Fixed**
+
 Approved players should have a New Inkling button on their profile page.
 
 The button should appear only when the current viewer is eligible to create an Inkling.
@@ -101,6 +117,8 @@ The button should appear only when the current viewer is eligible to create an I
 ---
 
 ## Bug 009 — Search Layout
+
+**Status: Fixed**
 
 Reduce unnecessary whitespace around the search controls.
 
@@ -111,6 +129,8 @@ Reduce unnecessary whitespace around the search controls.
 ---
 
 ## Bug 010 — Tag Visibility
+
+**Status: Fixed**
 
 Tags already exist but are inconsistently displayed.
 
@@ -132,6 +152,8 @@ Display tags in the full `inkling #` view.
 
 ## Bug 011 — inkling/submit Doesn't Create Review Job
 
+**Status: Fixed**
+
 Submitting an Inkling should:
 
 * Create a standard AresMUSH review job.
@@ -143,6 +165,8 @@ Submitting an Inkling should:
 ---
 
 ## Bug 012 — Missing MUSH Private Roll Command
+
+**Status: Fixed**
 
 The web supports private Inkling rolls but there is no equivalent MUSH command.
 
