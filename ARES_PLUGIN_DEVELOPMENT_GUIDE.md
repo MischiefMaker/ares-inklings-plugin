@@ -215,10 +215,19 @@ NOT auto-installed components. This is a critical distinction from profile tabs.
 - This breaks the game owner's chargen setup and interferes with other plugin integrations
 
 **Correct pattern:**
-1. Backend hook (auto-install): `chargen_finalize` in plugin validates required types exist
-2. Custom fields hook (manual paste): `custom_char_fields.rb` snippet defines `get_fields_for_chargen`
-3. Frontend hook (manual paste): `chargen-custom.snippet.*` files guide user to paste field
+1. Custom fields hook (manual paste): `custom_char_fields.rb` snippet defines `get_fields_for_chargen`
+2. Frontend hook (manual paste): `chargen-custom.snippet.*` files guide user to paste field
    definitions into existing game-owned files
+3. Enforcement, if any, happens through hooks confirmed to actually exist and be
+   auto-discovered - `get_app_review_issues(char)` (a top-level plugin-module method
+   AresMUSH's app-review system calls automatically; see `AppReviewApi` in this
+   project) flags missing/incomplete fields to staff during review, and
+   `custom_approval` (a manual-snippet hook, fired once `char.is_approved` is
+   already true - see `Inklings.convert_chargen_drafts`) is where this project
+   converts draft fields into real records post-approval. Neither of these
+   *blocks* the player from finishing chargen itself - see Lesson 33 below for
+   why an earlier, unconfirmed `chargen_finalize` hook that tried to do exactly
+   that never actually worked (and was since removed).
 
 **Integration flow:**
 - `get_fields_for_chargen` returns `{ inkling_secret_title: ..., inkling_goal_title: ..., ... }`
@@ -603,7 +612,6 @@ plugin/
   public/                   # *_api.rb classes — the actual business logic,
                              # shared by commands and web handlers
   models/                   # Ohm::Model classes
-  hooks/                    # app_review_hook.rb, chargen_hook.rb, etc.
   events/                   # event handler classes (CronEvent, etc.)
   locales/                  # locale_en.yml — all user-facing strings
   help/{admin,en,player}/   # help file markdown
@@ -862,10 +870,13 @@ consequences, from this project's own git history:
   duplicated in Ember. Every hardcoded list is a place a game owner has to
   either accept your defaults or fork your code.
 - **Generic hooks over plugin-specific special-casing.** Use Ares's existing
-  hook points (`app_review_issues`, `chargen_finalize`, custom-fields hooks,
-  event handlers) rather than reaching into another plugin's internals
+  hook points (`app_review_issues`, custom-fields hooks, event handlers,
+  `custom_approval`) rather than reaching into another plugin's internals
   directly. This is also what keeps a plugin functional when the *other*
-  plugin isn't installed.
+  plugin isn't installed. **Verify a hook name is real before building
+  against it** - see Lesson 33 below for a hook this project coded, never
+  confirmed, and shipped for multiple releases without it ever actually
+  being called.
 - **Generic reward/interop systems**, not point-to-point integrations. This
   project's reward system (`reward_type`/`reward_key`/`amount`, applied via a
   generic `grant_reward` path rather than one method per possible reward
@@ -1926,6 +1937,19 @@ discovers and calls automatically.
   never finished being wired up, not merely a mistake. Surface it and let
   the project owner decide whether to wire it up for real, replace it
   with the confirmed mechanism, or remove it.
+
+**Resolution (later session):** flagged directly to the project owner as
+"check `chargen_finalize`'s call sites - dead code," with the same
+three-way confirmation this lesson describes (structural placement inside
+a nested class rather than a top-level `Inklings` method; no registration
+or `custom-install/` reference anywhere in this plugin; the literal string
+absent from current `AresMUSH/aresmush` core). Owner's call was to remove
+it rather than wire it up - `plugin/hooks/chargen_hook.rb` is deleted, and
+the two places elsewhere in this guide that cited `chargen_finalize` as a
+real, usable hook pattern (§3's chargen "Correct pattern" list and §6's
+Extensibility Principles hook-points bullet) were corrected to point at
+`get_app_review_issues`/`custom_approval` instead - the mechanisms that
+actually cover the adjacent, real behavior.
 
 ---
 
