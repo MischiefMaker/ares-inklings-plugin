@@ -1786,6 +1786,202 @@ duplicated the same way if not caught before shipping.
 
 ---
 
+### Lesson 30: Configurable permission names use a flat top-level config key, not a nested `permissions:` hash
+
+Building a second plugin (SOUL) that needed three separate configurable
+permission tiers (player/scene-GM/staff), the natural-looking design was a
+nested hash: `permissions: { play: "play", gm_review: "gm", manage_soul:
+"manage_jobs" }`. That was written into several design docs before anyone
+checked it against a real, shipping example - this plugin's own
+`manage_permission: manage_apps` setting (see `plugin/inklings.rb`'s
+`can_manage_inklings?` and `game/config/inklings.yml`), which is a single
+flat, top-level key under the plugin's own config section, not nested
+under a shared `permissions:` block.
+
+- When a design calls for "a permission name the admin can configure,"
+  default to a flat `<verb>_permission` (or similarly named) top-level key
+  per permission, matching the one real precedent in this ecosystem,
+  rather than inventing a nested structure that merely looks more
+  organized. Nesting isn't wrong in the abstract, but it's an unforced
+  deviation from an established pattern with no confirmed benefit.
+- This also matters mechanically: `AresMUSH::Manage::ConfigValidator`'s
+  helpers (`require_nonblank_text`, `require_boolean`, etc. - see Lesson
+  31) only read top-level fields of a config section
+  (`@config[field]`). A nested hash forces custom validation code for
+  every sub-key instead of one direct call per field.
+- Most core AresMUSH plugins (Jobs, Chargen, etc.) don't make their
+  permission names configurable at all - they hardcode a literal string
+  like `"manage_jobs"` in the check itself. Configurable permission names
+  are a deliberate design choice for plugins that want it (this plugin
+  and SOUL both do), not a universal core convention to pattern-match
+  against by default.
+
+---
+
+### Lesson 31: `AresMUSH::Manage::ConfigValidator` + a per-plugin `check_config` method is the real, confirmed mechanism for startup config validation - and no plugin is required to implement it
+
+Every bundled core plugin that validates its own config (Jobs, Chargen,
+FS3Skills, Website, Channels, Scenes, Roles, Login, and others - see
+`aresmush/plugins/*/,*_config_validator.rb`) follows the identical shape:
+a `self.check_config` class method on the plugin module (e.g.
+`Jobs.check_config`), delegating to a `<Name>ConfigValidator` class that
+wraps `AresMUSH::Manage::ConfigValidator.new(section_name)` and calls its
+`require_boolean`, `require_int(field, min, max)`, `require_text`,
+`require_nonblank_text`, `require_hash`, `require_list`,
+`require_in_list(field, list)`, `check_cron`, `check_role_exists`,
+`check_channel_exists`/`check_channels_exist`,
+`check_forum_exists`/`check_forums_exist`, and `add_error` helpers,
+finishing with `@validator.errors`. `PluginManager#check_plugin_config`
+calls `check_config` on every loaded plugin that responds to it - so a
+plugin without one simply isn't validated at startup, which is exactly
+this plugin's own current state (`Inklings` defines no `check_config` at
+all).
+
+- Before writing custom config-validation code from scratch, check
+  `AresMUSH::Manage::ConfigValidator` (`plugins/manage/config_validator.rb`)
+  for an existing helper that already covers the check you need - most
+  structural/type/range/reference checks (including "does this named role
+  exist," "does this named channel/forum exist," "is this a valid cron
+  hash") are already implemented there and reused by a dozen+ plugins.
+- These helpers only validate **top-level** fields of a config section
+  (`Global.read_config(section_name)` then `@config[field]`) - a nested
+  hash's sub-fields need manual iteration and `@validator.add_error(...)`
+  calls, not a `require_*` call with a dotted path (see Lesson 30 for why
+  this favors flat config keys in the first place).
+- `check_role_exists` validates that a config value names an actual
+  **Role** (`Role.named(name)`) - it is NOT the right check for a
+  configurable *permission name* setting like `manage_permission`. A
+  permission is just a string that zero or more Roles happen to include
+  in their `permissions` array (`AresMUSH::Role#has_permission?`); there's
+  no fixed list of valid permission names to check membership against at
+  config-load time. Use `require_nonblank_text` for those instead.
+
+---
+
+### Lesson 32: Help files load from a single `help/<locale>/*.md` directory per plugin - there is no separate admin-vs-player directory split
+
+A design doc for a second plugin (SOUL) called for `help/admin/` and
+`help/en/` as two separate directories, on the assumption that
+admin-only topics would live somewhere distinct from player-facing ones.
+Checking both halves of the real loading mechanism disproved this:
+`PluginManager#help_files(plugin_module, locale)` globs exactly
+`File.join(plugin_module.plugin_dir, "help", locale, "**.md")`, and the
+separate game-level loader (`HelpReader#help_files`) globs
+`File.join(AresMUSH.game_path, "help", locale, "**.md")` for game-authored
+overrides. Neither mechanism knows or cares whether a topic is
+"admin" or "player" - it's a single flat directory per locale
+(`help/en/`, as this plugin's own `manage_inklings.md` demonstrates,
+sitting in `help/en/` right alongside player-facing topics like
+`inklings.md`).
+
+- Admin-only help topics are distinguished by **content**, not directory:
+  put a `> Permission Required: ...` blockquote near the top of the
+  topic's body (see `plugin/help/en/manage_inklings.md`) rather than
+  routing them to a different folder that nothing actually reads
+  differently.
+- Every help file needs YAML frontmatter with at least a `title:` field
+  (`HelpReader#load_help_file` skips - with a warning - any file whose
+  `MarkdownFile#metadata` comes back empty). Optional `toc:` groups it in
+  a table-of-contents section; optional `aliases:` registers alternate
+  lookup keys.
+- Per CI-08-style conventions (see this plugin's own admin help topic
+  naming), name the staff-facing topic file and its `title:` to match
+  however staff are meant to type `help <topic>` for it - don't assume a
+  separate directory will handle audience-appropriate discovery for you.
+
+---
+
+### Lesson 33: A class that looks like a real plugin hook isn't one until you find its actual call site - even in your own plugin's code
+
+This plugin's own `plugin/hooks/chargen_hook.rb` defines
+`ChargenHook.chargen_finalize(char)`, and its doc comments describe it as
+a per-step chargen validation gate. Grepping the entire current AresMUSH
+core (`aresmush/aresmush`, synced to a live 2026-07 commit - see Lesson 34
+for why a stale checkout would have made this grep meaningless) for
+`chargen_finalize` turns up **zero references** - nothing in the chargen
+plugin, nothing in the dispatcher, nothing anywhere calls it. It is not
+wired to anything. The real, confirmed chargen extension points are the
+manual-paste `custom_approval.rb`/`custom_app_review.rb` snippets (see
+`custom-install/custom_approval.snippet.rb` in this plugin, and
+`aresmush/plugins/chargen/custom_approval.rb` / `custom_app_review.rb` in
+core) - a completely different mechanism (game-owned file the admin
+pastes a line into) from a plugin-defined hook class the framework
+discovers and calls automatically.
+
+- A hook-shaped class sitting in a plugin's own `hooks/` directory, with
+  hook-shaped doc comments, is a **claim**, not a **guarantee** - the same
+  principle as a stale "mirrors permission check in X" comment elsewhere
+  in this guide. Before relying on it, replicating its pattern in another
+  plugin, or writing documentation that describes it as real integration
+  behavior, grep the actual framework source for the method name being
+  "hooked." No hits means no wiring, regardless of how confident the
+  surrounding comments sound.
+- This is a stronger version of Lesson 1 (don't invent APIs without
+  verification) - it applies even to reviewing your *own* already-written
+  plugin, not just new integration code being written against another
+  plugin's surface. Code that compiles and never errors (because nothing
+  calls it) gives no signal that it's wrong.
+- When this kind of dead hook is found, don't silently delete it without
+  flagging it - it may represent a real, still-desired feature that was
+  never finished being wired up, not merely a mistake. Surface it and let
+  the project owner decide whether to wire it up for real, replace it
+  with the confirmed mechanism, or remove it.
+
+---
+
+### Lesson 34: "Config is read live" means don't memoize it in your own plugin code - not that AresMUSH re-parses the YAML file on every call
+
+`Global.read_config(section, key, subkey)` (`engine/aresmush/global.rb`)
+delegates to `ConfigReader#get_config`, which reads from
+`self.config[section_name]` - a hash parsed once, at boot
+(`ConfigReader#load_game_config`), and re-parsed only when something
+explicitly reloads it (`plugins/manage/commands/game/load_config_cmd.rb`,
+the real `@config/load`-style staff command). It is an in-memory read, not
+a disk read, on every call.
+
+- Every plugin should still call `Global.read_config` fresh at each use
+  site rather than caching the result in a Ruby-level constant or instance
+  variable - that's what "changes take effect without a plugin reload"
+  actually depends on. The cost being avoided is a plugin-level cache
+  going stale after a staff config reload, not repeated file I/O (there
+  isn't any on the hot path).
+- Don't describe this behavior in plugin docs as "reads the YAML file live
+  on every call" - it doesn't, and the distinction matters if anyone ever
+  reasons about performance or about exactly when a config edit takes
+  effect (answer: after the next config reload, not at the instant the
+  file is saved to disk).
+
+---
+
+### Lesson 35: Before trusting a forked reference repo's conventions as "current," check its last commit date - a stale fork can look authoritative while actually contradicting live source
+
+A reference checkout of AresMUSH core (`MischiefMaker/aresmush`, added to
+verify a second plugin's design against real source per Lesson 1's own
+advice) turned out to be frozen at a commit from **2019-12-15** - roughly
+6.5 years stale relative to the actual current upstream, which had moved
+to a 2026-07-08 commit sitting unfetched in the same fork the whole time.
+Nothing about cloning or browsing the stale checkout signaled this; it
+looked like a complete, ordinary AresMUSH installation right up until its
+`git log -1 --date=short` was actually checked.
+
+- Before treating any cloned reference repo as ground truth for "current"
+  conventions, check its last commit date (`git log -1 --format='%ad'
+  --date=short`) and compare it against how old the repo could plausibly
+  be expected to be. A multi-year-stale core checkout can differ from live
+  source in dispatcher internals, config validation helpers, plugin
+  manager behavior, and more - several of the specific APIs this guide
+  documents (`Global.plugin_manager.sorted_plugins`, the `check_config`
+  mechanism) were confirmed only after fetching the fork's actual current
+  upstream state.
+- A fork that hasn't been synced in years isn't necessarily wrong to use -
+  it's just not "current official AresMUSH conventions" (this guide's own
+  stated authority-of-last-resort, above community examples) until it's
+  confirmed to actually be current. Fetch and fast-forward it first, or
+  explicitly flag findings sourced from it as reflecting that fork's
+  specific (dated) commit rather than the live project.
+
+---
+
 ## 9. Plugin Review Checklist
 
 Before considering a plugin (or a plugin change) complete:
